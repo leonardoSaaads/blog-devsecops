@@ -1,0 +1,268 @@
+---
+title: "Entendendo um pouco de Linux"
+date: "2025-10-03"
+tags: ["DEVOPS", "LINUX"]
+description: "O que eu queria que tivessem me ensinado sobre Linux"
+---
+
+# O que eu queria que tivessem me ensinado sobre Linux
+
+---
+
+<p align="center">
+  <img src="/images/linux/root.jpg" />
+</p>
+
+---
+
+Quando comecei a me aprofundar no mundo de Linux, não sabia direito a utilizar o terminal, 
+não sabia direito o que eram as distribuições linux, nem as peculiaridades e muito menos de por que as pessoas ficavam falando
+tanto desse assunto. Mas, conforme fui tendo um contato maior, entendi que Linux é uma ferramenta versátil, poderosa e que te permite fazer diversas coisas 
+(inclusive apagar todo o seu Sistema Operacional). O tempo começou a passar, padrões começaram a fazer mais sentido e alguns comandos
+estavam começando a ficar enraizados. Você sabe, naturalmente no trabalho você precisa usar um `| grep arquivo37482.log` ou algo do tipo.
+Contudo, reconheci que executar comandos não é entender Linux de fato. A diferença entre decorar `ls -la` e compreender o
+ filesystem Unix é brutal — especialmente quando você está debugando um container ou uma aplicação em produção às 1:39h da manhã.
+
+## Distribuições não são apenas sabores diferentes
+
+A primeira coisa que eu gostaria que tivessem me ensinado é sobre as distribuições Linux. Como você viu no título da sessão, as 
+distribuições não são apenas diferentes uma das outras, como muitas das vezes carregam filosofias distintas. Vamos pegar como exemplo algumas das distribuições mais
+famosas: Debian, Arch, Mint, Ubuntu, Pop! OS e Alpine linux. 
+
+```markdown
+| Distribuição | Base          | Público-alvo                    |
+|--------------|---------------|---------------------------------|
+| Debian       | Independente  | Servidores, estabilidade        |
+| Arch         | Independente  | Usuários avançados, entusiastas |
+| Mint         | Ubuntu/Debian | Iniciantes, desktop amigável    |
+| Ubuntu       | Debian        | Desktop e servidores            |
+| Pop! OS      | Ubuntu        | Criadores, gamers, devs         |
+| Alpine       | Independente  | Containers, minimalistas        |
+```
+
+Cada distro tem o seu foco e sua filosofia. Debian, por exemplo, é a base de 80% dos servidores clouds que você vai operar, justamente pela 
+sua estabilidade e democratização do acesso. Logo, entender `apt`, `dpkg` e o sistema de pacotes `.deb` não é opcional, é como se aprofundar em 
+um projeto com uma filosofia e que muitas das vezes te testará como um bom profissional. Alguns exemplos que você precisa estar preparado e 
+saber qual a melhor escolha:
+
+- Qual distro utilizar para a construção de imagens mínimas em um projeto do Docker?
+- Agora que escolhi a distro, como eu atualizo ela?
+- Se minha distro usa o apt, por que tem o diretório /etc/apt/sources.list.d/ e por que quando uso apt update ele mexe nisso?
+- Vou precisar de uma interface como GNOME, XFCE ou KDE?
+
+**Exemplo prático**: Dockerfile otimizado usando Alpine como base.
+
+```dockerfile
+FROM python:3.14-alpine
+WORKDIR /code
+ENV FLASK_APP=app.py
+ENV FLASK_RUN_HOST=0.0.0.0
+RUN apk add --no-cache gcc musl-dev linux-headers
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+EXPOSE 5000
+COPY . .
+CMD ["flask", "run", "--debug"]
+```
+
+Esse `-alpine` não está ali de enfeite, significa que você está usando como imagem base o Python 3.14 rodando sobre Alpine Linux. 
+Como a distro Alpine é minimalista e super leve (~5 MB de base), você pode utilizá-la como base de construção de seus projetos.
+
+## Permissões não são apenas chmod 777
+
+Um dos erros que cometi foi dar pouca importância para permissões, afinal de contas é só dar um `chmod +x arquivo` e correr pro abraço, 
+correto? NÃO PORRA, não caia nessa. Em DevSecOps, o modelo de permissões Unix é seu primeiro mecanismo de defesa - e ele é EXTREMAMENTE 
+importante. Vamos entender o que são as permissões:
+
+Quando você usa o comando `ls -l`, essa flag `-l` significa "long", ou seja, no modo longo mostra as permissões dos diretórios e arquivos. Para não me 
+estender demais, não vou ficar ensinando sobre flags e o que elas significam, mas com certeza você irá se deparar com algo do tipo:
+
+```bash
+-rw-r----- root root   696969 out 24  2024  arquivo_aleatorio.pdf
+│ │ │ │
+│ │ │ └── Outros (others): apenas leitura desabilitada (---)
+│ │ └──── Grupo (group): leitura habilitada (r--), sem escrita/execução
+│ └────── Dono/Usuário (owner): leitura + escrita (rw-)
+└──────── Tipo de arquivo: "-" (arquivo regular, se fosse "d" era um diretório)
+```
+
+Quando você utiliza um comando como `chmod u=rwx,g=rx,o= arquivo_aleatorio.pdf`, basicamente você deu as seguintes permissões:
+
+```bash
+-rwxr-x--- root root   696969 out 24  2024  arquivo_aleatorio.pdf
+│ │ │ │
+│ │ │ └── Outros (others): nenhuma permissão (---)
+│ │ └──── Grupo (group): leitura + execução (r-x)
+│ └────── Dono/Usuário (owner): leitura + escrita + execução (rwx)
+└──────── Tipo de arquivo: "-" (arquivo regular)
+```
+
+e isso muda completamente como o sistema enxerga esse arquivo. Antes o arquivo tinha menos permissões. Com as mudanças, o 
+owner do arquivo tem mais acesso, bem como o grupo. As permissões são como as catracas de acesso e devem ser utilizadas com 
+exatidão. Nesse sentido, é necessário seguir alguns princípios.
+
+### **Princípios que importam**:
+
+- **Menor privilégio possível**: só dê a cada usuário ou processo o que ele precisa, nada mais.
+- **Segregação de responsabilidades**: quem lê não precisa escrever, quem executa não precisa apagar.
+- **Evite o 777**: dar permissão total pra tudo é basicamente deixar a porta da sua casa aberta com um letreiro "ENTRE".
+
+Comandos que você precisa dominar:
+
+```bash
+ls -l → mostra permissões atuais.
+chmod → altera permissões (ex: chmod 640 arquivo.txt).
+chown → muda dono do arquivo (ex: chown user:group arquivo.txt).
+umask → define a "permissão padrão" na criação de novos arquivos.
+find / -perm 777 → auditando arquivos perigosos com permissão total.
+```
+
+**Exemplo prático:**
+
+Você sobe um script de deploy com chmod 777 deploy.sh. Resultado?
+
+QUALQUER DESGRAÇADO no servidor pode sobrescrever esse script e injetar um `rm -rf /` ou, pior ainda, minerar cripto em background. 
+O certo seria algo como chmod 750 deploy.sh e garantir que só o usuário correto (via chown) possa modificá-lo.
+
+## Comandos que eu gostaria que tivessem me ensinado
+
+### find — Seu melhor amigo em auditorias
+
+O find, como o nome já diz, serve para achar arquivos ou diretórios.
+
+```bash
+# Encontrar todos os arquivos .log dentro de /var/log
+find /var/log -name "*.log"
+
+# Achar arquivos com permissão 777 (cuidado!)
+find /home -type f -perm 777
+
+# Encontrar arquivos modificados nas últimas 24h
+find /var/www -type f -mtime -1
+```
+
+### grep — Análise de logs em tempo real
+
+O grep é usado basicamente para filtrar linhas com um padrão.
+
+```bash
+# Procurar pela palavra "ERROR" dentro de um arquivo de log
+grep "ERROR" /var/log/syslog
+
+# Buscar linhas que tenham "ssh" em /etc/services
+grep "ssh" /etc/services
+
+# Usar grep junto com cat
+cat arquivo.txt | grep "senha"
+```
+
+### tail — Monitoring sem ferramentas complexas
+
+Esse comando é o parceiro de todo dia de quem olha logs. Serve para pegar as últimas 
+linhas de um arquivo, por padrão 10 linhas finais. 
+
+```bash
+# Mostrar as últimas 10 linhas de um arquivo
+tail arquivo.txt
+
+# Acompanhar o log em tempo real
+tail -f /var/log/syslog
+
+# Filtrar eventos críticos em tempo real
+tail -f /var/log/syslog | grep -i "error\|fail\|critical"
+```
+
+### ps / top — vendo os processos
+
+Todo dia um DevOps chora no banho quando o júnior não sabe o ps / top
+
+```bash
+# Ver todos os processos rodando
+ps aux
+
+# Abrir o "gerenciador de tarefas" no terminal
+top
+```
+
+### netstat / ss — conexões de rede
+
+Serve para verificar a rede, de forma simples.
+
+```bash
+# Mostrar portas em uso (se net-tools estiver instalado)
+netstat -tulnp
+
+# Alternativa mais moderna (comando ss)
+ss -tuln
+```
+
+## Processos e sinais — O básico que ninguém explica direito
+
+Em Linux, os sinais são mensagens que o sistema ou o usuário mandam para um processo. Pense assim: 
+você está no trabalho e precisa avisar o estagiário que tá em outro setor. Você pode:
+
+- Puxar o estagiário pelo braço (SIGTERM) → "Ei, safado, é pra hoje? Fecha a comida aí e vem comigo".
+- Dar três tiros pro alto e ameaçar matar o CEO da empresa (SIGKILL) → "Acabou a palhaçada, agora!". O processo não tem chance de se defender, simplesmente morre.
+- Tocar no ombro do estagiário (SIGHUP) → "Refaz isso aí, se reconecta". Tradicionalmente usado quando um terminal cai, hoje muito usado para "reload de configs" em serviços.
+- Tocar no ombro e sussurrar pro estagiário (SIGSTOP / SIGCONT) → "Pausa aí rapidinho... beleza, pode voltar!". É literalmente colocar e tirar o processo do pause.
+
+Na prática:
+
+```bash
+kill -SIGTERM 1234   # pede para o processo 1234 encerrar
+kill -9 1234         # mata na marra (SIGKILL)
+kill -SIGHUP 1234    # reinicia (reload) configs
+```
+Sempre tente SIGTERM primeiro. Use SIGKILL (-9) só quando o processo está travado e não responde a nada.
+
+Para containers: `docker stop` envia SIGTERM e aguarda. Após timeout, SIGKILL. Aplicações que não tratam SIGTERM perdem dados.
+
+## Filesystem — Tudo é arquivo
+
+No Linux, **absolutamente tudo é representado como arquivo**. Significa que processos, dispositivos, sockets, hardware, 
+variáveis de ambiente... tudo pode ser lido ou manipulado como se fosse um arquivo. Essa ideia é o que permite você 
+fazer debugging profundo sem precisar de ferramentas mágicas. Exemplo prático: quando você roda `cat /proc/cpuinfo`, 
+você não está chamando um binário oculto, mas literalmente lendo um "arquivo virtual" que o kernel monta pra você.
+
+**Estrutura básica**
+
+- `/` → raiz de tudo. Não existe "C:" ou "D:". Só existe a árvore única.
+- `/bin`, /usr/bin → comandos do sistema.
+- `/etc` → configs. Errou aqui? O sistema vai comprar cigarro e não volta.
+- `/var` → logs, arquivos temporários, filas de spool.
+- `/home` → onde os usuários vivem. Se ferrar /home, você vai ouvir gritos.
+- `/proc` → informações do kernel e processos em tempo real.
+- `/dev` → dispositivos físicos (HD, placa de rede, tty).
+
+```bash
+# Processos
+ls -l /proc/<PID>
+
+# Hardware
+cat /proc/cpuinfo
+cat /proc/meminfo
+
+# Dispositivos de rede
+ip link show  # substitui ifconfig
+
+# Variáveis de ambiente de processos
+cat /proc/<PID>/environ | tr '\0' '\n'
+```
+
+A sacada: quando você dá `ls /dev/sda`, você não está vendo um arquivo de 1 TB, mas sim uma interface para falar com o HD real.
+
+O Linux não vai te dar pop-ups fofinhos, ele vai te dar `/proc`, `/var/log` e `/sys`. Se você entender essa arquitetura, 
+você consegue navegar de hardware → kernel → userspace sem precisar do chatLGBT
+
+## O que realmente importa
+
+Linux em DevSecOps não é decorar flags de comandos. É entender que:
+
+1. **Tudo tem contexto de segurança** — usuário, grupo, capabilities
+2. **Logs são eventos estruturados** — saber extrair informação é crítico
+3. **O sistema é composível** — pipes, redirecionamento e subshells resolvem 90% dos problemas
+4. **Imutabilidade é segurança** — containers, read-only filesystems, políticas de SELinux
+
+Aprenda a pensar em camadas: hardware → kernel → userspace → aplicação. Quando algo quebra, você sobe ou desce essa stack até encontrar o problema.
+
+Se você precisa do `man` para comandos básicos, ainda não internalizou o sistema. Mas se consegue construir pipelines de análise sem Google, está no caminho certo.

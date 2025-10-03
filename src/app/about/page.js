@@ -20,7 +20,7 @@ export default function AboutPage() {
             {/* Profile Image */}
             <div className="relative w-48 h-48 mx-auto md:mx-0 mb-6">
               <Image
-                src="/profile-image.png"
+                src="/profile-image.jpg"
                 alt="Leonardo Saads Pinto"
                 sizes="(max-width: 817px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 fill
