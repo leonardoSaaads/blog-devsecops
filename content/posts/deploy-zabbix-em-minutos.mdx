@@ -1,0 +1,224 @@
+---
+title: "Deploy de Zabbix em 1 Minuto com Docker"
+date: "2025-10-25"
+tags: ["DEVOPS", "DOCKER", "ZABBIX", "MONITORAMENTO"]
+description: "Deploy automatizado do Zabbix e integração com DVR Intelbras via SNMP"
+---
+
+# Deploy Rápido do Zabbix com Docker
+
+Nesta postagem vamos ver como o deploy pode ser feito em menos de 2 minutos. Aproveitando a estrutura do zabbix, vamos 
+fazer um monitoramento do DVR da intelbras; Em suma, tudo apresentado aqui deve levar menos de 15 minutos para ser feito.
+
+## Requisitos Mínimos
+
+- **RAM**: 6GB
+- **CPU**: 4 cores
+- **Docker**: 20.10+
+- **Docker Compose**: 2.0+
+- **SO**: Linux (Ubuntu/Debian/CentOS)
+
+## Deploy em 1 Minuto
+
+<p align="center">
+  <video width="100%" controls>
+    <source src="/videos/docker/deploy-zabbix/single_line_deploy_zabbix.mp4" type="video/mp4" />
+    Seu navegador não suporta a tag de vídeo.
+  </video>
+</p>
+
+Execute os comandos:
+
+```bash
+git clone https://github.com/leonardoSaaads/zabbix-docker
+cd zabbix-docker
+sudo bash install.sh
+```
+
+**⚠️ SEGURANÇA**: Sempre revise o código fonte antes de executar scripts com privilégios sudo. Verifique o repositório, analise o código e consulte relatos de outros usuários. Mesmo que o projeto seja meu, é necessário esse aviso!
+
+### O que o script install.sh faz?
+
+1. Verifica dependências (Docker e Docker Compose)
+2. Gera arquivo `.env` com configurações padrão
+3. Cria volumes para persistência de dados
+4. Executa `docker-compose up -d`
+5. Aguarda inicialização dos serviços
+
+### Estrutura do Projeto
+
+```bash
+zabbix-docker/
+├── docker-compose.yml
+├── .env.example
+├── install.sh
+├── volumes/ (São volumes do docker)
+└── README.md
+```
+
+## Acesso ao Zabbix
+
+Após o deploy (~1 minuto), acesse `http://localhost:8080`
+
+<p align="center">
+  <img src="https://www.zabbix.com/documentation/current/assets/en/manual/quickstart/login.png" />
+</p>
+
+**Credenciais padrão:**
+- **Usuário**: Admin
+- **Senha**: zabbix
+
+**⚠️ IMPORTANTE**: Altere a senha padrão imediatamente em **Administração → Usuários**.
+
+## Integração com DVR Intelbras
+
+### 1. Baixar o Template
+
+Acesse o [repositório oficial da Intelbras no Zabbix](https://www.zabbix.com/br/integrations/intelbras) e baixe o template compatível com sua versão do Zabbix.
+
+<p align="center">
+  <img src="/images/zabbix/zabbix-intelbras.png" />
+</p>
+
+### 2. Habilitar SNMP no DVR
+
+Configure o SNMP no seu DVR Intelbras:
+
+1. Acesse a interface web do DVR
+2. Navegue até **Configuração → Rede → SNMP**
+3. Habilite o SNMP
+4. Configure a comunidade (coloque a padrão `public` ou outra que você queira)
+5. Versão recomendada: SNMPv2c
+
+### 3. Verificar Conectividade SNMP
+
+Instale as ferramentas necessárias:
+
+```bash
+# Debian/Ubuntu
+sudo apt update
+sudo apt install snmp snmp-mibs-downloader -y
+
+# CentOS/RHEL
+sudo yum install net-snmp net-snmp-utils -y
+```
+
+Teste a conexão com o DVR:
+
+```bash
+# SNMP v2c
+snmpwalk -v2c -c public <IP_DO_DVR> | head -n 10
+
+# SNMP v1 (se necessário)
+snmpwalk -v1 -c public <IP_DO_DVR> | head -n 10
+```
+
+**Saída esperada**: Deve retornar informações do sistema (sysDescr, sysUpTime, etc).
+
+### 4. Importar Template no Zabbix
+
+1. Acesse **Configuração → Templates**
+2. Clique em **Importar** (canto superior direito)
+3. Selecione o arquivo do template baixado 
+4. Marque as opções:
+   - ☑ Criar novos
+   - ☑ Atualizar existentes
+5. Clique em **Importar**
+
+### 5. Criar Host para o DVR
+
+1. Acesse **Configuração → Hosts**
+2. Clique em **Criar host** (canto superior direito)
+3. Na aba **Host**, preencha:
+   - **Nome do host**: DVR_Intelbras
+   - **Nome visível**: DVR Intelbras
+   - **Grupos**: Selecione ou crie um grupo (ex: "Dispositivos de Segurança")
+   - **Interfaces**:
+     - Tipo: SNMP
+     - Endereço IP: `<IP_DO_DVR>`
+     - Porta: `161` (ou outra porta que você viu na interface web)
+     - Versão SNMP: `SNMPv2` 
+4. Na aba **Templates**:
+   - Clique em **Selecionar**
+   - Busque por "Intelbras"
+   - Adicione o template importado
+5. Na aba **Macros**:
+   - Adicione: `{$SNMP_COMMUNITY}` = `public` (ou sua comunidade configurada)
+6. Clique em **Adicionar**
+
+### 6. Verificar Status do Host
+
+Aguarde 2-5 minutos para a primeira coleta de dados.
+
+Em **Configuração → Hosts**, verifique se o ícone de disponibilidade está **verde** (SNMP).
+
+### 7. Visualizar Dados Coletados
+
+Acesse **Monitoramento → Dados Recentes**:
+- Filtre pelo host "DVR_Intelbras"
+- Visualize métricas coletadas (temperatura, status de discos, câmeras, etc)
+
+### 8. Dashboard Personalizado
+
+Exemplo de dashboard criado para o DVR:
+
+<p align="center">
+  <img src="/images/zabbix/dvr_intelbras_dashboard.jpeg" />
+</p>
+
+Para criar um dashboard similar:
+
+1. Acesse **Monitoramento → Dashboards**
+2. Clique em **Criar dashboard**
+3. Adicione widgets;
+
+## Troubleshooting
+
+### Containers não inicializam
+
+```bash
+# Verificar logs
+docker-compose logs -f
+
+# Recriar containers
+docker-compose down -v
+docker-compose up -d
+```
+
+### Firewall bloqueando SNMP
+
+```bash
+# Ubuntu/Debian
+sudo ufw allow 161/udp
+
+# CentOS/RHEL
+sudo firewall-cmd --add-port=161/udp --permanent
+sudo firewall-cmd --reload
+```
+
+### DVR não responde ao SNMP
+
+1. Verifique se o SNMP está habilitado no DVR
+2. Confirme a comunidade SNMP configurada
+3. Teste com `snmpwalk` do servidor Zabbix
+4. Verifique regras de firewall no DVR
+
+### Zabbix não coleta dados
+
+1. Verifique status do host em **Configuração → Hosts**
+2. Confirme se o template está vinculado
+3. Valide as macros configuradas
+4. Analise logs: `docker-compose logs zabbix-server`
+
+## Recursos Adicionais
+
+- [Documentação oficial do Zabbix](https://www.zabbix.com/documentation/current/)
+- [Repositório do projeto](https://github.com/leonardoSaaads/zabbix-docker)
+- [Templates oficiais Intelbras](https://www.zabbix.com/br/integrations/intelbras)
+
+## Conclusão
+
+Literalmente em 10 minutos temos uma dashboard que mostra os dados do DVR. Isso de forma simples e escalável. Você pode usar para outras coisas, outras ferramentas e integrações com API. O importante é sempre aprender coisas novas. 
+Uma coisa legal é que você pode colocar uma integração com o telegram e receber alertas quando algum evento ocorre. Isso é ótimo para saber se uma câmera quebrou ou algo do tipo.
+
+Valeu, flw
