@@ -1,0 +1,1337 @@
+---
+title: "Aprendendo K8s"
+date: "2025-10-31"
+tags: ["KUBERNETS", "DEVSECOPS", "DEVOPS"]
+description: "Os primeiros passos com Kubernets"
+---
+
+# Os primeiros passos com Kubernets
+
+Essa publicação será muito mais sobre anotações minhas no aprendizado de kubernets do que um tutorial de aprendizado. Para que que a gente consiga prosseguir 
+nesse tópico, será necessário definirmos alguns conceitos/estruturas antes. Vamos começar primeiro explicando o básico e aos poucos vamos avançando:
+
+- **Pod**: apartamento (containers moram nele)
+- **Node**: prédio (Pods ficam nele) [Geralmente um servidor ou PC]
+- **Cluster**: condomínio (Nodes ficam nele) [Coordena uma série de servidores e máquinas]
+- **Deployment**: síndico (garante tudo funcionando) [Gerencia vários Pods]
+- **Service**: portaria (recebe visitas e encaminha) [Encaminha com load balancing]
+- **Ingress**: guarita da rua (primeira entrada) [Encaminha para o Service]
+- **Namespace**: blocos separados no condomínio [Um bloco virtual de encapsulamento]
+
+Umas das primeiras coisas que você PRECISA entender é que existe uma hierarquia entre os processos. Essa hierarquia é definida da seguinte forma: **Container → Pod → Node → Cluster** 
+
+- **Container** fica DENTRO do **Pod**
+- **Pod** fica DENTRO do **Node**  
+- **Node** fica DENTRO do **Cluster**
+- Um **Pod** pode ter múltiplos **Containers** (Containers no mesmo Pod devem ser inseparáveis - um depende do outro)
+
+Verifique na imagem abaixo:
+
+<p align="center">
+  <img src="/images/k8s/pod.png" />
+</p>
+
+Por padrão, o **Pod** é efêmero, ou seja, se um **pod** morrer, o seu ciclo de vida se encerra e nada mais é feito. Devido a esse motivo é utilizado o 
+**Deployment**, pois ele gerencia vários **Pods**. O **Deployment** define quantas réplicas quer (ex: 3 **pods**), se um **Pod** morrer, ele cria outro automaticamente e 
+sempre mantém o número desejado de réplicas;
+
+O problema do sistema **Pod/Deployment** é que os **Pods** possuem IPs temporários, ou seja, se um **Pod** morrer, o **Deployment** cria outro, mas o IP utilizado é 
+trocado, ficando dificil o seu gerenciamento. Nesse sentido, o **Service** surgiu da necessidade de um ponto de acesso fixo. O **Service** tem um IP fixo
+e faz o load balancing entre os **Pods**;
+
+Por fim, há um elemento que precisa ser destacado: **Ingress**. Esse elemento está muito relacionado com a internet. Quando um usuário 
+acessa domínio (nginx.exemplo.com), o **Ingress** recebe e roteia para **Service** correto, o **Service** roteia para o **Pod** e o 
+**Pod** processa e responde (resposta retorna via mesmo caminho roteado);
+
+Quero destacar também que há um ciclo de vida bem defindo para os **Pods** que envolve alguns detalhes como *Restart Policy*. 
+Contudo, para não deixar o conteúdo extremamente grande, veja a imagem resumida abaixo que trata deste tema;
+
+<p align="center">
+  <img src="/images/k8s/pod_life_cicle.png" />
+</p>
+
+Vamos agora da início a uma série de "níveis", contudo fique atento aos pré-requisitos abaixo:
+
+## Pré-requisitos
+
+Para seguir este tutorial você precisa:
+- Cluster Kubernetes rodando (k3s, minikube, ou cloud);
+- kubectl instalado e configurado;
+- Acesso via SSH ao servidor (se aplicável);
+- Conhecimento básico de terminal Linux;
+
+Neste "Tutorial", usei o K3s de um servidor local - acesso via SSH e utilizei o VSCode para port forwading para o meu pc pessoal. Você 
+pode (e deve) escolher o setup que melhor desejar.
+
+## Nível 1: Seu Primeiro Pod
+
+Vamos criar apenas um arquivo para executar um container nginx no Kubernetes.
+
+**Estrutura:**
+```bash
+projeto-k8s/
+└── pod.yaml
+```
+
+**Arquivo: pod.yaml**
+```yaml
+# apiVersion: Define qual versão da API do Kubernetes usar
+# v1 = API core/estável do Kubernetes (para recursos básicos como Pod, Service)
+# Outras versões: apps/v1 (Deployment), networking.k8s.io/v1 (Ingress)
+# SEMPRE obrigatório. Define "qual dicionário" o K8s vai usar para entender este arquivo
+apiVersion: v1
+
+# kind: Tipo de recurso que você está criando
+# Opções comuns: Pod, Service, Deployment, ConfigMap, Secret, etc
+# SEMPRE obrigatório. Diz ao K8s "o que" você está criando
+kind: Pod
+
+# metadata: Informações que identificam este recurso
+metadata:
+  # name: Nome único deste Pod no namespace
+  # Regras: letras minúsculas, números, hífens (sem espaços ou caracteres especiais)
+  # SEMPRE obrigatório
+  name: meu-nginx
+  
+  # labels: Etiquetas chave-valor para organizar e selecionar recursos
+  # Não são obrigatórios, mas EXTREMAMENTE importantes
+  # Services e Deployments usam labels para encontrar Pods
+  labels:
+    app: nginx  # Você pode criar qualquer label: "ambiente: producao", "versao: 1.0"
+
+# spec: Especificação - descreve o estado desejado do recurso
+# SEMPRE obrigatório. É o "corpo" da configuração
+spec:
+  # containers: Lista de containers que rodarão dentro deste Pod
+  # Um Pod pode ter múltiplos containers (uso avançado)
+  # SEMPRE obrigatório (precisa de pelo menos 1 container)
+  containers:
+  
+  # O hífen "-" indica item de uma lista (este é o container 1)
+  - name: nginx  # Nome do container dentro do Pod (obrigatório)
+    
+    # image: Imagem Docker a ser usada
+    # Formato: [registro/]nome[:tag]
+    # nginx:latest = Docker Hub / nginx / versão latest
+    # Obrigatório
+    image: nginx:latest
+    
+    # ports: Lista de portas que o container expõe
+    # NÃO obrigatório, mas boa prática para documentação
+    # Não abre porta externamente, apenas documenta
+    ports:
+    - containerPort: 80  # Porta que o nginx escuta dentro do container
+```
+
+**Comandos para executar no seu servidor:**
+
+```bash
+# kubectl = Ferramenta de linha de comando para o Kubernetes
+# Sintaxe geral: kubectl [comando] [tipo] [nome] [flags]
+
+# 1. APPLY - Cria ou atualiza recursos
+sudo kubectl apply -f pod.yaml
+# apply = "aplicar configuração"
+# -f = --filename (indica que você está passando um arquivo)
+# Sem -f, o kubectl não sabe de onde ler a configuração
+# Alternativa: kubectl create -f pod.yaml (só cria, não atualiza)
+
+# 2. GET - Lista recursos
+sudo kubectl get pods
+# get = "obter/listar"
+# pods = tipo de recurso (pode ser: services, deployments, nodes, etc)
+# Flags úteis:
+#   -o wide    = mais detalhes (IP, Node)
+#   -o yaml    = saída em formato YAML
+#   --watch    = monitora mudanças em tempo real (-w)
+
+# 3. DESCRIBE - Detalhes completos de um recurso
+sudo kubectl describe pod meu-nginx
+# describe = "descrever detalhadamente"
+# pod = tipo
+# meu-nginx = nome do recurso
+# Mostra: eventos, status, configuração, logs de erro
+
+# 4. PORT-FORWARD - Túnel temporário para acessar o Pod
+sudo kubectl port-forward pod/meu-nginx 8080:80
+# port-forward = "encaminhar porta"
+# pod/meu-nginx = tipo/nome
+# 8080:80 = porta_local:porta_container
+# Permite acessar http://localhost:8080 que vai para a porta 80 do Pod
+# Funciona apenas enquanto o comando estiver rodando
+
+# 5. DELETE - Remove recursos
+sudo kubectl delete pod meu-nginx
+# delete = "deletar"
+# Pode também: kubectl delete -f pod.yaml (deleta tudo que está no arquivo)
+
+# COMANDOS EXTRAS ÚTEIS
+sudo kubectl logs meu-nginx              # Ver logs do container
+sudo kubectl logs meu-nginx -f           # Ver logs em tempo real (-f = follow)
+sudo kubectl logs meu-nginx --tail=50    # Ver últimas 50 linhas
+sudo kubectl exec -it meu-nginx -- bash  # Acessar terminal dentro do container (-it = interativo)
+sudo kubectl get pods -A                 # Listar pods de todos os namespaces (-A = --all-namespaces)
+
+### Problemas Comuns - Nível 1
+# - Pod fica em "ImagePullBackOff": Problema ao baixar imagem. Verifique internet/nome da imagem.
+# - Pod fica em "CrashLoopBackOff": Container inicia e morre. Veja logs com `kubectl logs`.
+```
+
+**O que acontece:**
+- Kubernetes baixa a imagem nginx
+- Cria um container dentro de um Pod
+- Expõe a porta 80 internamente no cluster
+
+**Problema deste nível:** Se o Pod morrer, você precisa recriá-lo manualmente. Não há redundância.
+
+___
+
+## Nível 2: Deployment
+
+**Problema do Nível 1 resolvido:** 
+- Pod morre → você precisa recriá-lo manualmente
+- Sem escalabilidade (apenas 1 Pod)
+- Sem controle de versão/rollback
+
+**Solução do Deployment:**
+- Mantém número desejado de Pods sempre rodando (réplicas)
+- Se um Pod morrer, cria automaticamente outro
+- Permite atualizar a aplicação sem downtime
+- Histórico de versões com rollback
+
+<p align="center">
+  <img src="/images/k8s/deployment.png" />
+</p>
+
+**Estrutura:**
+```bash
+projeto-k8s/
+├── pod.yaml (nível 1 - pode manter para referência)
+└── deployment.yaml (nível 2 - novo)
+```
+
+**Arquivo: deployment.yaml**
+```yaml
+# apiVersion: apps/v1 (diferente do Pod que era v1)
+# apps/v1 = API para recursos de aplicação (Deployment, StatefulSet, DaemonSet)
+# Deployment é um recurso mais avançado que Pod simples
+apiVersion: apps/v1
+
+# kind: Tipo de recurso - Deployment
+# Deployment gerencia Pods automaticamente
+kind: Deployment
+
+# metadata: Informações do Deployment (não dos Pods que ele cria)
+metadata:
+  # Nome deste Deployment
+  name: nginx-deployment
+  
+  # Labels do próprio Deployment (opcional, mas boa prática)
+  labels:
+    app: nginx
+
+# spec: Especificação do Deployment
+spec:
+  # replicas: Quantos Pods idênticos você quer rodando
+  # K8s garante que sempre haverá este número de Pods ativos
+  # Se um Pod morrer, K8s cria outro automaticamente
+  # Padrão: 1 (se omitido)
+  replicas: 3
+  
+  # selector: Como o Deployment encontra quais Pods gerenciar
+  # OBRIGATÓRIO e CRÍTICO
+  # Deve corresponder aos labels definidos em template.metadata.labels
+  selector:
+    matchLabels:
+      app: nginx  # Procura Pods com label "app: nginx"
+  
+  # template: Modelo do Pod que será criado
+  # É basicamente um Pod.yaml embutido aqui dentro
+  template:
+    # metadata do Pod (não do Deployment)
+    metadata:
+      # Labels que os Pods criados terão
+      # DEVE corresponder ao selector.matchLabels acima
+      labels:
+        app: nginx  # Mesma label do selector
+    
+    # spec do Pod - igual ao pod.yaml do Nível 1
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        
+        ports:
+        - containerPort: 80
+        
+        # resources: Limites de CPU e memória (opcional, mas recomendado)
+        # Ajuda o K8s a decidir onde alocar o Pod
+        resources:
+          # requests: Mínimo garantido
+          requests:
+            memory: "64Mi"   # 64 Megabytes
+            cpu: "250m"      # 250 milicores (0.25 de um core)
+          # limits: Máximo permitido
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+```
+
+**Comandos Detalhados:**
+
+```bash
+# 1. DELETAR O POD DO NÍVEL 1 (se ainda existir)
+sudo kubectl delete pod meu-nginx
+# Não pode ter conflito de portas/nomes
+
+# 2. CRIAR O DEPLOYMENT
+sudo kubectl apply -f deployment.yaml
+# apply: cria ou atualiza
+# K8s vai criar o Deployment e automaticamente criar 3 Pods
+
+# 3. VERIFICAR O DEPLOYMENT
+sudo kubectl get deployments
+# Mostra: NAME, READY (Pods prontos/desejados), UP-TO-DATE, AVAILABLE, AGE
+# Exemplo de saída:
+# NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+# nginx-deployment   3/3     3            3           10s
+
+# 4. VERIFICAR OS PODS CRIADOS PELO DEPLOYMENT
+sudo kubectl get pods
+# Agora você verá 3 Pods com nomes tipo: nginx-deployment-xxxxxxxxx-xxxxx
+# O Deployment adiciona hash aleatório ao nome
+# Status deve ser "Running"
+
+# 5. VER DETALHES DO DEPLOYMENT
+sudo kubectl describe deployment nginx-deployment
+# Mostra: estratégia de atualização, eventos, condições, Pods gerenciados
+
+# 6. TESTE DE AUTO-RECUPERAÇÃO - Deletar um Pod manualmente
+sudo kubectl get pods  # Copie o nome de um dos Pods
+sudo kubectl delete pod nginx-deployment-xxxxxxxxx-xxxxx
+# Imediatamente após deletar:
+sudo kubectl get pods --watch
+# Você verá: Pod deletado → Deployment detecta → Cria novo Pod automaticamente
+# Pressione Ctrl+C para sair do --watch
+
+# 7. ESCALAR O DEPLOYMENT (mudar número de réplicas)
+sudo kubectl scale deployment nginx-deployment --replicas=5
+# Agora terá 5 Pods rodando
+sudo kubectl get pods  # Confirme os 5 Pods
+
+# Voltar para 3:
+sudo kubectl scale deployment nginx-deployment --replicas=3
+
+# 8. ACESSAR UM DOS PODS (túnel temporário)
+sudo kubectl get pods  # Copie nome de qualquer Pod
+sudo kubectl port-forward pod/nginx-deployment-xxxxxxxxx-xxxxx 8080:80
+# Acesse: http://localhost:8080
+
+# 9. DELETAR TUDO
+sudo kubectl delete deployment nginx-deployment
+# Deleta o Deployment E todos os Pods que ele gerencia
+```
+
+**O que acontece:**
+- Deployment cria 3 Pods idênticos
+- Se você deletar 1 Pod, Deployment recria automaticamente
+- Pode escalar facilmente (aumentar/diminuir réplicas)
+- Todos os Pods recebem nomes únicos com hash aleatório
+
+**Problema deste nível:** 
+- Você acessa os Pods individualmente por nome (instável)
+- Se um Pod for recriado, o nome muda
+- Não há balanceamento de carga entre os 3 Pods
+- Não há endpoint único para acessar a aplicação
+
+___
+
+## Nível 3: Service
+
+**Problema do Nível 2 resolvido:**
+- Pods morrem e são recriados com nomes diferentes
+- Você precisa saber o nome específico de cada Pod para acessá-lo
+- Sem balanceamento de carga entre as 3 réplicas
+- Acesso instável (port-forward é temporário e manual)
+
+**Solução do Service:**
+- Cria um endpoint estável (IP fixo + DNS) para acessar os Pods
+- Balanceamento de carga automático entre todas as réplicas
+- Mesmo que Pods sejam recriados, o Service continua funcionando
+- Abstrai a complexidade de múltiplos Pods
+
+<p align="center">
+  <img src="/images/k8s/service.png" />
+</p>
+
+**Estrutura:**
+```bash
+projeto-k8s/
+├── pod.yaml (nível 1 - referência)
+├── deployment.yaml (nível 2 - mantém rodando)
+└── service.yaml (nível 3 - novo)
+```
+
+**Arquivo: service.yaml**
+```yaml
+# apiVersion: v1 (mesma do Pod)
+# Service é um recurso da API core/estável
+apiVersion: v1
+
+# kind: Service
+# Cria um balanceador de carga interno e endpoint estável
+kind: Service
+
+# metadata: Informações do Service
+metadata:
+  # Nome do Service
+  # Este nome vira um DNS interno: nginx-service.default.svc.cluster.local
+  # Outros Pods podem acessar via: http://nginx-service
+  name: nginx-service
+  
+  # Labels do próprio Service (opcional)
+  labels:
+    app: nginx
+
+# spec: Especificação do Service
+spec:
+  # type: Tipo de Service - define como será exposto
+  # Tipos disponíveis:
+  #   ClusterIP (padrão): Apenas interno no cluster (não acessa de fora)
+  #   NodePort: Expõe em uma porta em todos os Nodes (acessa externamente)
+  #   LoadBalancer: Cria load balancer externo (cloud providers)
+  #   ExternalName: Mapeia para DNS externo (uso avançado)
+  type: NodePort
+  # Usamos NodePort para você acessar via IP do servidor SSH
+  
+  # selector: Como o Service encontra os Pods para rotear tráfego
+  # CRÍTICO: Deve corresponder aos labels dos Pods no Deployment
+  selector:
+    app: nginx  # Procura Pods com label "app: nginx"
+  
+  # ports: Configuração de portas
+  # Lista das portas que o Service expõe
+  ports:
+    # O hífen "-" indica item de lista (pode ter múltiplas portas)
+    - protocol: TCP  # Protocolo (TCP ou UDP)
+      
+      # port: Porta que o Service expõe internamente no cluster
+      # Outros Pods acessam o Service por esta porta
+      port: 80
+      
+      # targetPort: Porta do container dos Pods (containerPort do Deployment)
+      # O Service redireciona tráfego da "port" para "targetPort" dos Pods
+      # Deve corresponder ao containerPort (80) do nginx
+      targetPort: 80
+      
+      # nodePort: Porta exposta em TODOS os Nodes do cluster
+      # Somente quando type: NodePort ou LoadBalancer
+      # Range: 30000-32767 (padrão do K8s)
+      # Se omitido, K8s escolhe uma porta aleatória neste range
+      nodePort: 30080
+      # Você acessará via: http://IP_DO_SERVIDOR:30080
+```
+
+**Comandos Detalhados:**
+
+```bash
+# 1. GARANTIR QUE O DEPLOYMENT ESTÁ RODANDO
+sudo kubectl get deployments
+# Se não estiver, crie novamente:
+# sudo kubectl apply -f deployment.yaml
+
+# 2. CRIAR O SERVICE
+sudo kubectl apply -f service.yaml
+# apply: cria ou atualiza o Service
+# -f: especifica o arquivo
+# K8s cria o Service e conecta aos Pods automaticamente
+
+# 3. VERIFICAR O SERVICE CRIADO
+sudo kubectl get services
+# Também pode usar: sudo kubectl get svc (svc = abreviação de service)
+# Colunas importantes:
+#   NAME: nome do service
+#   TYPE: ClusterIP, NodePort, LoadBalancer
+#   CLUSTER-IP: IP interno do cluster
+#   EXTERNAL-IP: IP externo (se LoadBalancer)
+#   PORT(S): porta_service:nodePort/protocol
+#   AGE: tempo desde criação
+# Exemplo de saída:
+# NAME            TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+# nginx-service   NodePort   10.43.xxx.xxx   <none>        80:30080/TCP   5s
+
+# 4. VER DETALHES DO SERVICE
+sudo kubectl describe service nginx-service
+# Mostra:
+#   - IP do Service
+#   - Endpoints: IPs dos Pods que o Service está roteando (balanceamento)
+#   - Porta NodePort
+#   - Selector usado
+# Procure por "Endpoints:" - deve listar os IPs dos 3 Pods
+
+# 5. VERIFICAR ENDPOINTS (Pods conectados ao Service)
+sudo kubectl get endpoints nginx-service
+# Mostra os IPs reais dos Pods que o Service está balanceando
+# Deve listar 3 IPs (um para cada réplica)
+# Também pode usar: sudo kubectl get ep nginx-service
+
+# 6. ACESSAR O SERVICE
+# Opção A: Via NodePort (porta 30080)
+# No servidor SSH, descubra o IP:
+ip addr show
+# Ou use localhost se estiver no próprio servidor:
+curl http://localhost:30080
+# Deve retornar o HTML padrão do nginx
+
+# Opção B: Se tiver acesso SSH com túnel
+# Na sua máquina local (não no servidor):
+# ssh -L 8080:localhost:30080 usuario@IP_DO_SERVIDOR
+# Depois acesse: http://localhost:8080
+
+# Opção C: Via IP externo do servidor
+# Se o firewall permitir, acesse diretamente:
+# http://IP_DO_SERVIDOR:30080
+
+# 7. TESTAR BALANCEAMENTO DE CARGA
+# Cada requisição vai para um Pod diferente
+for i in {1..10}; do
+  curl -s http://localhost:30080 | grep -i "welcome"
+  echo "Requisição $i"
+done
+# Todos devem retornar "Welcome to nginx"
+
+# 8. TESTE DE RESILIÊNCIA
+# Deletar um Pod e ver que o Service continua funcionando
+sudo kubectl get pods  # Copie nome de um Pod
+sudo kubectl delete pod nginx-deployment-xxxxxxxxx-xxxxx
+
+# Enquanto o Pod está sendo recriado, faça requisições:
+curl http://localhost:30080
+# O Service continua respondendo! Redireciona para os outros 2 Pods
+# Quando o 3º Pod estiver pronto, volta ao balanceamento entre 3
+
+# 9. VER LOGS DE REQUISIÇÕES (opcional)
+sudo kubectl logs -l app=nginx --tail=20
+# -l app=nginx: seleciona Pods com esta label (todos os 3)
+# --tail=20: últimas 20 linhas de cada Pod
+# Você verá logs de requisições distribuídas entre os Pods
+
+# 10. DELETAR O SERVICE (quando terminar)
+sudo kubectl delete service nginx-service
+# Deleta apenas o Service, os Pods continuam rodando
+# Para deletar tudo:
+# sudo kubectl delete deployment nginx-deployment
+# sudo kubectl delete service nginx-service
+```
+
+**O que acontece:**
+- Service cria um IP interno estável (ClusterIP)
+- NodePort expõe na porta 30080 de todos os Nodes
+- Requisições em 30080 → Service → balanceamento entre os 3 Pods
+- Se um Pod morrer, Service automaticamente remove do balanceamento
+- Quando Pod novo fica pronto, Service adiciona de volta
+
+**Problema deste nível:**
+- NodePort usa portas altas (30000-32767), não é elegante
+- Precisa lembrar/configurar porta específica para cada aplicação
+- Não há roteamento por domínio (exemplo.com → Service A, api.exemplo.com → Service B)
+- Para múltiplas aplicações, precisa múltiplas portas NodePort
+
+**Próximo passo:** Nível 4 resolverá isso com **Ingress** (roteamento HTTP por domínio/path, porta 80/443 padrão).
+
+Teste tudo. Principalmente acesse via navegador ou curl o `http://localhost:30080`. 
+
+___
+
+## Nível 4: Ingress
+
+**Problema do Nível 3 resolvido:**
+- NodePort usa portas altas (30000-32767), pouco conveniente
+- Cada Service precisa de uma porta diferente
+- Sem roteamento inteligente por domínio ou caminho (path)
+- Não gerencia SSL/TLS de forma centralizada
+
+**Solução do Ingress:**
+- Expõe múltiplos Services na porta 80 (HTTP) e 443 (HTTPS)
+- Roteamento por domínio: `app1.exemplo.com` → Service A, `app2.exemplo.com` → Service B
+- Roteamento por path: `/api` → Service A, `/web` → Service B
+- Gerenciamento centralizado de SSL/TLS
+- Um único ponto de entrada para todo o cluster
+
+<p align="center">
+  <img src="/images/k8s/ingress.png" />
+</p>
+
+**Estrutura:**
+```bash
+projeto-k8s/
+├── pod.yaml (nível 1 - referência)
+├── deployment.yaml (nível 2 - mantém rodando)
+├── service.yaml (nível 3 - precisa ajustar!)
+└── ingress.yaml (nível 4 - novo)
+```
+
+**IMPORTANTE:** O k3s já vem com **Traefik** (Ingress Controller) instalado por padrão. Não precisa instalar nada extra.
+
+**Primeiro: Ajustar o Service para ClusterIP**
+
+O Ingress funciona com Services tipo ClusterIP (não NodePort). Vamos ajustar:
+
+**Arquivo: service.yaml (ajustado)**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx
+
+spec:
+  # type: ClusterIP (padrão)
+  # Removemos NodePort porque agora o acesso será via Ingress
+  # ClusterIP = apenas acessível internamente no cluster
+  # O Ingress (Traefik) acessa este ClusterIP e roteia tráfego externo
+  type: ClusterIP
+  
+  selector:
+    app: nginx
+  
+  ports:
+    - protocol: TCP
+      port: 80          # Porta do Service (interna)
+      targetPort: 80    # Porta do container do Pod
+      # nodePort: removido (não é mais necessário)
+```
+
+**Arquivo: ingress.yaml (novo)**
+```yaml
+# apiVersion: networking.k8s.io/v1
+# API específica para recursos de rede (Ingress, NetworkPolicy)
+# networking.k8s.io/v1 = versão estável do Ingress
+apiVersion: networking.k8s.io/v1
+
+# kind: Ingress
+# Recurso que gerencia acesso HTTP/HTTPS externo aos Services
+kind: Ingress
+
+# metadata: Informações do Ingress
+metadata:
+  # Nome do Ingress
+  name: nginx-ingress
+  
+  # annotations: Configurações específicas do Ingress Controller
+  # Cada controller (Traefik, Nginx, HAProxy) tem suas próprias annotations
+  # Opcional, mas muito usado para configurações avançadas
+  annotations:
+    # Exemplo de annotation para Traefik (Ingress Controller do k3s)
+    # traefik.ingress.kubernetes.io/router.entrypoints: web
+    # Por enquanto, deixaremos sem annotations (configuração básica)
+
+# spec: Especificação do Ingress
+spec:
+  # ingressClassName: Qual Ingress Controller usar
+  # k3s usa Traefik por padrão, a classe é "traefik"
+  # Se omitido, usa o controller padrão do cluster
+  ingressClassName: traefik
+  
+  # rules: Regras de roteamento
+  # Lista de regras que definem como rotear tráfego HTTP
+  rules:
+    # Cada regra pode ter:
+    #   - host: domínio (exemplo.com)
+    #   - http: configurações de paths
+    
+    # Regra 1: Roteamento por domínio
+    - host: nginx.local
+      # host: domínio que receberá as requisições
+      # Para testar localmente, usaremos "nginx.local"
+      # Em produção, seria seu domínio real (exemplo.com)
+      
+      http:
+        # paths: Lista de caminhos (URLs) e para onde rotear
+        paths:
+          - path: /
+            # path: caminho da URL
+            # / = raiz (todas as URLs começando com /)
+            # Exemplos: /api, /admin, /app
+            
+            pathType: Prefix
+            # pathType: Como interpretar o path
+            # Tipos:
+            #   Prefix: qualquer URL que COMECE com o path (/api, /api/users)
+            #   Exact: apenas URL EXATA (/api, mas não /api/users)
+            #   ImplementationSpecific: depende do Ingress Controller
+            
+            backend:
+              # backend: Para onde enviar o tráfego
+              # Define qual Service receberá as requisições
+              
+              service:
+                name: nginx-service
+                # name: nome do Service de destino
+                # Deve existir no mesmo namespace
+                
+                port:
+                  number: 80
+                  # number: porta do Service (port do service.yaml)
+                  # O Ingress envia tráfego para esta porta do Service
+  
+  # Regra 2 (opcional): Roteamento sem host específico
+  # Se omitir "host:", responde para QUALQUER domínio
+  # Útil para testes, mas não recomendado em produção
+  # Descomente se quiser testar via IP direto:
+
+  # IMPORTANTE: Descomente a regra abaixo APENAS para testes locais
+  # Em produção, sempre especifique o host para evitar conflitos
+  # - http:
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+  #         backend:
+  #           service:
+  #             name: nginx-service
+  #             port:
+  #               number: 80
+```
+
+**Comandos Detalhados:**
+
+```bash
+# 1. VERIFICAR SE TRAEFIK (INGRESS CONTROLLER) ESTÁ RODANDO
+sudo kubectl get pods -n kube-system | grep traefik
+# Deve mostrar pods do Traefik rodando
+# k3s instala Traefik automaticamente no namespace kube-system
+# Se não aparecer nada, o Traefik pode estar desabilitado (raro)
+
+# 2. ATUALIZAR O SERVICE PARA ClusterIP
+sudo kubectl apply -f service.yaml
+# Atualiza o Service existente, mudando de NodePort para ClusterIP
+# Os Pods continuam rodando normalmente
+
+# 3. VERIFICAR O SERVICE ATUALIZADO
+sudo kubectl get service nginx-service
+# TYPE agora deve ser "ClusterIP" (não mais NodePort)
+# Não haverá mais a porta 30080 exposta
+
+# 4. CRIAR O INGRESS
+sudo kubectl apply -f ingress.yaml
+# Cria o recurso Ingress
+# Traefik detecta automaticamente e configura o roteamento
+
+# 5. VERIFICAR O INGRESS CRIADO
+sudo kubectl get ingress
+# Também pode usar: sudo kubectl get ing
+# Colunas:
+#   NAME: nome do ingress
+#   CLASS: Ingress Controller usado (traefik)
+#   HOSTS: domínios configurados
+#   ADDRESS: IP do Ingress Controller
+#   PORTS: portas expostas (80, 443)
+#   AGE: tempo desde criação
+# Exemplo de saída:
+# NAME            CLASS     HOSTS         ADDRESS         PORTS   AGE
+# nginx-ingress   traefik   nginx.local   192.168.1.100   80      10s
+
+# 6. VER DETALHES DO INGRESS
+sudo kubectl describe ingress nginx-ingress
+# Mostra:
+#   - Regras de roteamento configuradas
+#   - Backend (Service) de destino
+#   - Eventos (criação, updates)
+# Procure por "Rules:" e "Backend:" para ver a configuração
+
+# 7. CONFIGURAR DNS LOCAL (para testar com nginx.local)
+# Opção A: Editar /etc/hosts no servidor SSH
+sudo nano /etc/hosts
+# Adicione esta linha (substitua pelo IP do servidor):
+# 127.0.0.1 nginx.local
+# Salve: Ctrl+O, Enter, Ctrl+X
+
+# Opção B: Se estiver acessando de outra máquina
+# No computador local, adicione no /etc/hosts (Linux/Mac) ou C:\Windows\System32\drivers\etc\hosts (Windows):
+# IP_DO_SERVIDOR nginx.local
+
+# 8. DESCOBRIR A PORTA DO TRAEFIK (k3s expõe na porta 80 do host)
+# k3s configura Traefik para usar a porta 80 do servidor por padrão
+# Verifique se está escutando:
+sudo netstat -tulpn | grep :80
+# Deve mostrar Traefik escutando na porta 80
+
+# 9. TESTAR O INGRESS
+# Opção A: Pelo servidor SSH
+curl -H "Host: nginx.local" http://localhost
+# -H "Host: nginx.local": envia header Host (simula acesso via domínio)
+# Deve retornar o HTML do nginx
+
+# Opção B: Se configurou /etc/hosts
+curl http://nginx.local
+# Deve retornar o HTML do nginx
+
+# Opção C: Via navegador (se tiver acesso ao IP do servidor)
+# Após configurar /etc/hosts no computador local:
+# http://nginx.local
+
+# 10. VERIFICAR LOGS DO TRAEFIK (Ingress Controller)
+sudo kubectl logs -n kube-system -l app.kubernetes.io/name=traefik --tail=50
+# -n kube-system: namespace onde Traefik está instalado
+# -l app.kubernetes.io/name=traefik: filtra pods do Traefik
+# --tail=50: últimas 50 linhas
+# Deve mostrar requisições chegando via Ingress
+
+# 11. TESTAR BALANCEAMENTO via Ingress
+for i in {1..10}; do
+  curl -H "Host: nginx.local" http://localhost
+  echo "Requisição $i"
+done
+# Todas devem funcionar - Ingress → Service → 3 Pods balanceados
+
+# 12. LISTAR TODOS OS RECURSOS CRIADOS
+sudo kubectl get all
+# Mostra: Pods, Services, Deployments
+sudo kubectl get ingress
+# Mostra: Ingress
+
+# 13. DELETAR RECURSOS (quando terminar)
+sudo kubectl delete ingress nginx-ingress    # Deleta Ingress
+sudo kubectl delete service nginx-service    # Deleta Service
+sudo kubectl delete deployment nginx-deployment  # Deleta Deployment (e Pods)
+
+# Ou deletar tudo de uma vez com os arquivos:
+# sudo kubectl delete -f ingress.yaml
+# sudo kubectl delete -f service.yaml
+# sudo kubectl delete -f deployment.yaml
+```
+
+**O que acontece:**
+- Traefik (Ingress Controller) escuta na porta 80 do servidor
+- Requisição chega: `http://nginx.local` → Traefik
+- Traefik lê as regras do Ingress: `nginx.local` → Service `nginx-service`
+- Service balanceia entre os 3 Pods
+- Resposta volta: Pod → Service → Traefik → Usuário
+
+**Fluxo completo:**
+```bash
+Navegador (nginx.local:80)
+    ↓
+Traefik (Ingress Controller)
+    ↓
+Ingress (regras de roteamento)
+    ↓
+Service (nginx-service:80)
+    ↓
+Pods (3 réplicas do nginx)
+```
+
+**Problema deste nível:**
+- Configuração manual de DNS (/etc/hosts) não é escalável
+- Sem SSL/TLS (apenas HTTP, não HTTPS)
+- Dados em disco não persistem (se Pod reiniciar, perde dados)
+- Sem gerenciamento de configurações (tudo hardcoded)
+
+**Próximos passos possíveis:**
+- **Nível 5:** ConfigMap e Secret (gerenciar configurações e senhas)
+- **Nível 6:** PersistentVolume (armazenamento persistente)
+- **Nível 7:** Cert-Manager + Let's Encrypt (SSL/TLS automático)
+
+Teste tudo, principalmente o acesso via `curl -H "Host: nginx.local" http://localhost`.
+
+___
+
+## Nível 5: ConfigMap e Secret
+
+**Problema do Nível 4 resolvido:**
+- Configurações hardcoded nos arquivos YAML (imagem, portas, etc)
+- Senhas e dados sensíveis direto no código
+- Mudar uma variável = recriar todo o Deployment
+- Mesmo Deployment não serve para dev/staging/produção
+- Sem separação entre código e configuração
+
+**Solução do ConfigMap e Secret:**
+- **ConfigMap**: Armazena configurações não-sensíveis (URLs, features, textos)
+- **Secret**: Armazena dados sensíveis (senhas, tokens, certificados) em Base64
+- Injetar configurações como variáveis de ambiente ou arquivos nos Pods
+- Mudar configuração sem recriar imagem Docker
+- Reutilizar mesmo Deployment com configs diferentes
+
+**Estrutura:**
+```bash
+projeto-k8s/
+├── pod.yaml (nível 1 - referência)
+├── deployment.yaml (nível 2 - mantém)
+├── service.yaml (nível 3 - mantém)
+├── ingress.yaml (nível 4 - mantém)
+├── configmap.yaml (nível 5 - novo)
+├── secret.yaml (nível 5 - novo)
+└── deployment-com-config.yaml (nível 5 - novo, versão melhorada)
+```
+
+**Arquivo: configmap.yaml**
+```yaml
+# apiVersion: v1 (API core)
+# ConfigMap é recurso básico do Kubernetes
+apiVersion: v1
+
+# kind: ConfigMap
+# Armazena dados de configuração não-sensíveis em pares chave-valor
+kind: ConfigMap
+
+# metadata: Informações do ConfigMap
+metadata:
+  # Nome do ConfigMap
+  # Pods referenciam este nome para consumir as configurações
+  name: nginx-config
+  
+  labels:
+    app: nginx
+
+# data: Dados de configuração (chave-valor)
+# Tudo aqui é texto plano (NÃO use para senhas!)
+data:
+  # Formato: chave: "valor"
+  # Valores podem ser strings simples ou arquivos inteiros
+  
+  # Exemplo 1: Variáveis simples (chave-valor)
+  # Serão injetadas como variáveis de ambiente no Pod
+  APP_NAME: "Meu Nginx"
+  APP_VERSION: "1.0.0"
+  LOG_LEVEL: "info"
+  
+  # Exemplo 2: Arquivo de configuração completo
+  # Será montado como arquivo dentro do container
+  # Arquivo: nginx.conf (configuração customizada do nginx)
+  nginx.conf: |
+    # O pipe "|" indica texto multilinha
+    # Tudo indentado abaixo será o conteúdo do arquivo
+    server {
+        listen 80;
+        server_name localhost;
+        
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+        
+        # Adiciona header customizado (para testar que config foi aplicada)
+        add_header X-Config-From "ConfigMap";
+        add_header X-App-Name "Meu Nginx";
+    }
+  
+  # Exemplo 3: Arquivo HTML customizado
+  # Será montado como /usr/share/nginx/html/index.html
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Nginx com ConfigMap</title>
+        <style>
+            body { 
+                font-family: Arial; 
+                text-align: center; 
+                padding: 50px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .container {
+                background: rgba(255,255,255,0.1);
+                padding: 30px;
+                border-radius: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🚀 Nginx com ConfigMap!</h1>
+            <p>Esta página foi injetada via ConfigMap do Kubernetes</p>
+            <p>Versão: 1.0.0</p>
+        </div>
+    </body>
+    </html>
+```
+
+**Arquivo: secret.yaml**
+```yaml
+# apiVersion: v1 (API core)
+apiVersion: v1
+
+# kind: Secret
+# Armazena dados sensíveis em Base64
+# NÃO é criptografia real! Base64 é apenas encoding
+# Para segurança real, use soluções como Sealed Secrets ou Vault
+kind: Secret
+
+# metadata: Informações do Secret
+metadata:
+  name: nginx-secret
+  labels:
+    app: nginx
+
+# type: Tipo do Secret
+# Tipos disponíveis:
+#   Opaque: genérico (padrão, usado aqui)
+#   kubernetes.io/dockerconfigjson: credenciais de registry Docker
+#   kubernetes.io/tls: certificados TLS
+#   kubernetes.io/basic-auth: usuário/senha
+#   kubernetes.io/ssh-auth: chaves SSH
+type: Opaque
+
+# data: Dados sensíveis em Base64
+# Valores DEVEM estar em Base64
+# Para converter: echo -n "valor" | base64
+data:
+  # Exemplo: senha de banco de dados
+  # Valor original: "minha-senha-super-secreta"
+  # Base64: bWluaGEtc2VuaGEtc3VwZXItc2VjcmV0YQ==
+  DB_PASSWORD: bWluaGEtc2VuaGEtc3VwZXItc2VjcmV0YQ==
+  
+  # Exemplo: API token
+  # Valor original: "token-12345-abcde"
+  # Base64: dG9rZW4tMTIzNDUtYWJjZGU=
+  API_TOKEN: dG9rZW4tMTIzNDUtYWJjZGU=
+
+# stringData: Alternativa ao "data" (opcional)
+# Valores em texto plano, K8s converte automaticamente para Base64
+# Mais conveniente, mas menos seguro (fica visível no arquivo)
+stringData:
+  # Exemplo: usuário de banco
+  DB_USERNAME: "admin"
+  
+  # Exemplo: chave de API
+  SECRET_KEY: "chave-secreta-aqui"
+```
+
+**Arquivo: deployment-com-config.yaml**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment-config
+  labels:
+    app: nginx-config
+
+spec:
+  replicas: 2
+  
+  selector:
+    matchLabels:
+      app: nginx-config
+  
+  template:
+    metadata:
+      labels:
+        app: nginx-config
+    
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        
+        # env: Variáveis de ambiente
+        # Injetando valores do ConfigMap e Secret
+        env:
+          # Variável do ConfigMap (método 1: referência direta)
+          - name: APP_NAME
+            # name: nome da variável de ambiente no container
+            valueFrom:
+              # valueFrom: buscar valor de outro recurso
+              configMapKeyRef:
+                # configMapKeyRef: referência a uma chave do ConfigMap
+                name: nginx-config       # Nome do ConfigMap
+                key: APP_NAME            # Chave dentro do ConfigMap
+          
+          - name: APP_VERSION
+            valueFrom:
+              configMapKeyRef:
+                name: nginx-config
+                key: APP_VERSION
+          
+          # Variável do Secret (método 1: referência direta)
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                # secretKeyRef: referência a uma chave do Secret
+                name: nginx-secret       # Nome do Secret
+                key: DB_PASSWORD         # Chave dentro do Secret
+                # Valor será decodificado de Base64 automaticamente
+          
+          - name: DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: nginx-secret
+                key: DB_USERNAME
+        
+        # envFrom: Importar TODAS as chaves como variáveis (método 2)
+        # Mais conveniente quando tem muitas variáveis
+        envFrom:
+          # Importa todas as chaves do ConfigMap como variáveis
+          - configMapRef:
+              name: nginx-config
+          # Importa todas as chaves do Secret como variáveis
+          - secretRef:
+              name: nginx-secret
+        
+        # volumeMounts: Montar ConfigMap/Secret como arquivos
+        # Útil para arquivos de configuração (nginx.conf, etc)
+        volumeMounts:
+          # Mount 1: Arquivo nginx.conf do ConfigMap
+          - name: config-volume
+            # name: referência ao volume definido em "volumes" abaixo
+            mountPath: /etc/nginx/conf.d/default.conf
+            # mountPath: onde o arquivo será montado no container
+            subPath: nginx.conf
+            # subPath: qual chave do ConfigMap usar como arquivo
+            # Sem subPath, montaria todas as chaves como arquivos separados
+          
+          # Mount 2: Arquivo index.html do ConfigMap
+          - name: html-volume
+            mountPath: /usr/share/nginx/html/index.html
+            subPath: index.html
+        
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+      
+      # volumes: Definir volumes baseados em ConfigMap/Secret
+      # Vincula ConfigMaps/Secrets para serem montados nos containers
+      volumes:
+        # Volume 1: nginx.conf
+        - name: config-volume
+          # name: nome do volume (usado em volumeMounts)
+          configMap:
+            # configMap: este volume vem de um ConfigMap
+            name: nginx-config
+            # name: qual ConfigMap usar
+            items:
+              # items: quais chaves do ConfigMap incluir (opcional)
+              - key: nginx.conf
+                # key: chave do ConfigMap
+                path: nginx.conf
+                # path: nome do arquivo no volume
+        
+        # Volume 2: index.html
+        - name: html-volume
+          configMap:
+            name: nginx-config
+            items:
+              - key: index.html
+                path: index.html
+```
+
+**Comandos Detalhados:**
+
+```bash
+# 1. CRIAR O CONFIGMAP
+sudo kubectl apply -f configmap.yaml
+# ConfigMap criado com variáveis e arquivos de configuração
+
+# 2. VERIFICAR O CONFIGMAP
+sudo kubectl get configmap
+# Também pode usar: sudo kubectl get cm
+# Lista todos os ConfigMaps do namespace
+
+sudo kubectl describe configmap nginx-config
+# Mostra todas as chaves e valores (parcialmente, se muito grande)
+
+# Ver conteúdo completo do ConfigMap:
+sudo kubectl get configmap nginx-config -o yaml
+# -o yaml: saída em formato YAML (mostra tudo)
+
+# 3. CRIAR O SECRET
+sudo kubectl apply -f secret.yaml
+# Secret criado com dados sensíveis em Base64
+
+# 4. VERIFICAR O SECRET
+sudo kubectl get secret
+# Lista todos os Secrets
+
+sudo kubectl describe secret nginx-secret
+# Mostra chaves, MAS NÃO mostra os valores (segurança)
+
+# Ver conteúdo do Secret (Base64):
+sudo kubectl get secret nginx-secret -o yaml
+# Mostra valores em Base64
+
+# Decodificar um valor do Secret:
+sudo kubectl get secret nginx-secret -o jsonpath='{.data.DB_PASSWORD}' | base64 -d
+# Deve mostrar: minha-senha-super-secreta
+# -o jsonpath: extrai campo específico
+# base64 -d: decodifica de Base64
+
+# 5. CRIAR O DEPLOYMENT COM CONFIGMAP E SECRET
+sudo kubectl apply -f deployment-com-config.yaml
+# Deployment criado, Pods receberão as configurações
+
+# 6. VERIFICAR PODS
+sudo kubectl get pods -l app=nginx-config
+# -l app=nginx-config: filtra pods com esta label
+# Deve mostrar 2 Pods rodando
+
+# 7. TESTAR VARIÁVEIS DE AMBIENTE INJETADAS
+# Acessar um Pod e ver as variáveis
+sudo kubectl get pods -l app=nginx-config  # Copie nome de um Pod
+sudo kubectl exec -it nginx-deployment-config-xxxxxxxxx-xxxxx -- env | grep -E "APP_|DB_|SECRET_"
+# exec -it: executa comando no container de forma interativa
+# env: lista variáveis de ambiente
+# grep: filtra apenas variáveis que começam com APP_, DB_, SECRET_
+# Deve mostrar:
+#   APP_NAME=Meu Nginx
+#   APP_VERSION=1.0.0
+#   DB_PASSWORD=minha-senha-super-secreta
+#   DB_USERNAME=admin
+#   etc.
+
+# 8. TESTAR ARQUIVOS MONTADOS DO CONFIGMAP
+# Ver se nginx.conf foi montado corretamente:
+sudo kubectl exec nginx-deployment-config-xxxxxxxxx-xxxxx -- cat /etc/nginx/conf.d/default.conf
+# Deve mostrar o conteúdo do nginx.conf que definimos no ConfigMap
+
+# Ver se index.html foi montado:
+sudo kubectl exec nginx-deployment-config-xxxxxxxxx-xxxxx -- cat /usr/share/nginx/html/index.html
+# Deve mostrar o HTML customizado
+
+# 9. CRIAR SERVICE PARA O NOVO DEPLOYMENT
+# Criar arquivo: service-config.yaml (ou ajustar o service.yaml existente)
+cat <<EOF | sudo kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service-config
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-config
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+EOF
+# Usa "heredoc" para criar Service inline (sem arquivo separado)
+
+# 10. ATUALIZAR INGRESS PARA APONTAR PARA O NOVO SERVICE
+# Editar ingress.yaml, mudar:
+#   service.name: nginx-service-config
+# Ou criar inline:
+cat <<EOF | sudo kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress-config
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: nginx-config.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service-config
+                port:
+                  number: 80
+EOF
+
+# 11. ATUALIZAR /etc/hosts
+sudo nano /etc/hosts
+# Adicione:
+# 127.0.0.1 nginx-config.local
+
+# 12. TESTAR VIA INGRESS
+curl http://nginx-config.local
+# Deve retornar o HTML customizado do ConfigMap!
+
+# Verificar headers customizados (do nginx.conf):
+curl -I http://nginx-config.local
+# -I: mostra apenas headers
+# Deve mostrar:
+#   X-Config-From: ConfigMap
+#   X-App-Name: Meu Nginx
+
+# 13. ATUALIZAR CONFIGMAP SEM RECRIAR PODS
+# Editar o ConfigMap:
+sudo kubectl edit configmap nginx-config
+# Muda no editor (vim/nano): APP_VERSION: "1.0.0" → "2.0.0"
+# Salve e feche
+
+# Ver a variável no Pod (pode demorar alguns minutos para atualizar):
+sudo kubectl exec nginx-deployment-config-xxxxxxxxx-xxxxx -- env | grep APP_VERSION
+# ConfigMaps montados como volumes atualizam automaticamente (1-2 min)
+# Variáveis de ambiente NÃO atualizam (precisa recriar Pod)
+
+# Forçar recreação dos Pods para pegar novas variáveis:
+sudo kubectl rollout restart deployment nginx-deployment-config
+# rollout restart: recria Pods gradualmente (zero downtime)
+
+# 14. CRIAR CONFIGMAP/SECRET VIA LINHA DE COMANDO (alternativa)
+# Criar ConfigMap de arquivo:
+echo "Teste" > teste.txt
+sudo kubectl create configmap meu-config --from-file=teste.txt
+# --from-file: cria chave "teste.txt" com conteúdo do arquivo
+
+# Criar ConfigMap de literal:
+sudo kubectl create configmap meu-config2 --from-literal=chave=valor
+# --from-literal: cria chave-valor diretamente
+
+# Criar Secret de literal:
+sudo kubectl create secret generic meu-secret --from-literal=senha=123456
+# generic: tipo Opaque
+
+# 15. VER LOGS DOS PODS
+sudo kubectl logs -l app=nginx-config --tail=20
+# Logs dos Pods do novo Deployment
+
+# 16. DELETAR RECURSOS (quando terminar)
+sudo kubectl delete deployment nginx-deployment-config
+sudo kubectl delete service nginx-service-config
+sudo kubectl delete ingress nginx-ingress-config
+sudo kubectl delete configmap nginx-config
+sudo kubectl delete secret nginx-secret
+```
+
+**O que acontece:**
+
+**ConfigMap:**
+- Armazena configurações não-sensíveis (texto plano)
+- Pode ser injetado como variáveis de ambiente: `env.valueFrom.configMapKeyRef`
+- Pode ser montado como arquivo: `volumes.configMap` + `volumeMounts`
+- Atualiza arquivos montados automaticamente (1-2 min)
+- Variáveis de ambiente NÃO atualizam (precisa recriar Pod)
+
+**Secret:**
+- Armazena dados sensíveis em Base64 (não é criptografia!)
+- Mesmo uso que ConfigMap: variáveis ou arquivos
+- K8s decodifica Base64 automaticamente ao injetar
+- `kubectl describe secret` não mostra valores (segurança básica)
+
+**Fluxo:**
+```bash
+ConfigMap/Secret (armazenamento)
+    ↓
+Deployment (referencia)
+    ↓
+Pod (recebe via env ou volume)
+    ↓
+Container (usa as configurações)
+```
+
+**Problema deste nível:**
+- Secrets em Base64 não são criptografados (qualquer um com acesso ao cluster lê)
+- Dados em disco ainda não persistem (Pods reiniciam = dados perdidos)
+- ConfigMaps grandes poluem o arquivo YAML
+- Sem versionamento automático de configurações
+- Precisa gerenciar manualmente ambientes (dev/prod)
+
+Teste tudo, principalmente o `curl http://nginx-config.local` para ver o HTML customizado.
+
+Isso foi algo muito básico com kubernetes, mas conforme você vai aprendendo, novas funcionalidades irão surgir. Espero que tenha gostado.
+
+E o melhor: **tudo open-source e de graça**.
+
+Curtiu? Compartilha aí e me marca! Tem dúvidas? Comenta que eu respondo.
+
+Até a próxima!
