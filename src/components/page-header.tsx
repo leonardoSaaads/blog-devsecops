@@ -12,14 +12,20 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="mb-10 max-w-3xl">
-      {eyebrow && (
-        <p className="font-mono text-xs font-semibold uppercase tracking-widest text-accent">
-          {eyebrow}
+    <header className="mb-12 max-w-3xl">
+      {eyebrow && <p className="smallcaps text-sm font-semibold text-accent-strong">{eyebrow}</p>}
+      <h1 className="mt-2 font-serif text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+        {title}
+      </h1>
+      <div
+        className="mt-5 h-px w-24 bg-gradient-to-r from-signal to-transparent"
+        aria-hidden="true"
+      />
+      {description && (
+        <p className="mt-5 font-serif text-xl leading-relaxed text-muted-foreground">
+          {description}
         </p>
       )}
-      <h1 className="mt-2 text-4xl font-bold tracking-tight text-balance sm:text-5xl">{title}</h1>
-      {description && <p className="mt-4 text-lg text-muted-foreground">{description}</p>}
       {children}
     </header>
   );

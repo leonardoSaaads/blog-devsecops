@@ -1,4 +1,4 @@
-export type SearchKind = "post" | "product" | "page" | "tag";
+export type SearchKind = "post" | "page" | "tag";
 
 export interface SearchEntry {
   kind: SearchKind;

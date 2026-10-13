@@ -4,7 +4,14 @@ description: "Compilado × interpretado, JIT, benchmarks e por que algoritmo e a
 date: "2025-10-05"
 updated: "2026-10-13"
 tags: ["programacao", "devops", "python", "rust", "webassembly"]
-labs: ["Playground JavaScript: algoritmo × linguagem", "Playground Python (Pyodide): meça você mesmo"]
+category: software
+art: flamegraph
+abstract: "Ensaio sobre o peso real da velocidade de execução na escolha de uma linguagem. Compara linguagens compiladas, interpretadas e com compilação JIT, situa-as historicamente do Assembly aos ecossistemas atuais e discute o alcance e os limites de benchmarks como o Computer Language Benchmarks Game. Com código executável no navegador e um modelo interativo de complexidade assintótica, mostra que algoritmo e arquitetura dominam o desempenho, e apresenta a interoperabilidade via FFI e WebAssembly como caminho para otimizar apenas os trechos críticos."
+keyPoints:
+  - "Trocar um algoritmo exponencial por um linear muda o tempo em ordens de grandeza — muito mais do que trocar de linguagem."
+  - "Com um fator de 50×, um O(n log n) interpretado supera um O(n²) compilado a partir de algumas centenas de elementos."
+  - "Benchmarks medem a pista fechada; tempo de desenvolvimento, manutenção, ecossistema e segurança de memória também contam."
+  - "O caminho pragmático é medir com um profiler e reescrever em C ou Rust apenas o trecho crítico, via FFI."
 references:
   - id: knuth-1974
     type: article
@@ -170,6 +177,14 @@ references:
     place: "Boston"
     publisher: "Addison-Wesley"
     year: 2019
+  - id: cormen-2022
+    type: book
+    authors: ["Cormen, Thomas H.", "Leiserson, Charles E.", "Rivest, Ronald L.", "Stein, Clifford"]
+    title: "Introduction to Algorithms"
+    edition: "4"
+    place: "Cambridge"
+    publisher: "MIT Press"
+    year: 2022
 ---
 
 <Figure
@@ -264,10 +279,10 @@ Os números são ordens de grandeza: em loops de milhões de iterações, a dife
 
 ### E o Java (e o JavaScript)?
 
-A JVM compila para *bytecode* e usa um **JIT** (*Just-In-Time*): observa os trechos mais executados e os compila para código de máquina em tempo de execução. Os motores JavaScript (como o V8) fazem o mesmo — por isso o JavaScript moderno costuma ser bem mais rápido que o Python puro em laços numéricos.
+A JVM compila para *bytecode* e usa um **JIT** (*Just-In-Time*): observa os trechos mais executados e os compila para código de máquina em tempo de execução. Os motores JavaScript (como o V8) fazem o mesmo<Sidenote>O V8 combina um interpretador de bytecode com compiladores de otimização crescente: o código “quente” é recompilado a partir dos tipos observados durante a execução.</Sidenote> — por isso o JavaScript moderno costuma ser bem mais rápido que o Python puro em laços numéricos.
 
 <Callout type="info" title="O Python também está mudando">
-O CPython 3.13 trouxe um JIT experimental<Cite id="pep-744" /> e uma build opcional **sem GIL** (*free-threaded*)<Cite id="pep-703" />; no Python 3.14, essa build passou a ser oficialmente suportada<Cite id="pep-779" />, permitindo paralelismo real com threads em CPU.
+O CPython 3.13 trouxe um JIT experimental<Cite id="pep-744" /> e uma build opcional **sem <Term def="Global Interpreter Lock: trava que permite a apenas uma thread executar bytecode Python por vez em cada processo.">GIL</Term>** (*free-threaded*)<Cite id="pep-703" />; no Python 3.14, essa build passou a ser oficialmente suportada<Cite id="pep-779" />, permitindo paralelismo real com threads em CPU.
 </Callout>
 
 ## 4. A medição das linguagens faz sentido?
@@ -291,7 +306,7 @@ Em C, o mesmo exige cliente HTTP, parser de JSON e gerenciamento manual de memó
 
 2. **Manutenibilidade**: código legível é código que você entende seis meses depois.
 3. **Ecossistema**: o PyPI reúne centenas de milhares de projetos.
-4. **Segurança de memória**: C é rápido — até um *buffer overflow* virar uma CVE crítica.
+4. **Segurança de memória**: C é rápido — até um <Term def="Escrita além dos limites de uma área de memória, capaz de sobrescrever dados vizinhos e permitir a execução de código arbitrário.">buffer overflow</Term> virar uma CVE crítica.
 
 ### Meça você mesmo: algoritmo × linguagem
 
@@ -343,6 +358,14 @@ medir("memoizado", fib_memo, 300)
 ```
 
 Repare: trocar o **algoritmo** (exponencial → linear) muda o tempo em ordens de grandeza, muito mais do que trocar de linguagem. É exatamente o ponto deste artigo.
+
+<Definition term="Notação O (Big-O)">
+Limite superior para o crescimento do número de operações de um algoritmo em função do tamanho n da entrada, desprezando constantes multiplicativas<Cite id="cormen-2022" />. A velocidade da linguagem é justamente uma dessas constantes.
+</Definition>
+
+A figura a seguir generaliza o experimento com um modelo simples: tempo ≈ operações × custo por operação. Ajuste o fator de lentidão da linguagem interpretada e observe em que ponto o algoritmo melhor compensa a linguagem pior.
+
+<ComplexityChart />
 
 ### A falácia da otimização prematura
 
@@ -482,7 +505,13 @@ Em ordem de prioridade:
 4. **Ecossistema** — não reinvente a roda.
 5. **Desempenho** — quando medido e necessário<Cite id="gorelick-2020" />.
 
-A mentalidade vencedora: **MVP** na linguagem que você domina → **perfilamento** para achar gargalos reais → **hibridização** apenas do que é crítico.
+A mentalidade vencedora, em três etapas:
+
+<CardGrid cols={3}>
+<Card title="1. MVP" icon="terminal">Na linguagem que o time domina.</Card>
+<Card title="2. Perfilamento" icon="gauge" tone="signal">Para achar os gargalos reais, medidos — não adivinhados.</Card>
+<Card title="3. Hibridização" icon="layers" tone="success">Apenas do que é crítico, via FFI ou WebAssembly.</Card>
+</CardGrid>
 
 <Quiz
   question="Seu serviço Python está lento. Qual deve ser o primeiro passo?"

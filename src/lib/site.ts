@@ -13,9 +13,10 @@ function resolveSiteUrl(): string {
 
 export const site = {
   name: "Leonardo Saads",
-  title: "Leonardo Saads — DevSecOps, Observabilidade e Telecom",
+  title: "Leonardo Saads — Engenharia, Telecomunicações e Software",
+  tagline: "Engenharia · Telecomunicações · Software",
   description:
-    "Blog técnico e interativo sobre DevSecOps, observabilidade, Linux, Kubernetes e telecomunicações ópticas — com laboratórios executáveis e loja de modelos 3D.",
+    "Ensaios técnicos e interativos sobre telecomunicações ópticas, infraestrutura, segurança e software — com figuras interativas, código executável e referências bibliográficas.",
   url: resolveSiteUrl(),
   locale: "pt-BR",
   author: {
@@ -43,10 +44,9 @@ export interface NavItem {
 }
 
 export const mainNav: NavItem[] = [
-  { label: "Blog", href: "/blog" },
-  { label: "Loja 3D", href: "/shop" },
+  { label: "Artigos", href: "/blog" },
+  { label: "Tópicos", href: "/tags" },
   { label: "Projetos", href: "/projects" },
-  { label: "Tags", href: "/tags" },
   { label: "Sobre", href: "/about" },
 ];
 

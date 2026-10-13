@@ -1,6 +1,6 @@
-# Leonardo Saads — Blog DevSecOps
+# Leonardo Saads — Engenharia, Telecomunicações e Software
 
-Blog técnico **interativo** sobre DevSecOps, observabilidade, Linux, Kubernetes e telecomunicações ópticas, com laboratórios executáveis no navegador e loja de modelos 3D.
+Blog técnico com projeto editorial de **publicação acadêmica** — resumo, figuras e equações numeradas, notas de margem e referências ABNT — e **figuras interativas no próprio texto**: simuladores, calculadoras, um modelo 3D de fibra óptica e código executável no navegador. Cada artigo tem uma ilustração gerada por código a partir do seu tema.
 
 **Produção:** [blog.leonardosaads.com.br](https://blog.leonardosaads.com.br)
 
@@ -15,8 +15,9 @@ Blog técnico **interativo** sobre DevSecOps, observabilidade, Linux, Kubernetes
 - [Scripts](#scripts)
 - [Estrutura de pastas](#estrutura-de-pastas)
 - [Escrevendo artigos](#escrevendo-artigos)
-- [Laboratórios interativos](#laboratórios-interativos)
-- [Loja 3D](#loja-3d)
+- [Projeto editorial](#projeto-editorial)
+- [Figuras interativas](#figuras-interativas)
+- [Arte generativa](#arte-generativa)
 - [Segurança](#segurança)
 - [Testes e CI](#testes-e-ci)
 - [Deploy](#deploy)
@@ -26,16 +27,17 @@ Blog técnico **interativo** sobre DevSecOps, observabilidade, Linux, Kubernetes
 
 ## Visão geral
 
-| Recurso           | Descrição                                                                                                                          |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Artigos revisados | MDX validado por esquema (Zod); build falha com frontmatter inválido                                                               |
-| Referências ABNT  | Toda publicação exige referências; `<Cite id>` gera citações numeradas e a lista NBR 6023                                          |
-| Laboratórios      | Simulador de Kubernetes, calculadoras ópticas (grid DWDM, OSNR, Q/BER, constelações), permissões Unix, diagramas animados, quizzes |
-| Código executável | JavaScript e Python (Pyodide/WebAssembly) em Web Workers isolados, com CSP própria e timeout                                       |
-| Loja 3D           | Visualizador three.js (STL/GLB), cor do filamento, malha, tela cheia; pedido por e-mail ou checkout externo                        |
-| Leitura           | Sumário com scroll-spy, progresso de leitura (CSS), busca Ctrl+K, tema claro/escuro/sistema, "Como citar"                          |
-| SEO               | Metadados, Open Graph gerado, JSON-LD (`BlogPosting` com `citation`, `Product`), sitemap, robots, RSS                              |
-| Qualidade         | TypeScript estrito, ESLint, Vitest, Playwright + axe (WCAG 2.2 AA) e CI no GitHub Actions                                          |
+| Recurso           | Descrição                                                                                                                         |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Artigos revisados | MDX validado por esquema (Zod); build falha com frontmatter inválido                                                              |
+| Referências ABNT  | Toda publicação exige referências; `<Cite id>` gera citações numeradas e a lista NBR 6023                                         |
+| Projeto editorial | Resumo, palavras-chave e pontos-chave por artigo; figuras, listagens, definições e equações numeradas; notas de margem; glossário |
+| Figuras no texto  | Fibra óptica 3D, sinais/PID 1, FHS, exposição de portas, PromQL `rate()`, OIDs SNMP, complexidade, Kubernetes, DWDM/OSNR/Q/OTN    |
+| Código executável | JavaScript e Python (Pyodide/WebAssembly) em Web Workers isolados, com CSP própria e timeout                                      |
+| Arte generativa   | SVG determinístico por artigo (semente = slug) na capa, nos cards e na imagem Open Graph                                          |
+| Leitura           | Sumário com scroll-spy, progresso de leitura (CSS), busca Ctrl+K, filtros por área/tag, tema claro/escuro/sistema, "Como citar"   |
+| SEO               | Metadados, Open Graph gerado, JSON-LD (`BlogPosting` com `abstract`, `articleSection` e `citation`), sitemap, robots, RSS         |
+| Qualidade         | TypeScript estrito, ESLint, Vitest, Playwright + axe (WCAG 2.2 AA) e CI no GitHub Actions                                         |
 
 ## Stack
 
@@ -43,8 +45,9 @@ Blog técnico **interativo** sobre DevSecOps, observabilidade, Linux, Kubernetes
 - **TypeScript 6** (estrito; o TypeScript 7 nativo ainda não expõe a API usada pelo `typescript-eslint`)
 - **Tailwind CSS 4** + `@tailwindcss/typography`
 - **MDX 3** (`@mdx-js/mdx`) com remark-gfm, remark-math/rehype-katex, rehype-slug, Shiki
-- **Zod 4** (validação de conteúdo e catálogo)
-- **three.js** (visualizador 3D, carregado sob demanda)
+- **Zod 4** (validação do frontmatter)
+- **three.js** (modelo 3D da fibra, carregado sob demanda)
+- **Source Serif 4** (leitura) e **Geist** (interface), auto-hospedadas
 - **Vitest 5** + Testing Library · **Playwright** + **axe-core**
 - **Giscus** (comentários via GitHub Discussions, carregados sob demanda)
 
@@ -78,7 +81,6 @@ Variável opcional:
 | `npm run typecheck`                  | Gera os tipos de rota e executa `tsc --noEmit`            |
 | `npm test` / `npm run test:coverage` | Testes unitários e de componentes (Vitest)                |
 | `npm run test:e2e`                   | Testes ponta a ponta (Playwright; requer `npm run build`) |
-| `npm run models:generate`            | Regenera os modelos STL de exemplo em `public/models/`    |
 | `npm run check`                      | lint + typecheck + testes + build                         |
 
 > Em ambientes com Chromium pré-instalado, aponte o executável com `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/caminho/do/chrome npm run test:e2e`.
@@ -91,42 +93,38 @@ blog-devsecops/
 │   ├── workflows/ci.yml            # lint, typecheck, testes, auditoria, build e E2E
 │   └── dependabot.yml              # atualizações semanais (npm e Actions)
 ├── content/
-│   ├── posts/*.mdx                 # artigos (frontmatter YAML + MDX)
-│   └── products.json               # catálogo da loja 3D (validado por Zod)
-├── e2e/                            # Playwright: jornadas de usuário, labs, loja, SEO/segurança, a11y, mobile
+│   └── posts/*.mdx                 # artigos (frontmatter YAML + MDX)
+├── e2e/                            # Playwright: jornada do leitor, figuras, SEO/segurança, a11y, mobile
 ├── public/
 │   ├── images/                     # imagens dos artigos
-│   ├── models/                     # modelos STL e pôsteres (posters/*.png)
 │   ├── videos/                     # vídeos dos artigos
 │   ├── workers/
 │   │   ├── js-runner.js            # executor JavaScript (worker clássico, sem rede)
 │   │   └── py-runner.mjs           # executor Python (Pyodide sob demanda)
 │   └── icon.svg, easter-egg.png, profile-image.jpg
-├── scripts/
-│   └── generate-models.mjs         # gera os STL de exemplo com three.js
 ├── src/
 │   ├── app/                        # rotas (App Router)
 │   │   ├── layout.tsx              # HTML raiz, fontes, tema, cabeçalho/rodapé
-│   │   ├── page.tsx                # home
-│   │   ├── blog/page.tsx           # listagem com busca e filtros (?q=&tag=)
-│   │   ├── blog/[slug]/            # artigo + imagem Open Graph por artigo
-│   │   ├── tags/, shop/, projects/, about/
+│   │   ├── page.tsx                # home (capa, destaque, áreas, recentes, guia de leitura)
+│   │   ├── blog/page.tsx           # listagem com busca e filtros (?q=&area=&tag=)
+│   │   ├── blog/[slug]/            # artigo (capa, resumo, pontos-chave) + Open Graph por artigo
+│   │   ├── tags/                   # tópicos: áreas e palavras-chave
+│   │   ├── projects/, about/
 │   │   ├── feed.xml/route.ts       # RSS
 │   │   ├── sitemap.ts, robots.ts, manifest.ts, opengraph-image.tsx
 │   │   ├── not-found.tsx, error.tsx
 │   │   └── globals.css             # tokens de design (claro/escuro) e estilos de artigo
 │   ├── components/
+│   │   ├── art/                    # CoverArt: renderização SVG da arte generativa
 │   │   ├── layout/                 # cabeçalho, navegação, busca (Ctrl+K), tema, rodapé
 │   │   ├── blog/                   # cards, filtros, sumário, referências, citação, comentários
-│   │   ├── mdx/                    # mapa de componentes MDX, código, callouts, figuras, abas, quiz, Cite
-│   │   ├── labs/                   # laboratórios interativos e playground de código
-│   │   ├── shop/                   # visualizador 3D e cards de produto
-│   │   └── home/                   # terminal animado do hero
+│   │   ├── mdx/                    # mapa MDX, Cite, callouts, figuras, cards, notas de margem, termos, definições
+│   │   └── figures/                # figuras interativas numeradas e playground de código
 │   ├── hooks/                      # tema, media queries, visibilidade, valores só-cliente
 │   ├── lib/
-│   │   ├── content/                # carregamento, esquema, MDX, ABNT, tempo de leitura, plugins
-│   │   ├── labs/                   # lógica pura dos laboratórios (óptica, k8s, permissões, playground)
-│   │   ├── shop/                   # esquema e catálogo
+│   │   ├── art/                    # motivos generativos determinísticos e exportação SVG/OG
+│   │   ├── content/                # carregamento, esquema, áreas, MDX, ABNT, tempo de leitura, plugins
+│   │   ├── simulations/            # lógica pura das figuras (óptica, fibra, k8s, sinais, PromQL, SNMP…)
 │   │   ├── security/headers.ts     # CSP e cabeçalhos de segurança
 │   │   └── site.ts, search.ts, feed.ts, structured-data.ts, og.tsx, format.ts, theme.ts
 │   └── test/                       # setup do Vitest e substitutos de módulos do Next
@@ -149,7 +147,13 @@ description: "Resumo de 20 a 300 caracteres exibido nos cards e no SEO."
 date: "2026-10-13"
 updated: "2026-10-20" # opcional
 tags: ["kubernetes", "devsecops"] # kebab-case minúsculo
-labs: ["Simulador de Deployment"] # opcional: laboratórios do artigo
+category: infraestrutura # telecomunicacoes | infraestrutura | seguranca | software
+art: lattice # spectrum | lattice | bits | network | ridgeline | radar | flamegraph | circuit | eye
+abstract: "Resumo acadêmico de 120 a 900 caracteres, exibido no topo do artigo."
+keyPoints: # de 3 a 4 conclusões principais
+  - "O controlador compara o estado desejado ao atual."
+  - "O Service oferece um endereço estável."
+  - "Secrets são apenas codificados em base64."
 references:
   - id: k8s-docs
     type: web # book | article | conference | standard | report | web | software
@@ -163,7 +167,22 @@ references:
 
 O Deployment mantém o número desejado de réplicas<Cite id="k8s-docs" />.
 
-<Callout type="security">Nunca versione segredos.</Callout>
+<Definition term="Reconciliação">
+  Ciclo em que o controlador aproxima o estado atual do desejado.
+</Definition>
+
+Texto com nota<Sidenote>Comentário na margem.</Sidenote> e <Term def="Definição em balão.">termo</Term>.
+
+<CardGrid>
+  <Card title="Pod" icon="box">
+    Menor unidade implantável.
+  </Card>
+  <Card title="Service" icon="network" tone="signal">
+    Endereço estável.
+  </Card>
+</CardGrid>
+
+<K8sSimulator />
 
 ```python runnable title="Execute no navegador"
 print("olá")
@@ -177,39 +196,58 @@ Regras verificadas automaticamente (build e testes):
 - imagens locais existem; links internos `/blog/...` apontam para artigos existentes;
 - todos os artigos compilam e renderizam.
 
-Componentes disponíveis no MDX: `Cite`, `Callout`, `Figure`, `Video`, `Tabs`/`Tab`, `Quiz`, `FlowDiagram`, `CodePlayground` (ou blocos `runnable`), `PermissionLab`, `K8sSimulator`, `DwdmGridCalculator`, `OsnrCalculator`, `QBerCalculator`, `ConstellationViewer`, `FiberBandsChart`, `OtnHierarchy`. Fórmulas: `$$ … $$` (KaTeX).
+Componentes de texto: `Cite`, `Callout`, `Figure`, `Video`, `Tabs`/`Tab`, `Quiz`, `Sidenote`, `Term`, `Definition`, `PullQuote`, `Card`/`CardGrid` (ícones de uma lista fechada). Fórmulas: `$$ … $$` (KaTeX, numeradas automaticamente).
 
-## Laboratórios interativos
+## Projeto editorial
 
-A lógica de cada laboratório fica em `src/lib/labs/` como funções puras com testes; os componentes em `src/components/labs/` apenas desenham o estado. Os playgrounds executam código em **Web Workers**:
+- **Capa** com a arte do artigo, área, título em serifa, linha fina e autor; em seguida o **Resumo** com palavras-chave e metadados, e os **Pontos-chave** em cards.
+- **Numeração automática** por contadores CSS: `Figura n.`, `Listagem n.` (código executável), `Definição n.` e equações `(n)`, na ordem em que aparecem — sem JavaScript.
+- **Notas de margem** (`<Sidenote>`): flutuam na coluna direita a partir de 80rem; em telas menores aparecem em linha.
+- **Glossário em linha** (`<Term def>`): abre no hover, foco ou toque e fecha com Esc (WCAG 1.4.13).
+- Layout em três colunas em telas largas: sumário à esquerda, texto (≈42rem) e margem para notas; figuras interativas avançam sobre a margem.
+
+## Figuras interativas
+
+Cada figura é um componente MDX numerado (`InteractiveFigure`) inserido no fluxo do texto. A lógica fica em `src/lib/simulations/` como funções puras com testes; os componentes em `src/components/figures/` apenas desenham o estado.
+
+| Figura                                                                                                                        | Artigo                  |
+| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `Fiber3D`, `DwdmGridCalculator`, `FiberBandsChart`, `OsnrCalculator`, `QBerCalculator`, `ConstellationViewer`, `OtnHierarchy` | DWDM                    |
+| `PermissionLab`, `SignalSimulator`, `FilesystemExplorer`                                                                      | Linux                   |
+| `PortExposure`                                                                                                                | Cloudflare Tunnel       |
+| `RateExplainer`                                                                                                               | Monitoramento           |
+| `MibExplorer`                                                                                                                 | Zabbix/SNMP             |
+| `K8sSimulator`                                                                                                                | Kubernetes              |
+| `ComplexityChart`, `CodePlayground`                                                                                           | Velocidade de linguagem |
+| `ArtExplorer`, `CodePlayground`                                                                                               | Bastidores              |
+
+O modelo 3D usa three.js importado dinamicamente quando a figura entra na tela, pausa fora dela, não captura o zoom da página e tem corte transversal em SVG como alternativa sem WebGL. Os playgrounds executam código em **Web Workers**:
 
 | Executor        | Isolamento                                                                                                                |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `js-runner.js`  | Worker novo por execução; CSP `default-src 'none'; script-src 'unsafe-eval'` (sem rede); timeout de 5 s; saída limitada   |
 | `py-runner.mjs` | Pyodide 314.0.7 baixado sob demanda de `cdn.jsdelivr.net` (única origem permitida); namespace limpo por execução; timeout |
 
-## Loja 3D
+## Arte generativa
 
-Edite `content/products.json`. Campos principais: `slug`, `name`, `price.amount` (centavos), `status` (`available`, `made-to-order`, `coming-soon`), `model.src` (`/models/*.stl|glb`), `poster` e, opcionalmente, `checkoutUrl` (HTTPS — ex.: Stripe Payment Link, Mercado Pago, Gumroad). Sem `checkoutUrl`, o botão abre um pedido por e-mail.
-
-> Os três produtos atuais são **exemplos** gerados por `scripts/generate-models.mjs`; substitua pelos seus modelos, preços e links de pagamento.
+`src/lib/art/motifs.ts` define nove motivos ligados aos temas (espectro DWDM, malha de nós, matriz de bits, rede e túneis, séries temporais, radar, flame graph, circuito e diagrama de olho). A semente é o hash FNV-1a do slug e o PRNG é o mulberry32: a mesma entrada gera sempre o mesmo SVG. A arte é renderizada no servidor (`CoverArt`), reaproveitada nos cards e convertida em data URI para as imagens Open Graph; animações CSS discretas respeitam `prefers-reduced-motion`.
 
 ## Segurança
 
 - **CSP** restritiva (`default-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`); iframes apenas do Giscus. `script-src` permite `'unsafe-inline'` por ser um site estático (nonces exigiriam renderização por requisição).
 - **HSTS** com preload, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `COOP`, sem `X-Powered-By`.
 - Workers com CSP própria; JSON-LD serializado com escape; slugs resolvidos somente a partir da lista carregada (sem path traversal).
-- Fontes auto-hospedadas; comentários e three.js carregados sob demanda.
+- Fontes auto-hospedadas; comentários e three.js carregados sob demanda; nenhuma imagem de capa externa.
 - Auditoria de dependências de produção no CI e Dependabot semanal.
 
 ## Testes e CI
 
-| Camada         | Ferramenta                       | Cobertura                                                                                                      |
-| -------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Unitários      | Vitest                           | conteúdo (todos os artigos), ABNT, óptica, k8s, permissões, playground/worker, catálogo, CSP, RSS, busca, tema |
-| Componentes    | Vitest + Testing Library (jsdom) | laboratórios, playground, tema, busca, filtros, abas, quiz, easter egg                                         |
-| E2E            | Playwright                       | jornada do leitor, navegação, busca, tema, laboratórios, loja 3D (WebGL), cabeçalhos, SEO, mobile              |
-| Acessibilidade | axe-core                         | WCAG 2.2 AA nos temas claro e escuro                                                                           |
+| Camada         | Ferramenta                       | Cobertura                                                                                                                |
+| -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Unitários      | Vitest                           | conteúdo (todos os artigos), ABNT, arte, óptica, fibra, k8s, sinais, exposição, PromQL, SNMP, complexidade, CSP          |
+| Componentes    | Vitest + Testing Library (jsdom) | figuras interativas, glossário, notas, cards, playground, tema, busca, filtros, abas, quiz                               |
+| E2E            | Playwright                       | jornada do leitor, layout acadêmico, figuras (inclusive WebGL), busca, tema, cabeçalhos, SEO, mobile sem rolagem lateral |
+| Acessibilidade | axe-core                         | WCAG 2.2 AA nos temas claro e escuro                                                                                     |
 
 O workflow `.github/workflows/ci.yml` roda em cada push/PR com permissões mínimas (`contents: read`).
 

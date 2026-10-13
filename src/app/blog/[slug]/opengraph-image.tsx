@@ -1,3 +1,4 @@
+import { CATEGORIES } from "@/lib/content/categories";
 import { getAllPosts, getPostBySlug } from "@/lib/content/posts";
 import { formatDate } from "@/lib/format";
 import { OG_SIZE, renderOgImage } from "@/lib/og";
@@ -17,9 +18,16 @@ export default async function PostOpengraphImage({
 }) {
   const { slug } = await params;
   const post = getPostBySlug(slug);
+  if (!post)
+    return renderOgImage({
+      eyebrow: "Artigo",
+      title: "Artigo",
+      art: { motif: "circuit", seed: slug },
+    });
   return renderOgImage({
-    eyebrow: post?.tags.slice(0, 3).join(" · ") ?? "Blog",
-    title: post?.title ?? "Artigo",
-    footer: post ? formatDate(post.updated ?? post.date) : undefined,
+    eyebrow: CATEGORIES[post.category].label,
+    title: post.title,
+    footer: formatDate(post.updated ?? post.date),
+    art: { motif: post.art, seed: post.slug },
   });
 }

@@ -6,7 +6,7 @@ test.describe("jornada do leitor", () => {
   }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/Leonardo Saads/);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Infraestrutura");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Ensaios técnicos");
 
     await page.getByTestId("cta-blog").click();
     await expect(page).toHaveURL(/\/blog$/);
@@ -48,9 +48,57 @@ test.describe("jornada do leitor", () => {
     await expect(page.getByTestId("post-content")).toBeVisible();
   });
 
+  test("artigo acadêmico: capa, resumo, pontos-chave, figuras numeradas, notas e glossário", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/blog/dwdm_intoduction");
+    await expect(page.getByTestId("post-hero")).toContainText("Telecomunicações");
+    await expect(page.getByTestId("abstract")).toContainText("Resumo");
+    await expect(page.getByTestId("abstract")).toContainText("Palavras-chave:");
+    await expect(page.getByTestId("key-points").getByRole("listitem")).toHaveCount(4);
+
+    // Numeração automática por contadores CSS: a primeira figura é a "Figura 1."
+    const firstLabel = await page
+      .locator(".figure-label")
+      .first()
+      .evaluate((element) => getComputedStyle(element, "::before").content);
+    expect(firstLabel).toContain("Figura");
+
+    // Nota de margem flutua na coluna lateral em telas largas
+    const note = page.getByRole("note").filter({ hasText: "campo modal" });
+    const content = await page.getByTestId("post-content").boundingBox();
+    const noteBox = await note.boundingBox();
+    expect(noteBox!.x).toBeGreaterThan(content!.x + content!.width - 5);
+
+    // Termo do glossário abre a definição no foco e fecha com Esc
+    const term = page.getByTestId("term").filter({ hasText: "LCoS" });
+    await term.focus();
+    await expect(term).toHaveAttribute("aria-expanded", "true");
+    await expect(
+      page.getByRole("tooltip").filter({ hasText: "Liquid Crystal on Silicon" }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(term).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("filtro por área e página de tópicos", async ({ page }) => {
+    await page.goto("/blog");
+    await page
+      .getByRole("group", { name: "Filtrar por área" })
+      .getByRole("button", { name: "Software" })
+      .click();
+    await expect(page).toHaveURL(/area=software/);
+    await expect(page.getByTestId("post-card")).toHaveCount(2);
+    await page.goto("/tags");
+    await page.getByRole("link", { name: "Ver artigos de Segurança" }).click();
+    await expect(page).toHaveURL(/\/blog\?area=seguranca$/);
+    await expect(page.getByTestId("post-card")).toHaveCount(2);
+  });
+
   test("tags: do artigo para a listagem por tema", async ({ page }) => {
     await page.goto("/blog/comandos-linux");
-    await page.getByRole("link", { name: "#linux" }).first().click();
+    await page.getByTestId("abstract").getByRole("link", { name: "linux", exact: true }).click();
     await expect(page).toHaveURL(/\/tags\/linux$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("#linux");
     await expect(page.getByTestId("post-card").first()).toBeVisible();
@@ -60,11 +108,10 @@ test.describe("jornada do leitor", () => {
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Navegação principal" });
     for (const [label, url, heading] of [
-      ["Loja 3D", /\/shop$/, "Modelos 3D"],
+      ["Artigos", /\/blog$/, "Artigos"],
+      ["Tópicos", /\/tags$/, "Tópicos"],
       ["Projetos", /\/projects$/, "Projetos"],
-      ["Tags", /\/tags$/, "Tags"],
       ["Sobre", /\/about$/, "Leonardo Saads Pinto"],
-      ["Blog", /\/blog$/, "Artigos"],
     ] as const) {
       await nav.getByRole("link", { name: label }).click();
       await expect(page).toHaveURL(url);
@@ -113,11 +160,12 @@ test.describe("tema e busca", () => {
     await expect(page).toHaveURL(/\/blog\/dwdm_intoduction$/);
   });
 
-  test("busca encontra produtos da loja", async ({ page }) => {
+  test("busca encontra áreas e palavras-chave", async ({ page }) => {
     await page.goto("/about");
     await page.getByTestId("search-trigger").click();
-    await page.getByTestId("search-input").fill("raspberry");
-    await page.getByRole("option", { name: /Case ventilado/ }).click();
-    await expect(page).toHaveURL(/\/shop\/case-raspberry-pi-homeserver$/);
+    await page.getByTestId("search-input").fill("telecomunicacoes");
+    await page.getByRole("option", { name: /Área: Telecomunicações/ }).click();
+    await expect(page).toHaveURL(/\/blog\?area=telecomunicacoes$/);
+    await expect(page.getByTestId("post-card")).toHaveCount(2);
   });
 });

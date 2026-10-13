@@ -1,6 +1,6 @@
+import { CATEGORIES } from "@/lib/content/categories";
 import type { PostMeta } from "@/lib/content/posts";
 import { referenceToPlainText } from "@/lib/content/references";
-import type { Product } from "@/lib/shop/schema";
 import { absoluteUrl, site } from "@/lib/site";
 
 /** Serializa JSON-LD com escape de `<` para impedir quebra do `<script>` (XSS). */
@@ -22,6 +22,8 @@ export function blogPostingJsonLd(post: PostMeta) {
     mainEntityOfPage: url,
     image: absoluteUrl(`/blog/${post.slug}/opengraph-image`),
     keywords: post.tags.join(", "),
+    abstract: post.abstract,
+    articleSection: CATEGORIES[post.category].label,
     author: { "@type": "Person", name: site.author.name, url: site.author.linkedin },
     publisher: { "@type": "Person", name: site.author.name },
     citation: post.references.map((ref) => ({
@@ -29,30 +31,5 @@ export function blogPostingJsonLd(post: PostMeta) {
       name: referenceToPlainText(ref),
       ...(ref.url ? { url: ref.url } : {}),
     })),
-  };
-}
-
-export function productJsonLd(product: Product) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.name,
-    description: product.summary,
-    category: product.category,
-    url: absoluteUrl(`/shop/${product.slug}`),
-    ...(product.poster ? { image: absoluteUrl(product.poster) } : {}),
-    brand: { "@type": "Brand", name: site.name },
-    offers: {
-      "@type": "Offer",
-      price: (product.price.amount / 100).toFixed(2),
-      priceCurrency: product.price.currency,
-      availability:
-        product.status === "available"
-          ? "https://schema.org/InStock"
-          : product.status === "made-to-order"
-            ? "https://schema.org/PreOrder"
-            : "https://schema.org/OutOfStock",
-      url: absoluteUrl(`/shop/${product.slug}`),
-    },
   };
 }

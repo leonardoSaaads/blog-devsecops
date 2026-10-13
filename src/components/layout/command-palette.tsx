@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, CornerDownLeft, FileText, Hash, Package, Search } from "lucide-react";
+import { BookOpen, CornerDownLeft, FileText, Hash, Search } from "lucide-react";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
@@ -9,7 +9,6 @@ import { searchEntries, type SearchEntry, type SearchKind } from "@/lib/search";
 
 const KIND_META: Record<SearchKind, { label: string; icon: typeof BookOpen }> = {
   post: { label: "Artigo", icon: BookOpen },
-  product: { label: "Loja 3D", icon: Package },
   page: { label: "Página", icon: FileText },
   tag: { label: "Tag", icon: Hash },
 };
@@ -104,7 +103,7 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
             aria-controls={listId}
             aria-activedescendant={results[active] ? `${listId}-${active}` : undefined}
             aria-autocomplete="list"
-            placeholder="Busque artigos, laboratórios, modelos 3D…"
+            placeholder="Busque artigos, temas e conceitos…"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);

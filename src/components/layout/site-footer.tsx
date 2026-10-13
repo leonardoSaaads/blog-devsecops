@@ -1,5 +1,6 @@
 import { Mail, Rss } from "lucide-react";
 import Link from "next/link";
+import { CoverArt } from "@/components/art/cover-art";
 import { GithubIcon, LinkedinIcon } from "@/components/icons/brand-icons";
 import { mainNav, site } from "@/lib/site";
 
@@ -13,29 +14,32 @@ export function SiteFooter() {
   ];
 
   return (
-    <footer className="mt-24 border-t border-border">
-      <div className="container-page grid gap-8 py-10 sm:grid-cols-[1fr_auto] sm:items-start">
-        <div className="space-y-2">
-          <p className="font-semibold">{site.name}</p>
-          <p className="max-w-md text-sm text-muted-foreground">{site.description}</p>
-          <p className="text-xs text-muted-foreground">
-            © {year} {site.author.name}. Código sob licença MIT ·{" "}
-            <a
-              href={site.repository}
-              className="underline-offset-4 hover:underline"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              código-fonte
-            </a>
+    <footer className="relative mt-28 overflow-hidden border-t border-border text-slate-200">
+      <div className="absolute inset-0 -z-10" aria-hidden="true">
+        <CoverArt motif="ridgeline" seed="rodape" decorative className="opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#070b16]/90 via-[#070b16]/80 to-[#070b16]" />
+      </div>
+      <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_1fr]">
+        <div className="space-y-3">
+          <p className="font-serif text-2xl font-semibold text-white">{site.name}</p>
+          <p className="smallcaps text-sm text-cyan-200/90">{site.tagline}</p>
+          <p className="max-w-md font-serif text-[0.95rem] leading-relaxed text-slate-300">
+            {site.description}
+          </p>
+          <p className="pt-2 text-xs text-slate-400">
+            Composto em Source Serif 4 e Geist. Ilustrações geradas por código a partir de cada
+            tema.
           </p>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-6">
           <nav aria-label="Rodapé">
-            <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <ul className="grid grid-cols-2 gap-2 text-sm">
               {mainNav.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-muted-foreground hover:text-foreground">
+                  <Link
+                    href={item.href}
+                    className="text-slate-300 underline-offset-4 hover:text-white hover:underline"
+                  >
                     {item.label}
                   </Link>
                 </li>
@@ -51,13 +55,24 @@ export function SiteFooter() {
                   {...(href.startsWith("http")
                     ? { target: "_blank", rel: "noopener noreferrer me" }
                     : {})}
-                  className="grid size-9 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-accent hover:text-accent"
+                  className="grid size-10 place-items-center rounded-xl border border-white/15 text-slate-300 transition hover:border-cyan-300 hover:text-cyan-200"
                 >
                   <Icon className="size-4" />
                 </a>
               </li>
             ))}
           </ul>
+          <p className="text-xs text-slate-400">
+            © {year} {site.author.name}. Código sob licença MIT ·{" "}
+            <a
+              href={site.repository}
+              className="underline underline-offset-4 hover:text-white"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              código-fonte
+            </a>
+          </p>
         </div>
       </div>
     </footer>

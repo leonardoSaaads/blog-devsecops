@@ -11,15 +11,7 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
   async headers() {
-    return [
-      ...buildSecurityHeaders({ isDev }),
-      {
-        source: "/models/:path*",
-        headers: [
-          { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
-        ],
-      },
-    ];
+    return buildSecurityHeaders({ isDev });
   },
   async redirects() {
     return [

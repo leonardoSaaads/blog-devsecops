@@ -1,7 +1,7 @@
 import { parseFrontmatter } from "@/lib/content/frontmatter";
 import { estimateReadingMinutes } from "@/lib/content/reading-time";
 import { buildRssFeed, escapeXml } from "@/lib/feed";
-import { cn, formatCurrency, formatDate, formatShortDate } from "@/lib/format";
+import { cn, formatDate, formatShortDate } from "@/lib/format";
 import { normalize, searchEntries, type SearchEntry } from "@/lib/search";
 import { serializeJsonLd } from "@/lib/structured-data";
 import { nextPreference, resolveTheme, themeInitScript } from "@/lib/theme";
@@ -37,10 +37,6 @@ describe("formatação", () => {
     expect(formatShortDate("2026-02-01")).toMatch(/^01 de fev/);
   });
 
-  it("moeda em reais", () => {
-    expect(formatCurrency(2490).replace(/\s/g, " ")).toBe("R$ 24,90");
-  });
-
   it("cn ignora valores falsos", () => {
     expect(cn("a", false, undefined, "b")).toBe("a b");
   });
@@ -63,10 +59,10 @@ describe("busca", () => {
       keywords: ["optica"],
     },
     {
-      kind: "product",
-      title: "Case Raspberry Pi",
-      description: "Homelab",
-      href: "/shop/case",
+      kind: "tag",
+      title: "#homelab",
+      description: "2 artigos",
+      href: "/tags/homelab",
       keywords: ["homelab"],
     },
   ];

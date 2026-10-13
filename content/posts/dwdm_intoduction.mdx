@@ -5,13 +5,14 @@ date: "2026-02-01"
 updated: "2026-10-13"
 featured: true
 tags: ["dwdm", "optica", "telecomunicacoes", "otn", "huawei"]
-labs:
-  - "Calculadora do grid DWDM (ITU-T G.694.1)"
-  - "Janelas espectrais da fibra"
-  - "Orçamento de OSNR em cascata de EDFAs"
-  - "Fator Q ↔ BER"
-  - "Constelações coerentes sob ruído"
-  - "Encapsulamento OTN (G.709)"
+category: telecomunicacoes
+art: spectrum
+abstract: "Este artigo examina a transmissão óptica em sistemas DWDM com camada OTN, do meio físico às métricas de desempenho. Parte da fibra monomodo e do grid de frequências ITU-T G.694.1 (fixo e flex-grid), percorre os componentes de linha — multiplexadores, ROADMs, WSS e amplificadores EDFA e Raman — e os efeitos de dispersão cromática e PMD. Em seguida, descreve a modulação e a detecção coerentes, a hierarquia OTN com FEC e as métricas OSNR, fator Q, BER e GSNR, relacionadas por equações e por figuras interativas que permitem montar o orçamento de um enlace."
+keyPoints:
+  - "O grid ITU-T ancora os canais em 193,1 THz; o flex-grid aloca fatias de 12,5 GHz para sinais de 400G e acima."
+  - "Em uma cascata de N amplificadores idênticos, o OSNR cai 10·log₁₀(N) dB: dobrar a distância custa 3 dB."
+  - "A detecção coerente recupera amplitude e fase nas duas polarizações; o DSP compensa dispersão e PMD sem fibra compensadora."
+  - "Com SD-FEC, o enlace tolera BER pré-FEC da ordem de 10⁻²; o fator Q expressa a margem até esse limiar."
 references:
   - id: itu-g6941
     type: standard
@@ -149,7 +150,7 @@ references:
 ---
 
 <Callout type="info" title="Revisão de outubro de 2026">
-Esta versão preenche as fórmulas e diagramas que estavam pendentes, adiciona laboratórios interativos e corrige três pontos: a relação entre Q e BER no limiar de FEC (seção 7.3), a distinção entre módulos CFP-DCO e CFP-ACO (seção 8.2) e a largura espectral de um sinal 400G a 64 GBd (seção 3.2).
+Esta versão preenche as fórmulas e diagramas que estavam pendentes, adiciona figuras interativas — inclusive um modelo 3D da fibra — e corrige três pontos: a relação entre Q e BER no limiar de FEC (seção 7.3), a distinção entre módulos CFP-DCO e CFP-ACO (seção 8.2) e a largura espectral de um sinal 400G a 64 GBd (seção 3.2).
 </Callout>
 
 Este artigo é para profissionais já familiarizados com os conceitos básicos de DWDM que desejam aprofundar o entendimento dos mecanismos internos da tecnologia, de seus componentes e das métricas que determinam a qualidade de transmissão. O tratamento parte dos fundamentos físicos, desenvolve as relações matemáticas relevantes e conecta a teoria às implementações encontradas em equipamentos de produção<Cite id="agrawal-2021" />.
@@ -159,6 +160,10 @@ Este artigo é para profissionais já familiarizados com os conceitos básicos d
 ### 1.1 A necessidade de multiplexação por comprimento de onda
 
 A transmissão em fibras de sílica revolucionou as telecomunicações a partir da década de 1970, com largura de banda e alcance muito superiores aos do cobre. Os primeiros sistemas, porém, usavam um único comprimento de onda por fibra. A fibra monomodo padrão tem baixa atenuação aproximadamente entre 1260 nm e 1625 nm — cerca de 50 THz de banda potencial<Cite id="itu-g652" />. Usar uma única portadora nessa faixa é ocupar uma fração ínfima da capacidade.
+
+Antes de multiplexar, vale observar o meio físico. A luz é guiada por um núcleo de sílica dopada cujo índice de refração supera o da casca em menos de 1 % — o suficiente para a <Term def="Quando a luz incide na interface com um meio de índice menor acima do ângulo crítico, ela é totalmente refletida, sem perda por transmissão.">reflexão interna total</Term>.<Sidenote>Na fibra G.652, o diâmetro do campo modal é de cerca de 9 µm em 1310 nm, e a casca padronizada tem 125 µm<Cite id="itu-g652" />.</Sidenote> A figura a seguir mostra as camadas da fibra e a diferença entre a propagação monomodo e a multimodo.
+
+<Fiber3D />
 
 O *Wavelength Division Multiplexing* transmite simultaneamente vários canais ópticos, cada um em um comprimento de onda, pela mesma fibra. Os comprimentos de onda se propagam de forma essencialmente independente, interagindo apenas por efeitos não lineares relevantes em altas potências. A capacidade agregada cresce com o número de canais.
 
@@ -195,7 +200,7 @@ O transponder realiza a conversão **óptico-elétrico-óptica (O-E-O)**: recebe
   ]}
 />
 
-O laser de linha (DFB ou, em sistemas coerentes, ECL) opera com controle de temperatura em malha fechada para manter a frequência estável na ordem de poucos MHz.
+O laser de linha (DFB ou, em sistemas coerentes, <Term def="External Cavity Laser: laser de cavidade externa, com largura de linha estreita (da ordem de 100 kHz) e sintonia em toda a banda C.">ECL</Term>) opera com controle de temperatura em malha fechada para manter a frequência estável na ordem de poucos MHz.
 
 ### 2.3 Muxponders e agregação
 
@@ -205,7 +210,7 @@ O **muxponder** agrega vários sinais cliente de menor taxa em um único comprim
 
 ### 3.1 Fundamentos do grid DWDM
 
-A Recomendação G.694.1 garantiu interoperabilidade entre fabricantes ao fixar a frequência de ancoragem em **193,1 THz** (≈ 1552,52 nm no vácuo) e definir as frequências nominais como múltiplos inteiros do espaçamento<Cite id="itu-g6941" />:
+A Recomendação G.694.1 garantiu interoperabilidade entre fabricantes ao fixar a frequência de ancoragem em **193,1 THz** (≈ 1552,52 nm no vácuo)<Sidenote>O grid é definido em frequência, e não em comprimento de onda, porque a frequência de uma onda não muda com o meio em que ela se propaga.</Sidenote> e definir as frequências nominais como múltiplos inteiros do espaçamento<Cite id="itu-g6941" />:
 
 $$
 \lambda = \frac{c}{f}, \qquad f_n = 193{,}1\ \text{THz} + n\,\Delta f, \quad n \in \mathbb{Z}
@@ -229,7 +234,7 @@ $$
 f_c = 193{,}1\ \text{THz} + n \times 6{,}25\ \text{GHz}, \qquad \text{largura} = m \times 12{,}5\ \text{GHz}
 $$
 
-Assim, o mesmo sinal ocupa um slot de 75 GHz (m = 6). A implementação requer ROADMs com WSS baseados em LCoS, cuja resolução espectral permite bordas de canal programáveis.
+Assim, o mesmo sinal ocupa um slot de 75 GHz (m = 6). A implementação requer ROADMs com WSS baseados em <Term def="Liquid Crystal on Silicon: matriz de cristal líquido sobre silício que aplica um padrão de fase programável a cada fatia do espectro.">LCoS</Term>, cuja resolução espectral permite bordas de canal programáveis.
 
 ### 3.3 Bandas espectrais
 
@@ -285,7 +290,7 @@ $$
 G = \exp\!\left[\int_0^{L} \Gamma_s\,\big(\sigma_e\,N_2(z) - \sigma_a\,N_1(z)\big)\,dz\right]
 $$
 
-O bombeio em 980 nm leva a inversão de população próxima da completa (menor figura de ruído); o de 1480 nm favorece maior potência de saída. O espectro de ganho do érbio não é plano (pico perto de 1530 nm), por isso EDFAs de dois estágios intercalam um **GFF** (*Gain Flattening Filter*). O limite teórico da figura de ruído é 3 dB; EDFAs práticos ficam entre 4 e 6 dB.
+O bombeio em 980 nm leva a inversão de população próxima da completa (menor figura de ruído); o de 1480 nm favorece maior potência de saída. O espectro de ganho do érbio não é plano (pico perto de 1530 nm), por isso EDFAs de dois estágios intercalam um **GFF** (*Gain Flattening Filter*). O limite teórico da figura de ruído é 3 dB;<Sidenote>É o limite quântico de um amplificador insensível à fase com ganho alto: NF ≈ 2·n_sp ≥ 2, isto é, 3 dB.</Sidenote> EDFAs práticos ficam entre 4 e 6 dB.
 
 ### 4.5 Amplificação Raman
 
@@ -316,6 +321,8 @@ Fibras G.652.D têm $$D_{\text{PMD}}$$ tipicamente abaixo de 0,1 ps/√km (menos
 ### 5.1 De IM-DD para detecção coerente
 
 Na modulação de intensidade com detecção direta (IM-DD), o receptor detecta apenas a potência — o módulo ao quadrado do campo. A detecção coerente recupera o **campo elétrico completo**: amplitude e fase, nas duas polarizações<Cite id="kikuchi-2016" />. Isso viabiliza formatos com vários bits por símbolo e a compensação digital de dispersão e PMD.
+
+<PullQuote>Ao medir o campo, e não apenas a potência, o receptor transforma problemas ópticos em problemas de processamento de sinais.</PullQuote>
 
 ### 5.2 O receptor coerente
 
@@ -383,7 +390,11 @@ Em serviços que atravessam vários domínios administrativos, o monitoramento f
 
 ### 7.1 OSNR
 
-O **OSNR** é a razão entre a potência do sinal e a potência de ruído ASE (*Amplified Spontaneous Emission*) em uma banda de referência de 0,1 nm (≈ 12,5 GHz)<Cite id="agrawal-2021" />. A densidade espectral de ASE por polarização e a potência de ruído nas duas polarizações dentro de $$B_{\text{ref}}$$ são:
+<Definition term="OSNR (Optical Signal-to-Noise Ratio)">
+Razão entre a potência do sinal e a potência de ruído ASE (*Amplified Spontaneous Emission*) medida em uma banda de referência de 0,1 nm (≈ 12,5 GHz) em torno do canal<Cite id="agrawal-2021" />.
+</Definition>
+
+A densidade espectral de ASE por polarização e a potência de ruído nas duas polarizações dentro de $$B_{\text{ref}}$$ são:
 
 $$
 S_{\text{ASE}} = n_{sp}\,h\nu\,(G-1), \qquad P_{\text{ASE}} = 2\,n_{sp}\,h\nu\,(G-1)\,B_{\text{ref}}
@@ -401,13 +412,13 @@ $$
 \frac{1}{\text{OSNR}_{\text{total}}} = \sum_{i=1}^{N}\frac{1}{\text{OSNR}_i} \;\Rightarrow\; \text{OSNR}_{\text{total,dB}} = \text{OSNR}_{1,\text{dB}} - 10\log_{10} N
 $$
 
-Dobrar a distância custa 3 dB. Para compensar: aumentar a potência de lançamento (limitada por não linearidades), reduzir a NF ou usar Raman. Monte seu orçamento:
+Dobrar a distância custa 3 dB.<Sidenote>Regra prática de projeto: cada duplicação do número de spans idênticos consome 3 dB da margem de OSNR.</Sidenote> Para compensar: aumentar a potência de lançamento (limitada por não linearidades), reduzir a NF ou usar Raman. Monte seu orçamento:
 
 <OsnrCalculator />
 
 ### 7.2 OSNR, Q e BER
 
-Para decisão binária com ruído gaussiano, o fator Q e a taxa de erro de bit se relacionam por:
+Para decisão binária com ruído gaussiano, o <Term def="Razão entre a separação dos níveis lógicos e a soma dos desvios-padrão do ruído: mede o quão distinguíveis são os símbolos no instante de decisão.">fator Q</Term> e a taxa de erro de bit se relacionam por:
 
 $$
 Q = \frac{\mu_1 - \mu_0}{\sigma_1 + \sigma_0}, \qquad \text{BER} = \frac{1}{2}\,\operatorname{erfc}\!\left(\frac{Q}{\sqrt{2}}\right)
@@ -461,10 +472,12 @@ Milhares de quilômetros sem acesso para manutenção: repetidores selados a cad
 
 ## 10. Perspectivas
 
-- **Banda C+L** praticamente dobra o número de canais, exigindo amplificadores e WSS para a faixa estendida.
-- **800G e 1,2T por canal**, com DP-QAM de alta ordem, PCS e taxas de símbolos acima de 90 GBd, dependem de DSPs em nós de 7 nm e menores.
-- **Inteligência artificial** aplicada à otimização de parâmetros, predição de falhas, equalização e FEC — área em que conduzo pesquisa aplicada.
-- **Convergência IP + óptica**, com plugáveis coerentes em roteadores, reduz conversões O-E-O desnecessárias.
+<CardGrid>
+<Card title="Banda C+L" icon="waves">Praticamente dobra o número de canais, exigindo amplificadores e WSS para a faixa estendida.</Card>
+<Card title="800G e 1,2T por canal" icon="zap" tone="signal">DP-QAM de alta ordem, PCS e taxas de símbolos acima de 90 GBd, com DSPs em nós de 7 nm e menores.</Card>
+<Card title="Inteligência artificial" icon="cpu" tone="success">Otimização de parâmetros, predição de falhas, equalização e FEC — área em que conduzo pesquisa aplicada.</Card>
+<Card title="Convergência IP + óptica" icon="network">Plugáveis coerentes em roteadores reduzem conversões O-E-O desnecessárias.</Card>
+</CardGrid>
 
 <Quiz
   question="Um enlace tem OSNR de 24 dB com 10 spans. Mantendo tudo igual, qual o OSNR aproximado com 20 spans?"

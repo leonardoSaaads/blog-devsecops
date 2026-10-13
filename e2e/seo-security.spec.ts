@@ -30,7 +30,7 @@ test.describe("segurança e SEO", () => {
       if (message.type() === "error") problems.push(message.text());
     });
     page.on("pageerror", (error) => problems.push(error.message));
-    for (const path of ["/", "/blog/dwdm_intoduction", "/shop/vaso-parametrico-onda"]) {
+    for (const path of ["/", "/blog/dwdm_intoduction", "/blog/bastidores-do-blog", "/tags"]) {
       await page.goto(path, { waitUntil: "networkidle" });
     }
     // Recursos externos (ex.: imagens de terceiros, Giscus) podem falhar sem rede; CSP nunca.
@@ -41,7 +41,8 @@ test.describe("segurança e SEO", () => {
   test("sitemap, robots, RSS e manifest", async ({ request }) => {
     const sitemap = await (await request.get("/sitemap.xml")).text();
     expect(sitemap).toContain("/blog/dwdm_intoduction");
-    expect(sitemap).toContain("/shop/vaso-parametrico-onda");
+    expect(sitemap).toContain("/tags/kubernetes");
+    expect(sitemap).not.toContain("/shop");
     expect(await (await request.get("/robots.txt")).text()).toContain("Sitemap:");
     const feed = await request.get("/feed.xml");
     expect(feed.headers()["content-type"]).toContain("application/rss+xml");

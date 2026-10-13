@@ -4,7 +4,14 @@ description: "Publique serviços com Cloudflare Tunnel e Docker sem abrir portas
 date: "2025-10-09"
 updated: "2026-10-13"
 tags: ["devops", "docker", "cloudflare", "seguranca", "zero-trust"]
-labs: ["Fluxo animado: porta aberta × túnel de saída"]
+category: seguranca
+art: network
+abstract: "Tutorial de publicação segura de serviços auto-hospedados com Cloudflare Tunnel e Docker Compose, usando o Prometheus como exemplo. Contrasta o encaminhamento tradicional de portas com o modelo de conexões de saída, apresenta uma arquitetura com rede bridge isolada, segredos montados como arquivo, imagens fixadas e contêineres endurecidos, e completa o modelo Zero Trust com autenticação na borda via Cloudflare Access. Uma figura interativa demonstra por que portas publicadas pelo Docker contornam o firewall UFW."
+keyPoints:
+  - "O cloudflared só abre conexões de saída: nenhuma porta de entrada precisa ser liberada no roteador ou no firewall."
+  - "Portas publicadas sem IP ficam acessíveis em todas as interfaces e contornam o UFW, pois o Docker cria as próprias regras de NAT."
+  - "O túnel resolve a exposição de rede; a autenticação na borda (Cloudflare Access) completa o modelo Zero Trust."
+  - "Tokens são segredos: monte-os como arquivo, nunca no compose.yaml, no Git ou em variáveis visíveis no docker inspect."
 references:
   - id: cf-tunnel
     type: web
@@ -112,7 +119,7 @@ Para publicar um serviço, o caminho clássico é abrir uma porta no firewall/ro
 
 ### A solução: conexão de saída
 
-O Cloudflare Tunnel inverte a lógica: o conector `cloudflared` estabelece conexões **de saída** com a rede da Cloudflare, e as requisições dos usuários chegam por esse canal já aberto. Nenhuma porta de entrada precisa ser liberada<Cite id="cf-tunnel" />. Compare os dois fluxos — clique em *Reproduzir fluxo*:
+O Cloudflare Tunnel inverte a lógica: o conector `cloudflared` estabelece conexões **de saída** com a rede da Cloudflare, e as requisições dos usuários chegam por esse canal já aberto. Nenhuma porta de entrada precisa ser liberada<Cite id="cf-tunnel" />.<Sidenote>Por padrão, o cloudflared mantém quatro conexões com pelo menos dois data centers distintos da Cloudflare: a queda de um deles não derruba o serviço.</Sidenote> Compare os dois fluxos — clique em *Reproduzir fluxo*:
 
 <FlowDiagram
   title="Método tradicional: porta aberta"
@@ -142,7 +149,7 @@ O Cloudflare Tunnel inverte a lógica: o conector `cloudflared` estabelece conex
 
 ### Vocabulário essencial
 
-- **Túnel**: o canal persistente entre seu ambiente e a Cloudflare, identificado por um UUID.
+- **Túnel**: o canal persistente entre seu ambiente e a Cloudflare, identificado por um <Term def="Universally Unique Identifier: identificador de 128 bits, gerado de forma que a colisão seja praticamente impossível.">UUID</Term>.
 - **cloudflared**: o conector (daemon) que cria e mantém o túnel; mantém múltiplas conexões para redundância.
 - **Túnel gerenciado remotamente**: a configuração (rotas) fica no painel da Cloudflare; o conector só precisa do **token**.
 - **Rede bridge** (Docker): rede virtual privada em que os containers se encontram pelo nome do serviço.
@@ -154,9 +161,11 @@ O Cloudflare Tunnel inverte a lógica: o conector `cloudflared` estabelece conex
 
 Por que ela é boa?
 
-- **Segurança em camadas**: nenhuma porta de entrada; containers isolados; Prometheus inacessível de fora.
-- **Infraestrutura como código**: tudo em dois arquivos versionáveis — fácil de replicar e de fazer backup.
-- **Escalável**: novos serviços entram como novos containers e novas rotas no mesmo túnel.
+<CardGrid cols={3}>
+<Card title="Segurança em camadas" icon="shield" tone="success">Nenhuma porta de entrada; containers isolados; Prometheus inacessível de fora.</Card>
+<Card title="Infraestrutura como código" icon="layers">Tudo em dois arquivos versionáveis — fácil de replicar e de fazer backup.</Card>
+<Card title="Escalável" icon="network" tone="signal">Novos serviços entram como novos containers e novas rotas no mesmo túnel.</Card>
+</CardGrid>
 
 ## Parte 3: mão na massa
 
@@ -243,11 +252,17 @@ O que mudou em relação à primeira versão deste artigo — e por quê:
 | Token no `command` | `TUNNEL_TOKEN_FILE` + *secret* | O token não aparece no `compose.yaml`, no Git nem no `docker inspect`<Cite id="cf-run-parameters,compose-secrets" />. |
 | Imagens `:latest` | versões fixadas | Builds reproduzíveis e atualizações deliberadas. |
 
+A primeira linha da tabela é o erro mais comum — e o menos intuitivo: o firewall parece ativo, mas a porta continua aberta. Combine as opções na figura e observe quais caminhos chegam ao serviço<Cite id="docker-firewall" />.
+
+<PortExposure />
+
 **Endurecimento dos containers**<Cite id="owasp-docker" />:
 
-- `user: "65534:65534"` — sem privilégios de root dentro do container.
-- `read_only: true` + `tmpfs` — sistema de arquivos imutável; só `/tmp` é gravável.
-- `no-new-privileges` e `cap_drop: [ALL]` — impedem escalonamento e removem capacidades do kernel desnecessárias.
+<CardGrid cols={3}>
+<Card title="Usuário sem privilégios" icon="lock">`user: "65534:65534"` (nobody): nada roda como root dentro do container.</Card>
+<Card title="Sistema de arquivos imutável" icon="folder" tone="signal">`read_only: true` + `tmpfs`: só `/tmp` é gravável.</Card>
+<Card title="Sem escalonamento" icon="shield" tone="success">`no-new-privileges` e `cap_drop: [ALL]` removem capacidades do kernel desnecessárias.</Card>
+</CardGrid>
 
 ### Passo 2: configurar o Prometheus
 

@@ -4,7 +4,14 @@ description: "Stack de observabilidade com Node Exporter, Prometheus e Grafana p
 date: "2025-10-16"
 updated: "2026-10-13"
 tags: ["devops", "docker", "prometheus", "grafana", "observabilidade"]
-labs: ["Fluxo animado: do kernel ao dashboard"]
+category: infraestrutura
+art: ridgeline
+abstract: "Guia prático para montar a observabilidade de um servidor doméstico com Node Exporter, Prometheus e Grafana, executados em Docker Compose com versões fixadas, segredos fora do código, contêineres endurecidos e redes internas isoladas. Discute o que monitorar segundo os quatro sinais de ouro e o método USE, provisiona datasources e dashboards como código e explica, com uma figura interativa, como o PromQL transforma contadores em taxas com rate() e increase(). O acesso remoto usa Cloudflare Tunnel com autenticação na borda."
+keyPoints:
+  - "O Prometheus coleta métricas no modelo pull e as guarda em séries temporais; o Grafana apenas consulta e desenha."
+  - "Contadores só crescem: rate() os converte em taxa por segundo, corrigindo reinícios e extrapolando até as bordas da janela."
+  - "Datasources e dashboards provisionados como código tornam a stack reproduzível, sem cliques na interface."
+  - "Redes Docker internas aplicam o menor privilégio: só o Prometheus alcança o Node Exporter."
 references:
   - id: sre-book
     type: book
@@ -89,6 +96,30 @@ references:
     year: 2026
     url: "https://grafana.com/grafana/dashboards/1860-node-exporter-full/"
     accessed: "2026-10-13"
+  - id: prom-metric-types
+    type: web
+    authors: ["Prometheus Authors"]
+    title: "Metric types"
+    container: "Prometheus Documentation"
+    year: 2026
+    url: "https://prometheus.io/docs/concepts/metric_types/"
+    accessed: "2026-10-13"
+  - id: prom-functions
+    type: web
+    authors: ["Prometheus Authors"]
+    title: "Query functions"
+    container: "Prometheus Documentation"
+    year: 2026
+    url: "https://prometheus.io/docs/prometheus/latest/querying/functions/"
+    accessed: "2026-10-13"
+  - id: prom-migration
+    type: web
+    authors: ["Prometheus Authors"]
+    title: "Prometheus 3.0 migration guide"
+    container: "Prometheus Documentation"
+    year: 2026
+    url: "https://prometheus.io/docs/prometheus/latest/migration/"
+    accessed: "2026-10-13"
 ---
 
 <Figure src="https://i.imgflip.com/a98k0g.jpg" alt="Meme sobre montar um homeserver" source="imgflip (meme criado pelo autor)" sourceUrl="https://imgflip.com/i/a98k0g" maxWidth={480} />
@@ -112,21 +143,25 @@ Para começar, um PC antigo ou mini PC com Linux resolve. Sistemas como o ZimaOS
 
 ## Por que monitorar?
 
-Um servidor sem monitoramento é um carro sem painel: você só descobre o problema quando ele já aconteceu. O disco encheu e o banco parou; a CPU está em 100% há três dias; a memória esgotou e o kernel começou a matar processos (OOM killer).
+Um servidor sem monitoramento é um carro sem painel: você só descobre o problema quando ele já aconteceu. O disco encheu e o banco parou; a CPU está em 100% há três dias; a memória esgotou e o kernel começou a matar processos (<Term def="Out-Of-Memory killer: mecanismo do kernel que, sem memória disponível, escolhe e encerra processos para manter o sistema de pé.">OOM killer</Term>).
 
 Dois métodos ajudam a decidir **o que** observar:
 
-- **Quatro sinais de ouro** (latência, tráfego, erros e saturação) para serviços<Cite id="sre-book" />.
-- **Método USE** (utilização, saturação e erros) para cada recurso — CPU, memória, disco e rede<Cite id="gregg-use" />.
+<CardGrid>
+<Card title="Quatro sinais de ouro" icon="activity">Latência, tráfego, erros e saturação — a visão de quem **usa** o serviço<Cite id="sre-book" />.</Card>
+<Card title="Método USE" icon="gauge" tone="signal">Utilização, saturação e erros de cada **recurso**: CPU, memória, disco e rede<Cite id="gregg-use" />.</Card>
+</CardGrid>
 
 ## O trio: Node Exporter, Prometheus e Grafana
 
 <Figure src="/images/linux/BackgroundMonitoramento.png" alt="Logotipos do Prometheus, Grafana e Node Exporter" maxWidth={560} />
 
-- **Node Exporter** — expõe métricas do sistema operacional e do hardware em `:9100/metrics`; não armazena nada<Cite id="node-exporter" />.
-- **Prometheus** — coleta (*scrape*) as métricas periodicamente no modelo **pull** e as guarda em um banco de séries temporais, consultável com PromQL<Cite id="prom-overview" />.
-- **Grafana** — transforma consultas em dashboards e alertas.
-- **Cloudflare Tunnel** — acesso remoto com HTTPS e sem abrir portas no roteador.
+<CardGrid>
+<Card title="Node Exporter" icon="cpu">Expõe métricas do sistema operacional e do hardware em `:9100/metrics`; não armazena nada<Cite id="node-exporter" />.</Card>
+<Card title="Prometheus" icon="activity" tone="signal">Coleta (*scrape*) as métricas no modelo **pull** e as guarda em um banco de séries temporais, consultável com PromQL<Cite id="prom-overview" />.</Card>
+<Card title="Grafana" icon="gauge" tone="success">Transforma consultas em dashboards e alertas.</Card>
+<Card title="Cloudflare Tunnel" icon="shield">Acesso remoto com HTTPS e sem abrir portas no roteador.</Card>
+</CardGrid>
 
 <FlowDiagram
   title="Do kernel ao dashboard"
@@ -366,6 +401,20 @@ scrape_configs:
       - targets: ["cloudflared:2000"]
 ```
 
+### De contadores a taxas: rate() e increase()
+
+A maioria das métricas do Node Exporter é de contadores: `node_cpu_seconds_total` e `node_network_receive_bytes_total` só crescem desde a inicialização do host<Cite id="node-exporter" />.
+
+<Definition term="Contador (counter)">
+Métrica cumulativa que só aumenta — ou volta a zero quando o processo reinicia. O valor absoluto quase nunca interessa: o que importa é a variação por unidade de tempo<Cite id="prom-metric-types" />.
+</Definition>
+
+A função `rate(x[5m])` calcula a taxa média por segundo dentro da janela, corrigindo os reinícios do contador e extrapolando até as bordas; `increase()` é a mesma conta multiplicada pela duração da janela<Cite id="prom-functions" />. Por isso não se usa `delta()` em contadores: no reinício, a diferença fica negativa.<Sidenote>No Prometheus 3, as janelas são abertas à esquerda: uma amostra exatamente no início da janela é excluída<Cite id="prom-migration" />.</Sidenote>
+
+<RateExplainer />
+
+Na prática, use janelas de pelo menos quatro intervalos de scrape — com scrape de 15 s, `[1m]` ou mais — para que sempre haja amostras suficientes, mesmo que uma coleta falhe.
+
 ## Configurando o Grafana como código
 
 O Grafana lê arquivos de *provisioning* na inicialização: datasources e dashboards aparecem sem nenhum clique<Cite id="grafana-provisioning" />. O `uid` fixo do datasource permite que os dashboards o referenciem de forma estável.
@@ -503,7 +552,7 @@ docker inspect --format '{{json .State.Health}}' prometheus
 1. **Alertas**: regras no Prometheus + Alertmanager (disco acima de 85%, target fora, túnel desconectado).
 2. **Mais exporters**: cAdvisor (containers), PostgreSQL, Nginx, SNMP.
 3. **Backups** dos volumes `grafana_data` e `prometheus_data`.
-4. **PromQL**: aprenda `rate()`, `increase()` e agregações `by (...)`.
+4. **PromQL**: além de `rate()` e `increase()`, aprenda agregações `by (...)` e `histogram_quantile()`.
 
 <Quiz
   question="Por que o Node Exporter fica numa rede Docker marcada como internal?"

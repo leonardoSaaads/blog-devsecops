@@ -1,10 +1,17 @@
 ---
 title: "Aprendendo Kubernetes: os primeiros passos"
-description: "Pods, Deployments, Services, Ingress/Gateway API, ConfigMaps e Secrets em níveis progressivos no k3s — com manifestos endurecidos e um simulador interativo de Deployment."
+description: "Pods, Deployments, Services, Ingress/Gateway API, ConfigMaps e Secrets em níveis progressivos no k3s — com manifestos endurecidos e uma figura interativa do laço de reconciliação."
 date: "2025-10-31"
 updated: "2026-10-13"
 tags: ["kubernetes", "devsecops", "devops"]
-labs: ["Simulador de Deployment + Service"]
+category: infraestrutura
+art: lattice
+abstract: "Introdução progressiva ao Kubernetes em um cluster k3s, organizada em cinco níveis: Pod, Deployment, Service, Ingress e Gateway API, e ConfigMap e Secret. Cada nível apresenta um manifesto endurecido segundo os Pod Security Standards, explica a limitação que motiva o nível seguinte e discute mudanças recentes do ecossistema, como o congelamento da API Ingress e a aposentadoria do Ingress NGINX. Uma figura interativa simula o laço de reconciliação de um Deployment com Service, incluindo autorrecuperação, escala e atualização gradual."
+keyPoints:
+  - "Kubernetes é declarativo: controladores comparam o estado desejado ao atual e agem até que coincidam."
+  - "Pods são efêmeros; o Deployment mantém as réplicas e o Service oferece um endereço estável para os Pods prontos."
+  - "O Gateway API é o sucessor recomendado do Ingress, cuja API foi congelada e cujo controlador NGINX foi aposentado."
+  - "Secrets são apenas codificados em base64: ative a criptografia em repouso e restrinja o acesso via RBAC."
 references:
   - id: k8s-pods
     type: web
@@ -131,15 +138,17 @@ references:
     year: 2022
 ---
 
-Esta publicação nasceu das minhas anotações aprendendo Kubernetes — o orquestrador de containers que herdou ideias do Borg, o sistema interno do Google<Cite id="borg" />. Antes de avançar, alguns conceitos com uma analogia de condomínio:
+Esta publicação nasceu das minhas anotações aprendendo Kubernetes — o orquestrador de containers que herdou ideias do Borg, o sistema interno do Google<Cite id="borg" />.<Sidenote>O nome vem do grego *kybernḗtēs*, “timoneiro” — daí o leme no logotipo e a abreviação k8s (k, oito letras, s).</Sidenote> Antes de avançar, alguns conceitos com uma analogia de condomínio:
 
-- **Pod**: apartamento (os containers moram nele).
-- **Node**: prédio (os Pods ficam nele) — geralmente um servidor ou VM.
-- **Cluster**: condomínio (conjunto de Nodes coordenados).
-- **Deployment**: síndico (garante que tudo funcione; gerencia vários Pods).
-- **Service**: portaria (recebe visitas e encaminha, com balanceamento).
-- **Ingress / Gateway**: guarita da rua (primeira entrada HTTP, encaminha para o Service).
-- **Namespace**: blocos do condomínio (isolamento lógico).
+<CardGrid cols={3}>
+<Card title="Pod" icon="box">O apartamento: os containers moram nele.</Card>
+<Card title="Node" icon="server">O prédio onde os Pods ficam — geralmente um servidor ou VM.</Card>
+<Card title="Cluster" icon="network">O condomínio: conjunto de Nodes coordenados.</Card>
+<Card title="Deployment" icon="layers" tone="signal">O síndico: garante que tudo funcione e gerencia vários Pods.</Card>
+<Card title="Service" icon="tower" tone="success">A portaria: recebe as visitas e encaminha, com balanceamento.</Card>
+<Card title="Ingress / Gateway" icon="shield">A guarita da rua: primeira entrada HTTP, encaminha para o Service.</Card>
+<Card title="Namespace" icon="folder">Os blocos do condomínio: isolamento lógico.</Card>
+</CardGrid>
 
 A hierarquia é **Container → Pod → Node → Cluster**. Um Pod pode ter vários containers, mas eles devem ser inseparáveis (compartilham rede e volumes)<Cite id="k8s-pods" />.
 
@@ -156,7 +165,7 @@ Os Pods também têm um ciclo de vida bem definido, influenciado pela *restart p
 - Um cluster Kubernetes (usei **k3s** em um servidor local; minikube, kind ou um serviço gerenciado também servem).
 - `kubectl` configurado.
 
-No k3s, o kubeconfig fica em `/etc/rancher/k3s/k3s.yaml`, legível apenas pelo root. Em vez de usar `sudo` em todo comando, copie-o para o seu usuário com permissões restritas<Cite id="k3s-docs" />:
+No k3s, o <Term def="Arquivo com o endereço do cluster, as credenciais e os contextos usados pelo kubectl.">kubeconfig</Term> fica em `/etc/rancher/k3s/k3s.yaml`, legível apenas pelo root. Em vez de usar `sudo` em todo comando, copie-o para o seu usuário com permissões restritas<Cite id="k3s-docs" />:
 
 ```bash
 mkdir -p ~/.kube
@@ -274,7 +283,11 @@ kubectl rollout undo deployment/nginx-deployment
 
 ### Experimente: o laço de reconciliação
 
-O simulador abaixo reproduz o comportamento do controlador: o **estado desejado** (réplicas, versão) é comparado ao **estado atual** a cada ciclo. Exclua um pod, escale, envie requisições pelo Service e dispare um rollout — note que, com `maxUnavailable: 0`, o número de pods prontos nunca cai abaixo do desejado.
+<Definition term="Laço de reconciliação">
+Ciclo contínuo em que um controlador observa o estado atual dos objetos, compara-o ao estado desejado declarado no manifesto e executa ações até que ambos coincidam<Cite id="k8s-deployment" />.
+</Definition>
+
+A figura a seguir reproduz o comportamento do controlador: o **estado desejado** (réplicas, versão) é comparado ao **estado atual** a cada ciclo. Exclua um pod, escale, envie requisições pelo Service e dispare um rollout — note que, com `maxUnavailable: 0`, o número de pods prontos nunca cai abaixo do desejado.
 
 <K8sSimulator />
 
@@ -518,9 +531,11 @@ Volumes de ConfigMap montados como **diretório** são atualizados pelo kubelet 
 
 ## Próximos passos
 
-- **Armazenamento persistente**: PersistentVolumes e StorageClasses.
-- **TLS automático**: cert-manager com Let's Encrypt.
-- **GitOps**: Argo CD ou Flux para declarar o cluster a partir do Git.
-- **Leitura recomendada**: *Kubernetes: Up and Running*<Cite id="k8s-up-running" />.
+<CardGrid>
+<Card title="Armazenamento persistente" icon="folder">PersistentVolumes e StorageClasses.</Card>
+<Card title="TLS automático" icon="lock" tone="success">cert-manager com Let's Encrypt.</Card>
+<Card title="GitOps" icon="activity" tone="signal">Argo CD ou Flux para declarar o cluster a partir do Git.</Card>
+<Card title="Leitura recomendada" icon="book">*Kubernetes: Up and Running*<Cite id="k8s-up-running" />.</Card>
+</CardGrid>
 
 Isso foi o básico — mas é a base de tudo o que vem depois. E o melhor: **tudo open source**.

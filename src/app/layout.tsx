@@ -1,12 +1,31 @@
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import { EasterEgg } from "@/components/layout/easter-egg";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { site } from "@/lib/site";
 import { themeInitScript } from "@/lib/theme";
 import "./globals.css";
+
+// Fonte serifada de leitura, auto-hospedada (eixos de peso e tamanho óptico).
+const serif = localFont({
+  src: [
+    {
+      path: "../../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-latin-opsz-normal.woff2",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-latin-opsz-italic.woff2",
+      style: "italic",
+    },
+  ],
+  weight: "200 900",
+  variable: "--font-serif-text",
+  display: "swap",
+  fallback: ["Iowan Old Style", "Georgia", "serif"],
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -50,8 +69,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f4ec" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d1220" },
   ],
   colorScheme: "light dark",
 };
@@ -62,7 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="pt-BR"
       data-theme="light"
       suppressHydrationWarning
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable} ${serif.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

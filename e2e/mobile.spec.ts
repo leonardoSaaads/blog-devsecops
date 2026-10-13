@@ -27,6 +27,33 @@ test.describe("experiência móvel", () => {
     expect(overflow).toBeLessThanOrEqual(1);
   });
 
+  test("nenhuma página tem rolagem horizontal", async ({ page }) => {
+    const paths = [
+      "/",
+      "/blog",
+      "/tags",
+      "/projects",
+      "/about",
+      "/blog/bastidores-do-blog",
+      "/blog/cloudflared-tunnel-tutorail",
+      "/blog/comandos-linux",
+      "/blog/deploy-zabbix-em-minutos",
+      "/blog/dwdm_intoduction",
+      "/blog/first-steps-with-k8s",
+      "/blog/monitoramento-homeserver",
+      "/blog/valocidade-de-linguagem-nao-importa",
+    ];
+    const overflowing: string[] = [];
+    for (const path of paths) {
+      await page.goto(path, { waitUntil: "networkidle" });
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      if (overflow > 1) overflowing.push(`${path}: ${overflow}px`);
+    }
+    expect(overflowing).toEqual([]);
+  });
+
   test("simulador de Kubernetes funciona com toque", async ({ page }) => {
     await page.goto("/blog/first-steps-with-k8s");
     const sim = page.getByTestId("k8s-simulator");

@@ -1,10 +1,17 @@
 ---
 title: "Entendendo um pouco de Linux"
-description: "O que eu queria que tivessem me ensinado sobre Linux: distribuições, permissões, processos, sinais e o sistema de arquivos — com laboratório interativo de chmod e umask."
+description: "O que eu queria que tivessem me ensinado sobre Linux: distribuições, permissões, processos, sinais e o sistema de arquivos — com figuras interativas de chmod, sinais e da hierarquia de diretórios."
 date: "2025-10-03"
 updated: "2026-10-13"
 tags: ["linux", "devops", "seguranca"]
-labs: ["Calculadora de permissões (chmod) e umask"]
+category: seguranca
+art: bits
+abstract: "Guia conceitual de Linux para quem opera servidores e contêineres. Explica o papel das distribuições e a escolha de imagens base, o modelo de permissões Unix (notação octal, umask e menor privilégio), ferramentas essenciais de diagnóstico, o ciclo de vida de processos e sinais — incluindo a armadilha do PID 1 em contêineres — e a hierarquia de diretórios com os sistemas de arquivos virtuais /proc, /sys e /dev. Figuras interativas permitem calcular permissões, enviar sinais a um contêiner simulado e navegar pela árvore do sistema."
+keyPoints:
+  - "Permissões são a primeira linha de defesa: 777 permite que qualquer conta comprometida altere o arquivo."
+  - "A umask é aplicada com E lógico do complemento (base ∧ ¬umask), e não por subtração."
+  - "Como PID 1, um processo sem tratador ignora o SIGTERM e só termina no SIGKILL, após o prazo do docker stop."
+  - "/proc, /sys e /dev são sistemas de arquivos virtuais: janelas para o kernel que não ocupam disco."
 references:
   - id: kerrisk-tlpi
     type: book
@@ -137,7 +144,7 @@ Este guia é o que eu gostaria de ter recebido quando comecei: menos lista de co
 
 ### O que são distribuições, afinal?
 
-**Linux é só o kernel**: o núcleo que conversa com o hardware. Sozinho, ele não entrega um sistema utilizável — faltam shell, bibliotecas, gerenciador de pacotes e serviços. Uma **distribuição** empacota o kernel com esse conjunto de software, configurações padrão e uma filosofia de manutenção.
+**Linux é só o kernel**: o núcleo que conversa com o hardware.<Sidenote>Por isso parte da comunidade prefere o nome GNU/Linux: o sistema utilizável combina o kernel com as ferramentas do projeto GNU.</Sidenote> Sozinho, ele não entrega um sistema utilizável — faltam shell, bibliotecas, gerenciador de pacotes e serviços. Uma **distribuição** empacota o kernel com esse conjunto de software, configurações padrão e uma filosofia de manutenção.
 
 | Distribuição | Base | Público-alvo | Filosofia |
 | --- | --- | --- | --- |
@@ -151,18 +158,20 @@ Este guia é o que eu gostaria de ter recebido quando comecei: menos lista de co
 
 ### Por que isso importa no mundo real?
 
-Ao escolher a base de uma imagem de container, a decisão afeta:
+Ao escolher a base de uma imagem de container, a decisão afeta quatro dimensões:
 
-- **Tamanho**: a imagem `alpine` tem poucos MB compactada; a `ubuntu` tem algumas dezenas de MB.
-- **Superfície de ataque**: menos pacotes, menos CVEs para corrigir<Cite id="docker-best-practices" />.
-- **Compatibilidade**: o Alpine usa a biblioteca C **musl** em vez da **glibc**; binários pré-compilados (e algumas *wheels* Python) podem não funcionar.
-- **Atualização**: `apt`, `dnf` ou `apk` — cada ecossistema tem seu ciclo de correções.
+<CardGrid>
+<Card title="Tamanho" icon="box">A imagem `alpine` tem poucos MB compactada; a `ubuntu`, algumas dezenas de MB.</Card>
+<Card title="Superfície de ataque" icon="shield" tone="danger">Menos pacotes, menos CVEs para corrigir<Cite id="docker-best-practices" />.</Card>
+<Card title="Compatibilidade" icon="layers" tone="signal">O Alpine usa a biblioteca C **musl** em vez da **glibc**: binários pré-compilados (e algumas *wheels* Python) podem não funcionar.</Card>
+<Card title="Atualização" icon="activity" tone="success">`apt`, `dnf` ou `apk`: cada ecossistema tem o seu ciclo de correções.</Card>
+</CardGrid>
 
 Debian e derivados (como o Ubuntu) estão entre as distribuições mais usadas em servidores web segundo levantamentos públicos<Cite id="w3techs-linux" />. Entender o ecossistema `apt`/`dpkg` não é opcional.
 
 ### Perguntas que você precisa saber responder
 
-1. **Qual base usar para imagens mínimas?** Alpine ou imagens *distroless*/*slim* — o critério é compatibilidade + superfície de ataque, não só tamanho.
+1. **Qual base usar para imagens mínimas?** Alpine ou imagens <Term def="Imagens que contêm apenas a aplicação e suas dependências de execução, sem shell nem gerenciador de pacotes.">distroless</Term>/*slim* — o critério é compatibilidade + superfície de ataque, não só tamanho.
 2. **Como atualizar pacotes?**
 
 <Tabs labels={["Debian/Ubuntu", "Alpine", "Fedora/RHEL"]}>
@@ -243,7 +252,7 @@ Um dos erros clássicos — que eu cometi e vejo **constantemente** — é trata
 
 Cada trio é formado por **r** (leitura = 4), **w** (escrita = 2) e **x** (execução = 1). Somando os valores de cada trio obtemos a forma octal: `rwx` = 7, `r-x` = 5, `r--` = 4. Assim, `chmod 750 arquivo` significa dono `rwx`, grupo `r-x` e outros sem acesso<Cite id="man-chmod" />.
 
-Experimente abaixo: marque as caixas, digite um modo octal ou use os atalhos. Observe os alertas de segurança.
+Experimente na figura a seguir: marque as caixas, digite um modo octal ou use os atalhos. Observe os alertas de segurança.
 
 <PermissionLab fileName="deploy.sh" />
 
@@ -290,13 +299,13 @@ find / -xdev -type f -perm -o+w 2>/dev/null
 
 ### umask: a configuração que ninguém explica direito
 
-A `umask` define quais bits **não** serão concedidos a arquivos e diretórios recém-criados. Arquivos partem de `666` e diretórios de `777`; o resultado é calculado com uma operação bit a bit — **E lógico com o complemento da máscara** — e não por subtração<Cite id="man-umask" />:
+A `umask` define quais bits **não** serão concedidos a arquivos e diretórios recém-criados. Arquivos partem de `666` e diretórios de `777`; o resultado é calculado com uma operação bit a bit — **E lógico com o complemento da máscara** — e não por subtração<Cite id="man-umask" />:<Sidenote>Em C, a mesma operação se escreve `modo = base & ~umask`.</Sidenote>
 
 $$
 \text{permissão} = \text{base} \;\land\; \lnot\,\text{umask}
 $$
 
-Com `umask 022`, ambos os métodos coincidem (`666 → 644`, `777 → 755`), o que esconde o detalhe. Com `umask 033`, a subtração daria `633`, mas o resultado real é `644`: o bit de execução que a máscara removeria nem existia na base. Teste valores diferentes no laboratório acima.
+Com `umask 022`, ambos os métodos coincidem (`666 → 644`, `777 → 755`), o que esconde o detalhe. Com `umask 033`, a subtração daria `633`, mas o resultado real é `644`: o bit de execução que a máscara removeria nem existia na base. Teste valores diferentes na figura interativa acima.
 
 ```bash
 umask 077   # arquivos 600, diretórios 700: tudo privado por padrão
@@ -381,7 +390,9 @@ sudo nft list ruleset               # regras de firewall (nftables)
 
 ## Processos e sinais
 
-**Sinais** são notificações assíncronas que o kernel ou outros processos enviam a um processo<Cite id="man-signal" />.
+<Definition term="Sinal">
+Notificação assíncrona que o kernel ou outro processo envia a um processo. Cada sinal tem uma ação padrão (terminar, ignorar, parar), que o processo pode substituir por um tratador — exceto SIGKILL e SIGSTOP<Cite id="man-signal" />.
+</Definition>
 
 - **SIGTERM (15)** — pedido educado de encerramento. O processo pode salvar estado e fechar conexões. **Use sempre primeiro.**
 - **SIGKILL (9)** — encerramento imediato pelo kernel; não pode ser capturado nem ignorado. Dados em memória são perdidos.
@@ -402,6 +413,10 @@ O `docker stop` envia SIGTERM ao processo principal (PID 1), aguarda o período 
 <Callout type="warning" title="A armadilha do PID 1">
 Dentro de um container, o processo PID 1 **não recebe os tratadores padrão de sinais** do kernel: se a aplicação não tratar SIGTERM explicitamente, ela simplesmente ignora o sinal e só morre no SIGKILL. Use a forma *exec* do `CMD` (lista JSON, sem shell intermediário) e, se necessário, um init mínimo como `docker run --init`.
 </Callout>
+
+A figura a seguir reproduz as combinações mais comuns. Comece pela forma *shell* com tratador de sinal: mesmo com o código correto, o `sh -c` não repassa o SIGTERM, e o contêiner leva os 10 segundos inteiros para morrer.
+
+<SignalSimulator />
 
 Aplicação que trata o sinal corretamente:
 
@@ -442,22 +457,9 @@ No Unix, dispositivos, processos e até informações do kernel são expostos co
 
 ### Não existe C: ou D:
 
-Existe **uma única árvore**, a partir de `/`, organizada pelo *Filesystem Hierarchy Standard*<Cite id="fhs" />:
+Existe **uma única árvore**, a partir de `/`, organizada pelo *Filesystem Hierarchy Standard*<Cite id="fhs" />.<Sidenote>Nas distribuições atuais, /bin, /sbin e /lib são links para os equivalentes em /usr — a chamada *usr-merge*.</Sidenote> Navegue por ela e observe o propósito de cada diretório e os cuidados de segurança associados:
 
-```text
-/
-├── bin, sbin → hoje links para /usr/bin e /usr/sbin na maioria das distros
-├── boot       kernel e bootloader
-├── dev        dispositivos
-├── etc        configuração do sistema
-├── home       diretórios dos usuários
-├── opt        software opcional de terceiros
-├── proc, sys  pseudo-sistemas de arquivos do kernel (não ocupam disco)
-├── run        dados de execução (PIDs, sockets)
-├── tmp        temporários (sticky bit: cada um apaga só o que é seu)
-├── usr        programas e bibliotecas
-└── var        dados variáveis: logs, cache, filas
-```
+<FilesystemExplorer />
 
 ### /proc: janela para o kernel
 
@@ -480,14 +482,14 @@ clear                                        # limpar o terminal
 ```
 
 <Callout type="info" title="/dev/random × /dev/urandom">
-A ideia de que `/dev/urandom` seria "menos aleatório" é um mito antigo. Nos kernels modernos (5.6+), ambos são servidos pelo mesmo CSPRNG; `/dev/random` só bloqueia antes de o gerador ser inicializado no boot<Cite id="man-random" />. Para gerar chaves e tokens, `/dev/urandom` (ou `getrandom(2)`) é a escolha correta.
+A ideia de que `/dev/urandom` seria "menos aleatório" é um mito antigo. Nos kernels modernos (5.6+), ambos são servidos pelo mesmo <Term def="Cryptographically Secure Pseudo-Random Number Generator: gerador cuja saída é imprevisível mesmo para quem conhece as saídas anteriores.">CSPRNG</Term>; `/dev/random` só bloqueia antes de o gerador ser inicializado no boot<Cite id="man-random" />. Para gerar chaves e tokens, `/dev/urandom` (ou `getrandom(2)`) é a escolha correta.
 </Callout>
 
 ## Pipes e redirecionamento: o superpoder Unix
 
 A filosofia Unix, resumida por Doug McIlroy<Cite id="salus-unix" />:
 
-> Escreva programas que façam uma coisa e a façam bem. Escreva programas que trabalhem juntos. Escreva programas que lidem com fluxos de texto, pois essa é uma interface universal.
+<PullQuote cite="Doug McIlroy">Escreva programas que façam uma coisa e a façam bem. Escreva programas que trabalhem juntos. Escreva programas que lidem com fluxos de texto, pois essa é uma interface universal.</PullQuote>
 
 ```bash
 echo "teste" > arquivo.txt        # sobrescreve

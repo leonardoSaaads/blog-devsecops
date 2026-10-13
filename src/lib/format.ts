@@ -26,12 +26,6 @@ export function formatReadingTime(minutes: number): string {
   return `${minutes} min de leitura`;
 }
 
-export function formatCurrency(amountInCents: number, currency = "BRL"): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(
-    amountInCents / 100,
-  );
-}
-
 export function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
 }

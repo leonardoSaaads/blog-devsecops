@@ -19,7 +19,9 @@ const posts: PostCardData[] = [
     date: "2025-10-31",
     tags: ["kubernetes", "devops"],
     readingMinutes: 10,
-    labs: ["Simulador"],
+    category: "infraestrutura",
+    art: "lattice",
+    figures: 1,
   },
   {
     slug: "linux",
@@ -28,7 +30,9 @@ const posts: PostCardData[] = [
     date: "2025-10-03",
     tags: ["linux"],
     readingMinutes: 12,
-    labs: [],
+    category: "seguranca",
+    art: "bits",
+    figures: 0,
   },
 ];
 
@@ -71,10 +75,10 @@ describe("navegação", () => {
             keywords: ["kubernetes"],
           },
           {
-            kind: "product",
-            title: "Case Raspberry Pi",
-            description: "Homelab",
-            href: "/shop/case",
+            kind: "tag",
+            title: "#prometheus",
+            description: "1 artigo",
+            href: "/tags/prometheus",
             keywords: [],
           },
         ]}
@@ -83,19 +87,27 @@ describe("navegação", () => {
     await user.keyboard("{Control>}k{/Control}");
     const input = screen.getByTestId("search-input");
     expect(input).toHaveFocus();
-    await user.type(input, "raspberry");
+    await user.type(input, "prometheus");
     expect(screen.getAllByRole("option")).toHaveLength(1);
     await user.keyboard("{Enter}");
-    expect(routerMock.push).toHaveBeenCalledWith("/shop/case");
+    expect(routerMock.push).toHaveBeenCalledWith("/tags/prometheus");
   });
 });
 
 describe("listagem de artigos", () => {
-  it("filtra por texto (sem acentos) e por tag", () => {
+  it("filtra por texto (sem acentos), tag e área", () => {
     expect(filterPosts(posts, "permissoes", null).map((p) => p.slug)).toEqual(["linux"]);
     expect(filterPosts(posts, "", "kubernetes").map((p) => p.slug)).toEqual(["k8s"]);
-    expect(filterPosts(posts, "simulador", null).map((p) => p.slug)).toEqual(["k8s"]);
+    expect(filterPosts(posts, "seguranca", null).map((p) => p.slug)).toEqual(["linux"]);
+    expect(filterPosts(posts, "", null, "infraestrutura").map((p) => p.slug)).toEqual(["k8s"]);
     expect(filterPosts(posts, "linux", "kubernetes")).toHaveLength(0);
+  });
+
+  it("filtro de área atualiza a URL", async () => {
+    const user = userEvent.setup();
+    render(<PostExplorer posts={posts} tags={["kubernetes", "linux"]} />);
+    await user.click(screen.getByRole("button", { name: "Segurança" }));
+    expect(routerMock.replace).toHaveBeenLastCalledWith("/?area=seguranca", { scroll: false });
   });
 
   it("atualiza contagem e URL ao digitar", async () => {

@@ -45,7 +45,9 @@ export default function AboutPage() {
               priority
             />
           </div>
-          <h1 className="mt-6 text-2xl font-bold tracking-tight">{site.author.name}</h1>
+          <h1 className="mt-6 font-serif text-3xl font-semibold tracking-tight">
+            {site.author.name}
+          </h1>
           <p className="mt-1 text-muted-foreground">{site.author.role}</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Universidade Federal do Rio Grande do Norte (UFRN)
@@ -68,7 +70,7 @@ export default function AboutPage() {
           </ul>
         </aside>
 
-        <div className="prose prose-lg max-w-none dark:prose-invert">
+        <div className="prose prose-lg max-w-none font-serif dark:prose-invert prose-headings:font-serif prose-headings:font-semibold">
           <h2>Quem escreve</h2>
           <p>
             Leonardo Saads Pinto é engenheiro de telecomunicações e desenvolvedor de pesquisa, com
@@ -86,10 +88,11 @@ export default function AboutPage() {
           </p>
           <h2>Sobre este blog</h2>
           <p>
-            Cada artigo é revisado, traz referências bibliográficas no padrão ABNT e, sempre que
-            possível, um laboratório interativo — para que você possa executar, quebrar e consertar
-            sem sair do navegador. A <Link href="/shop">loja 3D</Link> reúne modelos que desenho
-            para o meu próprio homelab.
+            Os textos seguem as convenções de uma publicação técnica — resumo, figuras e equações
+            numeradas, notas de margem e referências no padrão ABNT — com uma diferença: as figuras
+            são interativas. Você pode simular, executar e quebrar o que está lendo sem sair do
+            artigo. Comece pelos <Link href="/blog">artigos</Link> ou pelos{" "}
+            <Link href="/tags">tópicos</Link>.
           </p>
           <h2>Competências</h2>
           <ul className="not-prose flex flex-wrap gap-2">

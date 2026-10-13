@@ -15,7 +15,7 @@ export function ReferenceList({ references }: { references: Reference[] }) {
     >
       <h2
         id="referencias"
-        className="flex items-center gap-2 text-2xl font-semibold tracking-tight"
+        className="flex items-center gap-2 font-serif text-3xl font-semibold tracking-tight"
       >
         <BookOpen className="size-5 text-accent" aria-hidden="true" />
         Referências
@@ -26,10 +26,10 @@ export function ReferenceList({ references }: { references: Reference[] }) {
           <li
             key={ref.id}
             id={referenceAnchor(ref.id)}
-            className="grid scroll-mt-24 grid-cols-[2.25rem_1fr] rounded-lg p-2 transition target:bg-accent-soft"
+            className="grid scroll-mt-24 grid-cols-[2.25rem_minmax(0,1fr)] rounded-lg p-2 transition target:bg-accent-soft"
           >
             <span className="font-mono text-muted-foreground">[{index + 1}]</span>
-            <span className="break-words">
+            <span className="min-w-0 [overflow-wrap:anywhere]">
               {formatReference(ref).map((part, partIndex) =>
                 part.href ? (
                   <a

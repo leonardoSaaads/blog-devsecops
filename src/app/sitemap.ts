@@ -1,13 +1,12 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
-import { getAllProducts } from "@/lib/shop/products";
 import { absoluteUrl } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const posts = getAllPosts();
   const lastModified = posts[0]?.updated ?? posts[0]?.date;
 
-  const pages: MetadataRoute.Sitemap = ["/", "/blog", "/shop", "/projects", "/tags", "/about"].map(
+  const pages: MetadataRoute.Sitemap = ["/", "/blog", "/projects", "/tags", "/about"].map(
     (path) => ({
       url: absoluteUrl(path),
       lastModified,
@@ -23,11 +22,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: post.updated ?? post.date,
       changeFrequency: "monthly" as const,
       priority: 0.9,
-    })),
-    ...getAllProducts().map((product) => ({
-      url: absoluteUrl(`/shop/${product.slug}`),
-      changeFrequency: "monthly" as const,
-      priority: 0.6,
     })),
     ...getAllTags().map(({ tag }) => ({
       url: absoluteUrl(`/tags/${tag}`),

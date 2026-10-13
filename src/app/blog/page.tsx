@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { PostCard } from "@/components/blog/post-card";
+import { PostCard, type PostCardData } from "@/components/blog/post-card";
 import { PostExplorer } from "@/components/blog/post-explorer";
 import { PageHeader } from "@/components/page-header";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
 
 export const metadata: Metadata = {
-  title: "Blog",
+  title: "Artigos",
   description:
-    "Artigos sobre DevSecOps, observabilidade, Linux, Kubernetes e telecomunicações ópticas — com laboratórios interativos.",
+    "Ensaios técnicos sobre telecomunicações, infraestrutura, segurança e software — com figuras interativas e referências.",
   alternates: { canonical: "/blog" },
 };
 
 export default function BlogPage() {
-  const posts = getAllPosts().map(
-    ({ slug, title, description, date, updated, tags, readingMinutes, labs }) => ({
+  const posts: PostCardData[] = getAllPosts().map(
+    ({
       slug,
       title,
       description,
@@ -22,22 +22,35 @@ export default function BlogPage() {
       updated,
       tags,
       readingMinutes,
-      labs,
+      category,
+      art,
+      figures,
+    }) => ({
+      slug,
+      title,
+      description,
+      date,
+      updated,
+      tags,
+      readingMinutes,
+      category,
+      art,
+      figures,
     }),
   );
   const tags = getAllTags().map(({ tag }) => tag);
 
   return (
-    <div className="container-page py-12">
+    <div className="container-page py-14">
       <PageHeader
-        eyebrow="Blog"
+        eyebrow="Arquivo"
         title="Artigos"
-        description={`${posts.length} artigos com referências bibliográficas e laboratórios que rodam no navegador.`}
+        description={`${posts.length} ensaios revisados, com figuras interativas no texto e referências bibliográficas.`}
       />
       {/* Fallback estático (sem JS ou antes da hidratação): lista completa. */}
       <Suspense
         fallback={
-          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {posts.map((post) => (
               <li key={post.slug}>
                 <PostCard post={post} />

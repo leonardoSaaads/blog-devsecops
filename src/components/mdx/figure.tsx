@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { imageSize } from "image-size";
 import Image from "next/image";
+import { cn } from "@/lib/format";
 
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 
@@ -30,9 +31,9 @@ export function Figure({ src, alt, caption, source, sourceUrl, priority, maxWidt
   const size = localImageSize(src);
 
   return (
-    <figure className="not-prose my-8">
+    <figure className={cn("not-prose my-10", (caption || source) && "figure-numbered")}>
       <div
-        className="mx-auto overflow-hidden rounded-xl border border-border bg-card"
+        className="mx-auto overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
         style={maxWidth ? { maxWidth } : undefined}
       >
         {size ? (
@@ -59,7 +60,8 @@ export function Figure({ src, alt, caption, source, sourceUrl, priority, maxWidt
         )}
       </div>
       {(caption || source) && (
-        <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+        <figcaption className="mx-auto mt-3 max-w-2xl text-center font-serif text-[0.95rem] leading-relaxed text-muted-foreground">
+          <span className="figure-label" />
           {caption}
           {source && (
             <>

@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { MOTIFS } from "@/lib/art/types";
+import { CATEGORY_IDS } from "./categories";
 
 const slugLike = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -43,11 +45,15 @@ export const postFrontmatterSchema = z
     date: z.iso.date(),
     updated: z.iso.date().optional(),
     tags: z.array(z.string().regex(slugLike, "tags devem ser kebab-case minúsculo")).min(1),
-    cover: z.object({ src: z.string().startsWith("/"), alt: z.string().min(3) }).optional(),
+    category: z.enum(CATEGORY_IDS),
+    /** Motivo da arte generativa da capa (ligado ao tema do artigo). */
+    art: z.enum(MOTIFS),
+    /** Resumo acadêmico (exibido no topo do artigo). */
+    abstract: z.string().min(120).max(900),
+    /** Pontos-chave exibidos em cards no início do artigo. */
+    keyPoints: z.array(z.string().min(10).max(220)).min(3).max(4),
     featured: z.boolean().default(false),
     draft: z.boolean().default(false),
-    /** Laboratórios interativos presentes no artigo (exibidos na listagem). */
-    labs: z.array(z.string().min(3)).default([]),
     references: z.array(referenceSchema).min(1, "todo artigo precisa de referências"),
   })
   .strict()

@@ -2,6 +2,7 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import { parseFrontmatter } from "./frontmatter";
+import { countInteractiveFigures } from "./interactive";
 import { estimateReadingMinutes } from "./reading-time";
 import { postFrontmatterSchema, type PostFrontmatter } from "./schema";
 
@@ -11,6 +12,8 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
 export interface PostMeta extends Omit<PostFrontmatter, "draft"> {
   slug: string;
   readingMinutes: number;
+  /** Número de figuras interativas no artigo. */
+  figures: number;
 }
 
 export interface Post extends PostMeta {
@@ -35,7 +38,13 @@ export function parsePostFile(fileName: string, source: string): Post & { draft:
       .join("\n");
     throw new Error(`Frontmatter inválido em content/posts/${fileName}:\n${issues}`);
   }
-  return { ...result.data, slug, body, readingMinutes: estimateReadingMinutes(body) };
+  return {
+    ...result.data,
+    slug,
+    body,
+    readingMinutes: estimateReadingMinutes(body),
+    figures: countInteractiveFigures(body),
+  };
 }
 
 function loadPosts(): Post[] {

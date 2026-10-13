@@ -4,7 +4,14 @@ description: "Deploy automatizado do Zabbix 7.0 LTS com Docker Compose e monitor
 date: "2025-10-25"
 updated: "2026-10-13"
 tags: ["devops", "docker", "zabbix", "monitoramento", "snmp"]
-labs: ["Fluxo animado: polling SNMP do Zabbix"]
+category: telecomunicacoes
+art: radar
+abstract: "Procedimento reproduzível para implantar o Zabbix 7.0 LTS com Docker Compose e monitorar um DVR Intelbras por SNMP. Descreve o script de instalação, o primeiro acesso com troca de senha e MFA, o modelo de polling SNMP e a estrutura hierárquica de OIDs das MIBs padronizadas, explorada em uma figura interativa que reproduz consultas GET e walks. Discute ainda SNMPv3 com authPriv, macros secretas e a configuração correta do firewall, em que a porta 161/UDP deve ser aberta apenas no dispositivo monitorado."
+keyPoints:
+  - "No polling SNMP, o servidor inicia a consulta: a porta 161/UDP só precisa estar aberta no dispositivo monitorado."
+  - "Prefira SNMPv3 com authPriv; no v2c, a community trafega em texto claro e funciona como senha."
+  - "OIDs formam uma árvore global; um snmpwalk é apenas uma sequência de GetNext em ordem lexicográfica."
+  - "Contadores de 32 bits dão a volta em ~34 s a 1 Gb/s: em enlaces rápidos, use os de 64 bits (ifHC*)."
 references:
   - id: zabbix-manual
     type: web
@@ -91,6 +98,26 @@ references:
     year: 2025
     url: "https://github.com/leonardoSaaads/zabbix-docker"
     accessed: "2026-10-13"
+  - id: rfc3418
+    type: report
+    authors: ["Presuhn, Randy"]
+    title: "Management Information Base (MIB) for the Simple Network Management Protocol (SNMP)"
+    note: "RFC 3418"
+    place: "[S. l.]"
+    publisher: "IETF"
+    year: 2002
+    url: "https://www.rfc-editor.org/rfc/rfc3418"
+    accessed: "2026-10-13"
+  - id: rfc2863
+    type: report
+    authors: ["McCloghrie, Keith", "Kastenholz, Frank"]
+    title: "The Interfaces Group MIB"
+    note: "RFC 2863"
+    place: "[S. l.]"
+    publisher: "IETF"
+    year: 2000
+    url: "https://www.rfc-editor.org/rfc/rfc2863"
+    accessed: "2026-10-13"
 ---
 
 Neste artigo o deploy do Zabbix leva menos de dois minutos. Aproveitando a estrutura, vamos monitorar um DVR Intelbras via SNMP — tudo em cerca de 15 minutos.
@@ -99,7 +126,7 @@ Neste artigo o deploy do Zabbix leva menos de dois minutos. Aproveitando a estru
 Este guia usa a linha **7.0 LTS**, com suporte de longo prazo; a 7.4 é a versão *standard* mais recente e a próxima LTS (8.0) segue o calendário oficial de ciclo de vida<Cite id="zabbix-lifecycle" />. Em produção, prefira sempre uma versão LTS.
 </Callout>
 
-## Requisitos para este laboratório
+## Requisitos do ambiente
 
 - **RAM**: 4 GB (o PostgreSQL e o servidor Zabbix são os maiores consumidores)
 - **CPU**: 2 vCPUs
@@ -166,6 +193,18 @@ Altere a senha imediatamente em **Usuários → Usuários** e habilite a autenti
   ]}
 />
 
+### A árvore de OIDs
+
+<Definition term="OID (Object Identifier)">
+Sequência de inteiros que identifica, de forma única e global, um objeto gerenciável — como `1.3.6.1.2.1.1.5`, o nome administrativo do equipamento. As MIBs dão nome, tipo e semântica a cada ramo da árvore<Cite id="rfc3418" />.
+</Definition>
+
+Cada requisição do poller carrega um ou mais OIDs. Os objetos padronizados ficam sob `mib-2`, como o grupo `system` e a tabela de interfaces<Cite id="rfc2863" />; cada fabricante define os seus sob `enterprises`, e os templates costumam combinar os dois ramos.<Sidenote>Um snmpwalk é apenas uma sequência de GetNext: o agente devolve o próximo OID em ordem lexicográfica até que a resposta saia da sub-árvore pedida.</Sidenote>
+
+<MibExplorer />
+
+Repare nos contadores de interface: `ifInOctets` tem 32 bits e, a 1 Gb/s, dá a volta em cerca de 34 segundos — menos que um intervalo de coleta típico. Em enlaces rápidos, use as versões de 64 bits, como `ifHCInOctets`<Cite id="rfc2863" />.
+
 ### 1. Baixe o template
 
 No [catálogo de integrações do Zabbix](https://www.zabbix.com/br/integrations/intelbras), baixe o template compatível com a sua versão<Cite id="zabbix-intelbras" />.
@@ -178,7 +217,7 @@ Na interface web do DVR, em **Configuração → Rede → SNMP**:
 
 - **Prefira SNMPv3** com nível *authPriv* (autenticação SHA-256 e criptografia AES), se o firmware suportar<Cite id="rfc3414" />.
 - Se só houver SNMPv2c, **troque a community `public`** por um valor aleatório: no v2c, ela trafega em texto claro e funciona como senha<Cite id="rfc1901" />.
-- Restrinja o acesso SNMP ao IP do servidor Zabbix e mantenha o DVR em uma VLAN de gerência.
+- Restrinja o acesso SNMP ao IP do servidor Zabbix e mantenha o DVR em uma <Term def="Rede lógica separada, usada só para administrar equipamentos: as interfaces de gerência não ficam alcançáveis a partir da rede dos usuários.">VLAN de gerência</Term>.
 
 ### 3. Teste a conectividade
 
@@ -247,9 +286,11 @@ docker compose down -v && docker compose up -d
 
 A versão anterior deste artigo sugeria liberar a porta 161/UDP **no servidor Zabbix** — isso é desnecessário e amplia a superfície de ataque. Quem escuta na 161 é o **DVR**; o servidor apenas inicia a consulta (e recebe a resposta pela mesma "conexão" UDP rastreada pelo firewall).
 
-- No **DVR** (ou firewall da VLAN): permita 161/UDP **somente** a partir do IP do servidor Zabbix.
-- No **servidor Zabbix**: garanta apenas que o tráfego de **saída** para o DVR na 161/UDP não esteja bloqueado.
-- Traps SNMP (porta 162/UDP, do dispositivo para o servidor) só precisam de liberação de entrada se você configurar o recebimento de traps.
+<CardGrid cols={3}>
+<Card title="No DVR" icon="radio" tone="success">Permita 161/UDP **somente** a partir do IP do servidor Zabbix (ou no firewall da VLAN).</Card>
+<Card title="No servidor Zabbix" icon="server">Garanta apenas que a **saída** para o DVR na 161/UDP não esteja bloqueada.</Card>
+<Card title="Traps (162/UDP)" icon="tower" tone="signal">Caminho inverso, do dispositivo para o servidor: libere a entrada só se usar traps.</Card>
+</CardGrid>
 
 ### Zabbix não coleta dados
 

@@ -1,22 +1,22 @@
 import "server-only";
+import { CATEGORIES, CATEGORY_IDS } from "@/lib/content/categories";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
 import type { SearchEntry } from "@/lib/search";
-import { getAllProducts } from "@/lib/shop/products";
 
 const PAGES: SearchEntry[] = [
   {
     kind: "page",
-    title: "Blog",
+    title: "Artigos",
     description: "Todos os artigos",
     href: "/blog",
     keywords: ["artigos", "posts"],
   },
   {
     kind: "page",
-    title: "Loja 3D",
-    description: "Modelos 3D para impressão",
-    href: "/shop",
-    keywords: ["3d", "stl", "comprar", "impressao"],
+    title: "Tópicos",
+    description: "Áreas de estudo e palavras-chave",
+    href: "/tags",
+    keywords: ["tags", "temas", "areas"],
   },
   {
     kind: "page",
@@ -27,7 +27,7 @@ const PAGES: SearchEntry[] = [
   },
   {
     kind: "page",
-    title: "Sobre",
+    title: "Sobre o autor",
     description: "Quem escreve este blog",
     href: "/about",
     keywords: ["contato", "autor", "linkedin"],
@@ -41,14 +41,7 @@ export function buildSearchIndex(): SearchEntry[] {
     title: post.title,
     description: post.description,
     href: `/blog/${post.slug}`,
-    keywords: [...post.tags, ...post.labs],
-  }));
-  const products: SearchEntry[] = getAllProducts().map((product) => ({
-    kind: "product",
-    title: product.name,
-    description: product.summary,
-    href: `/shop/${product.slug}`,
-    keywords: [product.category, ...product.tags],
+    keywords: [...post.tags, CATEGORIES[post.category].label],
   }));
   const tags: SearchEntry[] = getAllTags().map(({ tag, count }) => ({
     kind: "tag",
@@ -57,5 +50,12 @@ export function buildSearchIndex(): SearchEntry[] {
     href: `/tags/${tag}`,
     keywords: [tag],
   }));
-  return [...posts, ...products, ...PAGES, ...tags];
+  const areas: SearchEntry[] = CATEGORY_IDS.map((id) => ({
+    kind: "page",
+    title: `Área: ${CATEGORIES[id].label}`,
+    description: CATEGORIES[id].description,
+    href: `/blog?area=${id}`,
+    keywords: [id],
+  }));
+  return [...posts, ...PAGES, ...areas, ...tags];
 }
