@@ -4,53 +4,14 @@ import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
 import { GithubIcon } from "@/components/icons/brand-icons";
 import { PageHeader } from "@/components/page-header";
-import type { Motif } from "@/lib/art/types";
-import { site } from "@/lib/site";
+import { projectArtwork } from "@/lib/art/catalog";
+import { PROJECTS } from "@/lib/projects";
 
 export const metadata: Metadata = {
   title: "Projetos",
   description: "Projetos open source de infraestrutura, observabilidade e automação.",
   alternates: { canonical: "/projects" },
 };
-
-interface Project {
-  name: string;
-  description: string;
-  stack: string[];
-  repository?: string;
-  /** Slug do artigo relacionado no blog. */
-  article?: string;
-  art: Motif;
-}
-
-const PROJECTS: Project[] = [
-  {
-    name: "blog-devsecops",
-    description:
-      "Este blog: Next.js 16 com renderização estática, MDX validado por esquema, figuras interativas (simuladores, modelo 3D e execução de código em Web Workers), arte generativa, CSP restritiva e testes E2E.",
-    stack: ["Next.js", "TypeScript", "MDX", "three.js", "Playwright"],
-    repository: site.repository,
-    article: "bastidores-do-blog",
-    art: "circuit",
-  },
-  {
-    name: "zabbix-docker",
-    description:
-      "Deploy do Zabbix com Docker Compose em um único comando, com volumes persistentes e configuração por variáveis de ambiente.",
-    stack: ["Zabbix", "Docker Compose", "Bash", "SNMP"],
-    repository: "https://github.com/leonardoSaaads/zabbix-docker",
-    article: "deploy-zabbix-em-minutos",
-    art: "radar",
-  },
-  {
-    name: "homeserver-stack",
-    description:
-      "Stack de observabilidade para homelab: Node Exporter, Prometheus e Grafana provisionados como código e publicados com Cloudflare Tunnel.",
-    stack: ["Prometheus", "Grafana", "Node Exporter", "Cloudflare Tunnel"],
-    article: "monitoramento-homeserver",
-    art: "ridgeline",
-  },
-];
 
 export default function ProjectsPage() {
   return (
@@ -67,7 +28,7 @@ export default function ProjectsPage() {
             className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:border-accent hover:shadow-xl"
           >
             <div className="aspect-[16/7] bg-plate">
-              <CoverArt motif={project.art} seed={`projeto-${project.name}`} decorative />
+              <CoverArt {...projectArtwork(project.name, project.art)} />
             </div>
             <div className="flex flex-1 flex-col p-6">
               <h2 className="font-mono text-lg font-semibold">{project.name}</h2>

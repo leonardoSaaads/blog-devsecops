@@ -3,24 +3,26 @@ import type { MDXComponents } from "mdx/types";
 import type { Route } from "next";
 import Link from "next/link";
 import type { ComponentProps } from "react";
-import { ArtExplorer } from "@/components/figures/art-explorer";
-import { CodePlayground } from "@/components/figures/code-playground";
-import { ComplexityChart } from "@/components/figures/complexity-chart";
-import { ConstellationViewer } from "@/components/figures/constellation-viewer";
-import { DwdmGridCalculator } from "@/components/figures/dwdm-grid-calculator";
-import { Fiber3D } from "@/components/figures/fiber-3d";
-import { FiberBandsChart } from "@/components/figures/fiber-bands-chart";
-import { FilesystemExplorer } from "@/components/figures/filesystem-explorer";
-import { FlowDiagram } from "@/components/figures/flow-diagram";
-import { K8sSimulator } from "@/components/figures/k8s-simulator";
-import { MibExplorer } from "@/components/figures/mib-explorer";
-import { OsnrCalculator } from "@/components/figures/osnr-calculator";
-import { OtnHierarchy } from "@/components/figures/otn-hierarchy";
-import { PermissionLab } from "@/components/figures/permission-lab";
-import { PortExposure } from "@/components/figures/port-exposure";
-import { QBerCalculator } from "@/components/figures/q-ber-calculator";
-import { RateExplainer } from "@/components/figures/rate-explainer";
-import { SignalSimulator } from "@/components/figures/signal-simulator";
+import {
+  ArtExplorer,
+  CodePlayground,
+  ComplexityChart,
+  ConstellationViewer,
+  DwdmGridCalculator,
+  Fiber3D,
+  FiberBandsChart,
+  FilesystemExplorer,
+  FlowDiagram,
+  K8sSimulator,
+  MibExplorer,
+  OsnrCalculator,
+  OtnHierarchy,
+  PermissionLab,
+  PortExposure,
+  QBerCalculator,
+  RateExplainer,
+  SignalSimulator,
+} from "@/components/figures/lazy";
 import type { Reference } from "@/lib/content/schema";
 import { Callout } from "./callout";
 import { Card, CardGrid } from "./cards";

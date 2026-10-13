@@ -128,8 +128,9 @@ export function K8sSimulator() {
           )}
         </div>
 
+        {/* Altura reservada para as 3 réplicas iniciais: o surgimento dos pods não empurra o texto (CLS). */}
         <ul
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid min-h-[20.75rem] content-start gap-3 sm:min-h-[13.5rem] sm:grid-cols-2 lg:grid-cols-3"
           aria-label="Pods"
           data-testid="pods"
         >
@@ -192,7 +193,8 @@ export function K8sSimulator() {
 NAME               READY   UP-TO-DATE
 nginx-deployment   ${summary.ready}/${summary.desired}     ${summary.upToDate}`}
           </pre>
-          <div className="min-w-0 rounded-xl bg-code p-3 font-mono text-xs leading-6">
+          {/* Espaço fixo para os 8 eventos mais recentes (a lista cresce durante a simulação). */}
+          <div className="min-h-[15rem] min-w-0 rounded-xl bg-code p-3 font-mono text-xs leading-6">
             <p className="text-muted-foreground">$ kubectl get events --sort-by=.lastTimestamp</p>
             <ol aria-label="Eventos do cluster" data-testid="k8s-events">
               {state.events.map((event, index) => (

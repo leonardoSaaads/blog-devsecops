@@ -28,7 +28,8 @@ describe("arte generativa", () => {
         if (shape.kind === "path") expect(shape.d).not.toMatch(/NaN|Infinity/);
       }
       expect(a.caption.length).toBeGreaterThan(20);
-      expect(artworkToSvg(a).length).toBeLessThan(600_000);
+      // Arquivo servido em /art: tamanho limitado (é baixado em cards e capas).
+      expect(artworkToSvg(a).length).toBeLessThan(70_000);
     },
   );
 

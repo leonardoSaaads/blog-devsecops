@@ -44,7 +44,6 @@ export function PostCard({
         <CoverArt
           motif={post.art}
           seed={post.slug}
-          decorative
           className="transition duration-700 group-hover:scale-[1.04]"
         />
         <span className="smallcaps absolute left-4 top-3 rounded-full bg-black/45 px-2.5 py-0.5 text-[0.7rem] text-white backdrop-blur">

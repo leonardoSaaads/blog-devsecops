@@ -1,10 +1,10 @@
-import "katex/dist/katex.min.css";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CoverArt, artCaption } from "@/components/art/cover-art";
+import { CoverArt } from "@/components/art/cover-art";
+import { artCaption } from "@/lib/art/motifs";
 import { CiteThis } from "@/components/blog/cite-this";
 import { Comments } from "@/components/blog/comments";
 import { PostCard } from "@/components/blog/post-card";
@@ -69,7 +69,7 @@ function AdjacentLink({ post, direction }: { post: PostMeta; direction: "prev" |
       )}
     >
       <span className="relative block h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-plate">
-        <CoverArt motif={post.art} seed={post.slug} decorative />
+        <CoverArt motif={post.art} seed={post.slug} />
       </span>
       <span className="min-w-0">
         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -116,7 +116,7 @@ export default async function PostPage({ params }: PageProps<"/blog/[slug]">) {
           data-testid="post-hero"
         >
           <div className="absolute inset-0 -z-10" aria-hidden="true">
-            <CoverArt motif={post.art} seed={post.slug} decorative className="art-reveal" />
+            <CoverArt motif={post.art} seed={post.slug} priority className="art-reveal" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#050812]/95 via-[#050812]/80 to-[#050812]/30" />
             <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#050812]/90 to-transparent" />
           </div>

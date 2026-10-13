@@ -1,6 +1,7 @@
 import { Mail, Rss } from "lucide-react";
 import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
+import { SITE_ARTWORKS } from "@/lib/art/catalog";
 import { GithubIcon, LinkedinIcon } from "@/components/icons/brand-icons";
 import { mainNav, site } from "@/lib/site";
 
@@ -16,7 +17,7 @@ export function SiteFooter() {
   return (
     <footer className="relative mt-28 overflow-hidden border-t border-border text-slate-200">
       <div className="absolute inset-0 -z-10" aria-hidden="true">
-        <CoverArt motif="ridgeline" seed="rodape" decorative className="opacity-60" />
+        <CoverArt {...SITE_ARTWORKS.footer} className="opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#070b16]/90 via-[#070b16]/80 to-[#070b16]" />
       </div>
       <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_1fr]">
