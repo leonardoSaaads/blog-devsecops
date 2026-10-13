@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
+import { areaArtwork } from "@/lib/art/catalog";
 import { PageHeader } from "@/components/page-header";
 import { CATEGORIES, CATEGORY_IDS } from "@/lib/content/categories";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
@@ -44,9 +45,7 @@ export default function TopicsPage() {
                   aria-label={`Ver artigos de ${category.label}`}
                 >
                   <CoverArt
-                    motif={category.motif}
-                    seed={`area-${id}`}
-                    decorative
+                    {...areaArtwork(id)}
                     className="transition duration-700 group-hover:scale-105"
                   />
                   <span

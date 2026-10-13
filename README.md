@@ -18,6 +18,7 @@ Blog técnico com projeto editorial de **publicação acadêmica** — resumo, f
 - [Projeto editorial](#projeto-editorial)
 - [Figuras interativas](#figuras-interativas)
 - [Arte generativa](#arte-generativa)
+- [Desempenho](#desempenho)
 - [Segurança](#segurança)
 - [Testes e CI](#testes-e-ci)
 - [Deploy](#deploy)
@@ -91,7 +92,7 @@ Variável opcional:
 blog-devsecops/
 ├── .github/
 │   ├── workflows/ci.yml            # lint, typecheck, testes, auditoria, build e E2E
-│   └── dependabot.yml              # atualizações semanais (npm e Actions)
+│   └── dependabot.yml              # um único PR semestral (npm + Actions)
 ├── content/
 │   └── posts/*.mdx                 # artigos (frontmatter YAML + MDX)
 ├── e2e/                            # Playwright: jornada do leitor, figuras, SEO/segurança, a11y, mobile
@@ -115,7 +116,7 @@ blog-devsecops/
 │   │   ├── not-found.tsx, error.tsx
 │   │   └── globals.css             # tokens de design (claro/escuro) e estilos de artigo
 │   ├── components/
-│   │   ├── art/                    # CoverArt: renderização SVG da arte generativa
+│   │   ├── art/                    # CoverArt (<img> do SVG estático) e ArtSvg (SVG interativo)
 │   │   ├── layout/                 # cabeçalho, navegação, busca (Ctrl+K), tema, rodapé
 │   │   ├── blog/                   # cards, filtros, sumário, referências, citação, comentários
 │   │   ├── mdx/                    # mapa MDX, Cite, callouts, figuras, cards, notas de margem, termos, definições
@@ -230,7 +231,26 @@ O modelo 3D usa three.js importado dinamicamente quando a figura entra na tela, 
 
 ## Arte generativa
 
-`src/lib/art/motifs.ts` define nove motivos ligados aos temas (espectro DWDM, malha de nós, matriz de bits, rede e túneis, séries temporais, radar, flame graph, circuito e diagrama de olho). A semente é o hash FNV-1a do slug e o PRNG é o mulberry32: a mesma entrada gera sempre o mesmo SVG. A arte é renderizada no servidor (`CoverArt`), reaproveitada nos cards e convertida em data URI para as imagens Open Graph. As capas são **estáticas** (só uma revelação inicial): animar elementos internos de um SVG de tela cheia força a re-rasterização a cada quadro e, medido sem GPU, ocupava dois núcleos de CPU com a página parada; o E2E garante que a capa não tenha animações infinitas.
+`src/lib/art/motifs.ts` define nove motivos ligados aos temas (espectro DWDM, malha de nós, matriz de bits, rede e túneis, séries temporais, radar, flame graph, circuito e diagrama de olho). A semente é o hash FNV-1a do slug e o PRNG é o mulberry32: a mesma entrada gera sempre o mesmo SVG.
+
+- **Arquivo estático, não HTML:** a rota `src/app/art/[motif]/[file]/route.ts` pré-gera no build um SVG por arte usada (`/art/<motivo>/<semente>.svg`, catálogo em `src/lib/art/catalog.ts`). Capas e cards usam `CoverArt`, um `<img>` com `loading="lazy"` (a capa do artigo usa `fetchpriority="high"`). Antes, os SVGs iam embutidos no HTML e no payload do React: a home tinha 1,9 MB e milhares de nós para hidratar.
+- **SVG enxuto:** polilinhas com coordenadas relativas, curvas de Bézier e formas de mesma pintura agrupadas em um só `<path>` (todos os arquivos < 70 KB, verificado em teste).
+- **Estáticas por desempenho:** animar elementos internos de um SVG de tela cheia força a re-rasterização a cada quadro e, medido sem GPU, ocupava dois núcleos de CPU com a página parada; o E2E garante que a capa não tenha animações infinitas. Só o explorador do artigo de bastidores (`ArtSvg`) desenha a arte em linha, com animação opcional.
+- As imagens Open Graph usam o mesmo SVG como data URI.
+
+## Desempenho
+
+Medido simulando um visitante novo (cache vazio, CPU 4× mais lenta, rede 4G) que navega pela home, um artigo com figura 3D, a busca, o simulador e as listagens:
+
+| Métrica                                 | Antes                                                  | Depois       |
+| --------------------------------------- | ------------------------------------------------------ | ------------ |
+| HTML da home (transferido)              | 348 KB                                                 | 19 KB        |
+| Prefetch de rotas (dados RSC) na sessão | 2,85 MB                                                | 0,67 MB      |
+| Nós de DOM na home                      | 2 767                                                  | 476          |
+| Fontes pré-carregadas em toda página    | 4 (≈ 393 KB)                                           | 3 (≈ 173 KB) |
+| Avisos/erros no console                 | API obsoleta (`THREE.Clock`), preload de CSS não usado | nenhum       |
+
+Outras medidas: código de cada figura interativa carregado só nos artigos que a usam (`next/dynamic`), Giscus baixado só ao chegar aos comentários, three.js só quando a fibra entra na tela, CSS do KaTeX global (evita preload desperdiçado no prefetch) e altura reservada no simulador de Kubernetes (CLS de 0,043 para 0,007).
 
 ## Segurança
 
@@ -238,7 +258,7 @@ O modelo 3D usa three.js importado dinamicamente quando a figura entra na tela, 
 - **HSTS** com preload, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `COOP`, sem `X-Powered-By`.
 - Workers com CSP própria; JSON-LD serializado com escape; slugs resolvidos somente a partir da lista carregada (sem path traversal).
 - Fontes auto-hospedadas; comentários e three.js carregados sob demanda; nenhuma imagem de capa externa.
-- Auditoria de dependências de produção no CI e Dependabot semanal.
+- Auditoria de dependências de produção no CI. Dependabot em um único PR semestral (npm + GitHub Actions); alertas de segurança continuam imediatos. Exceções documentadas em `.github/dependabot.yml`: TypeScript 7 (sem suporte do typescript-eslint) e majors de `@types/node` (acompanham o `.nvmrc`).
 
 ## Testes e CI
 

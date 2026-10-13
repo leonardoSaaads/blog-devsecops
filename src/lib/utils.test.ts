@@ -67,6 +67,26 @@ describe("busca", () => {
     },
   ];
 
+  it("em empate, artigos vêm antes de tags", () => {
+    const tied: SearchEntry[] = [
+      {
+        kind: "tag",
+        title: "#kubernetes",
+        description: "1 artigo",
+        href: "/tags/kubernetes",
+        keywords: ["kubernetes"],
+      },
+      {
+        kind: "post",
+        title: "Aprendendo Kubernetes",
+        description: "Pods",
+        href: "/blog/k8s",
+        keywords: ["kubernetes"],
+      },
+    ];
+    expect(searchEntries(tied, "kubernetes")[0]?.href).toBe("/blog/k8s");
+  });
+
   it("normaliza acentos e caixa", () => {
     expect(normalize("Óptica ÇÃO")).toBe("optica cao");
   });

@@ -2,6 +2,7 @@ import { ArrowRight, BookMarked, MousePointerClick, NotebookPen, Sigma } from "l
 import Image from "next/image";
 import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
+import { SITE_ARTWORKS, areaArtwork } from "@/lib/art/catalog";
 import { PostCard } from "@/components/blog/post-card";
 import { CATEGORIES, CATEGORY_IDS } from "@/lib/content/categories";
 import { getAllPosts } from "@/lib/content/posts";
@@ -50,7 +51,7 @@ export default function HomePage() {
         aria-labelledby="hero-title"
       >
         <div className="absolute inset-0 -z-10" aria-hidden="true">
-          <CoverArt motif="eye" seed="inicio" decorative className="art-reveal opacity-80" />
+          <CoverArt {...SITE_ARTWORKS.home} priority className="art-reveal opacity-80" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#050812] via-[#050812]/85 to-[#050812]/20" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#050812]/80 to-transparent" />
         </div>
@@ -131,9 +132,7 @@ export default function HomePage() {
                 >
                   <div className="absolute inset-0" aria-hidden="true">
                     <CoverArt
-                      motif={category.motif}
-                      seed={`area-${id}`}
-                      decorative
+                      {...areaArtwork(id)}
                       className="transition duration-700 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#050812] via-[#050812]/75 to-transparent" />

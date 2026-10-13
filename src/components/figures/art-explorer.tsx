@@ -2,7 +2,8 @@
 
 import { Shuffle } from "lucide-react";
 import { useId, useRef, useState } from "react";
-import { CoverArt, artCaption } from "@/components/art/cover-art";
+import { ArtSvg } from "@/components/art/art-svg";
+import { artCaption } from "@/lib/art/motifs";
 import { useInView } from "@/hooks/use-in-view";
 import { MOTIFS, type Motif } from "@/lib/art/types";
 import { InteractiveFigure, controlButton, controlToggle } from "./interactive-figure";
@@ -87,7 +88,7 @@ export function ArtExplorer() {
           className="overflow-hidden rounded-xl bg-plate"
           data-testid="art-preview"
         >
-          <CoverArt
+          <ArtSvg
             motif={motif}
             seed={safeSeed}
             animated={animated && inView}

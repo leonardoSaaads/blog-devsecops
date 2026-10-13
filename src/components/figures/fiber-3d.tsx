@@ -193,9 +193,11 @@ async function createScene(
 
   const placePulses = (time: number) => {
     for (const pulse of pulses) {
-      const t = (time * 0.12 + pulse.offset) % 1;
+      // Fase sempre em [0, 1): o primeiro quadro pode chegar com tempo levemente negativo
+      // (timestamp do requestAnimationFrame anterior à criação do Timer).
+      const t = (((time * 0.12 + pulse.offset) % 1) + 1) % 1;
       const position = t * (pulse.points.length - 1);
-      const i = Math.floor(position);
+      const i = Math.min(Math.max(Math.floor(position), 0), pulse.points.length - 1);
       const [x0, y0] = pulse.points[i]!;
       const [x1, y1] = pulse.points[Math.min(i + 1, pulse.points.length - 1)]!;
       const f = position - i;
@@ -222,10 +224,12 @@ async function createScene(
 
   build(initial);
   placePulses(0);
-  const clock = new THREE.Clock();
-  const loop = () => {
+  // THREE.Clock foi descontinuado; Timer recebe o timestamp do próprio laço de animação.
+  const timer = new THREE.Timer();
+  const loop = (timestamp: number) => {
+    timer.update(timestamp);
     controls.update();
-    if (!reducedMotion) placePulses(clock.getElapsedTime());
+    if (!reducedMotion) placePulses(timer.getElapsed());
     renderer.render(scene, camera);
   };
   renderer.setAnimationLoop(loop);
@@ -238,6 +242,7 @@ async function createScene(
     setRunning: (value) => renderer.setAnimationLoop(value ? loop : null),
     dispose: () => {
       renderer.setAnimationLoop(null);
+      timer.dispose();
       observer.disconnect();
       controls.dispose();
       disposables.forEach((item) => item.dispose());

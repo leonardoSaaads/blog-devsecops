@@ -29,15 +29,36 @@ test.describe("segurança e SEO", () => {
 
     const problems: string[] = [];
     page.on("console", (message) => {
-      if (message.type() === "error") problems.push(message.text());
+      if (message.type() === "error" || message.type() === "warning") problems.push(message.text());
     });
-    page.on("pageerror", (error) => problems.push(error.message));
+    page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
     for (const path of ["/", "/blog/dwdm_intoduction", "/blog/bastidores-do-blog", "/tags"]) {
       await page.goto(path, { waitUntil: "networkidle" });
     }
+    // A fibra 3D (three.js) só carrega quando entra na tela: rola até ela e espera o WebGL.
+    await page.goto("/blog/dwdm_intoduction");
+    await page.getByTestId("fiber-3d").scrollIntoViewIfNeeded();
+    await expect(page.getByTestId("fiber-3d").locator("canvas")).toBeVisible({ timeout: 15_000 });
+    await page.waitForTimeout(1500);
     // Recursos externos (ex.: imagens de terceiros, Giscus) podem falhar sem rede; CSP nunca.
     expect(problems.filter((text) => /Content Security Policy|Refused to/i.test(text))).toEqual([]);
-    expect(problems.filter((text) => /hydrat/i.test(text))).toEqual([]);
+    expect(problems.filter((text) => /hydrat|pageerror/i.test(text))).toEqual([]);
+    // APIs obsoletas (ex.: THREE.Clock) e preloads desperdiçados não podem voltar.
+    expect(
+      problems.filter((text) => /deprecated|preloaded using link preload/i.test(text)),
+    ).toEqual([]);
+  });
+
+  test("páginas leves: arte como imagem estática, fora do HTML", async ({ request }) => {
+    const home = await (await request.get("/")).text();
+    // Antes da correção: 1,9 MB (SVGs embutidos no HTML e no payload do React).
+    expect(home.length).toBeLessThan(250_000);
+    expect(home).toContain('src="/art/eye/inicio.svg"');
+    const art = await request.get("/art/spectrum/dwdm_intoduction.svg");
+    expect(art.headers()["content-type"]).toContain("image/svg+xml");
+    expect(art.headers()["cache-control"]).toContain("max-age");
+    expect((await art.body()).length).toBeLessThan(70_000);
+    expect((await request.get("/art/spectrum/..%2F..%2Fetc.svg")).status()).toBe(404);
   });
 
   test("sitemap, robots, RSS e manifest", async ({ request }) => {

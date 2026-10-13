@@ -1,19 +1,36 @@
+# Dependabot: uma única atualização a cada 6 meses.
+#
+# - Um só pull request (e uma só branch) com TODAS as dependências — npm e GitHub
+#   Actions juntas —, graças ao grupo multiecossistema "dependencias".
+# - Execução semestral (`semiannually`); nada roda entre uma janela e outra.
+# - Alertas de segurança (Dependabot security updates) continuam independentes deste
+#   agendamento: correções de vulnerabilidade chegam assim que publicadas.
+#
+# Referência: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
 version: 2
+
+multi-ecosystem-groups:
+  dependencias:
+    schedule:
+      interval: semiannually
+    labels: ["dependencies"]
+
 updates:
   - package-ecosystem: npm
     directory: /
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 10
-    groups:
-      next-react:
-        patterns: ["next", "react", "react-dom", "eslint-config-next", "@types/react*"]
-      testing:
-        patterns:
-          ["vitest", "@vitest/*", "@playwright/test", "@axe-core/*", "@testing-library/*", "jsdom"]
-      markdown:
-        patterns: ["@mdx-js/*", "remark-*", "rehype-*", "shiki", "@shikijs/*", "katex"]
+    multi-ecosystem-group: dependencias
+    patterns: ["*"]
+    ignore:
+      # TypeScript 7 (compilador nativo): o typescript-eslint ainda não suporta a versão
+      # 7.0 (o suporte está previsto para 7.1+). Atualize manualmente quando houver.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # @types/node acompanha a versão do Node em produção (.nvmrc = 24 LTS). Atualize
+      # o major junto com o .nvmrc, nunca isoladamente.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: github-actions
     directory: /
-    schedule:
-      interval: weekly
+    multi-ecosystem-group: dependencias
+    patterns: ["*"]

@@ -9,8 +9,23 @@ const between = (random: Random, min: number, max: number) => min + random() * (
 const pick = <T>(random: Random, items: readonly T[]): T =>
   items[Math.floor(random() * items.length)]!;
 
+/**
+ * Polilinha compacta: primeiro ponto absoluto e os demais relativos ("l dx dy"),
+ * calculados sobre coordenadas já arredondadas (sem acúmulo de erro). Corta o tamanho
+ * do SVG pela metade em relação a "L x y" absolutos.
+ */
 function polyline(points: Array<[number, number]>): string {
-  return points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${fmt(x)} ${fmt(y)}`).join("");
+  let previous: [number, number] = [0, 0];
+  const parts: string[] = [];
+  points.forEach(([x, y], index) => {
+    const current: [number, number] = [fmt(x), fmt(y)];
+    if (index === 0) parts.push(`M${current[0]} ${current[1]}l`);
+    else parts.push(`${fmt(current[0] - previous[0])} ${fmt(current[1] - previous[1])}`);
+    previous = current;
+  });
+  return points.length > 1
+    ? parts.join(" ").replace("l ", "l")
+    : `M${fmt(points[0]![0])} ${fmt(points[0]![1])}`;
 }
 
 /** Mapeia t ∈ [0, 1] para uma cor espectral (violeta → vermelho). */
@@ -177,6 +192,7 @@ export function lattice(random: Random): Artwork {
 // ------------------------------------------------------------- Linux: bits de permissão
 export function bits(random: Random): Artwork {
   const shapes: Shape[] = [];
+  const cells: Shape[] = [];
   const cell = 14;
   const gap = 4;
   const groupGap = 12;
@@ -191,20 +207,24 @@ export function bits(random: Random): Artwork {
         const bx = x + bit * (cell + gap) + Math.floor(bit / 3) * groupGap;
         if (bx > W) continue;
         const fade = 0.35 + 0.65 * Math.exp(-(((y - H * 0.5) / (H * 0.55)) ** 2));
-        shapes.push({
+        cells.push({
           kind: "rect",
           x: fmt(bx),
           y: fmt(y),
           w: cell,
           h: cell,
-          rx: 2,
           fill: set ? (danger ? "#ff6b6b" : bit % 3 === 2 ? "#f2c94c" : "#3ddc97") : "#1d2b3f",
-          opacity: fmt((set ? between(random, 0.55, 0.95) : 0.55) * fade),
+          // Opacidade em passos de 0,05: imperceptível e permite agrupar células iguais.
+          opacity: Math.round((set ? between(random, 0.55, 0.95) : 0.55) * fade * 20) / 20,
           className: set && random() < 0.015 ? "art-blink" : undefined,
         });
       }
     }
   }
+  // Células não se sobrepõem: ordenar por pintura não muda a imagem e deixa o SVG
+  // agrupar centenas de quadrados em poucos <path>.
+  const paint = (shape: Shape) => `${shape.fill}|${shape.opacity}`;
+  shapes.push(...cells.sort((a, b) => paint(a).localeCompare(paint(b))));
   shapes.push({
     kind: "rect",
     x: W - 210,
@@ -607,19 +627,20 @@ export function eye(random: Random): Artwork {
     const bitsSeq = Array.from({ length: 5 }, () => (random() < 0.5 ? 1 : 0));
     const jitter = gaussian(random) * 12;
     const noise = gaussian(random) * 11;
-    const points: Array<[number, number]> = [];
+    // Cada transição de bit é uma curva de Bézier cúbica em "S" (aproxima o cosseno
+    // elevado): 4 comandos por traço em vez de 100 pontos.
+    const x0 = -unit * 0.6 + jitter;
+    let d = `M${fmt(x0)} ${fmt(level(bitsSeq[0]!) + noise)}`;
     for (let k = 0; k < 4; k++) {
       const from = level(bitsSeq[k]!) + noise;
       const to = level(bitsSeq[k + 1]!) + noise;
-      for (let s = 0; s <= 24; s++) {
-        const t = s / 24;
-        const smooth = 0.5 - 0.5 * Math.cos(Math.PI * t);
-        points.push([-unit * 0.6 + (k + t) * unit + jitter, from + (to - from) * smooth]);
-      }
+      const start = x0 + k * unit;
+      const end = start + unit;
+      d += `C${fmt(start + unit * 0.36)} ${fmt(from)} ${fmt(end - unit * 0.36)} ${fmt(to)} ${fmt(end)} ${fmt(to)}`;
     }
     shapes.push({
       kind: "path",
-      d: polyline(points),
+      d,
       stroke: spectralColor(0.12 + 0.3 * random(), 66),
       strokeWidth: 1.1,
       opacity: 0.17,
@@ -692,4 +713,9 @@ export function generateArt(motif: keyof typeof GENERATORS, seed: string | numbe
   const random = mulberry32(typeof seed === "number" ? seed : seedFrom(seed));
   const art = GENERATORS[motif](random);
   return { ...art, shapes: capAnimations(art.shapes, MAX_ANIMATED_SHAPES) };
+}
+
+/** Legenda descritiva da arte (texto alternativo e crédito da capa). */
+export function artCaption(motif: keyof typeof GENERATORS, seed: string): string {
+  return generateArt(motif, seed).caption;
 }

@@ -26,7 +26,72 @@ function shapeToString(shape: Shape): string {
   }
 }
 
-/** SVG autônomo (sem CSS externo) — usado nas imagens Open Graph. */
+const n = (value: number) => Number(value.toFixed(1));
+
+/** Forma convertível em dados de path (para agrupar várias em um único elemento). */
+function asPathData(shape: Shape): string | null {
+  if (shape.kind === "path") return shape.d;
+  if (shape.kind === "rect" && !shape.stroke) {
+    const r = Math.min(n(shape.rx ?? 0), shape.w / 2, shape.h / 2);
+    if (r === 0) return `M${n(shape.x)} ${n(shape.y)}h${n(shape.w)}v${n(shape.h)}h${n(-shape.w)}z`;
+    const w = n(shape.w - 2 * r);
+    const h = n(shape.h - 2 * r);
+    return `M${n(shape.x + r)} ${n(shape.y)}h${w}a${r} ${r} 0 0 1 ${r} ${r}v${h}a${r} ${r} 0 0 1 ${-r} ${r}h${-w}a${r} ${r} 0 0 1 ${-r} ${-r}v${-h}a${r} ${r} 0 0 1 ${r} ${-r}z`;
+  }
+  if (shape.kind === "circle" && !shape.stroke) {
+    const r = n(shape.r);
+    return `M${n(shape.cx - shape.r)} ${n(shape.cy)}a${r} ${r} 0 1 0 ${n(2 * shape.r)} 0a${r} ${r} 0 1 0 ${n(-2 * shape.r)} 0`;
+  }
+  return null;
+}
+
+const paintKey = (shape: Shape) =>
+  [
+    shape.fill ?? "none",
+    shape.stroke ?? "",
+    shape.strokeWidth ?? "",
+    shape.opacity ?? "",
+    shape.dash ?? "",
+  ].join("|");
+
+/**
+ * Serializa as formas agrupando as consecutivas de mesma pintura em um só <path>:
+ * centenas de elementos viram poucos, e o arquivo encolhe várias vezes.
+ */
+function shapesToString(shapes: readonly Shape[]): string {
+  let out = "";
+  type Run = { key: string; shape: Shape; d: string[] };
+  // Cast evita que o TS estreite para `null` (a variável também muda dentro de `flush`).
+  let run = null as Run | null;
+  const flush = () => {
+    if (!run) return;
+    out += `<path d="${run.d.join("")}" ${paintAttrs(run.shape)} stroke-linecap="round" stroke-linejoin="round"/>`;
+    run = null;
+  };
+  for (const shape of shapes) {
+    if (shape.kind === "group") {
+      flush();
+      out += `<g>${shapesToString(shape.children)}</g>`;
+      continue;
+    }
+    const d = asPathData(shape);
+    if (d === null) {
+      flush();
+      out += shapeToString(shape);
+      continue;
+    }
+    const key = paintKey(shape);
+    if (run?.key === key) run.d.push(d);
+    else {
+      flush();
+      run = { key, shape, d: [d] };
+    }
+  }
+  flush();
+  return out;
+}
+
+/** SVG autônomo (sem CSS externo) — servido em /art e usado nas imagens Open Graph. */
 export function artworkToSvg(art: Artwork): string {
   const [top, bottom] = art.background;
   const glow = art.glow
@@ -37,7 +102,7 @@ export function artworkToSvg(art: Artwork): string {
     `<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient>${glow}</defs>`,
     `<rect width="100%" height="100%" fill="url(#bg)"/>`,
     art.glow ? `<rect width="100%" height="100%" fill="url(#glow)"/>` : "",
-    art.shapes.map(shapeToString).join(""),
+    shapesToString(art.shapes),
     "</svg>",
   ].join("");
 }
