@@ -1,498 +1,497 @@
 ---
 title: "Velocidade de linguagem importa?"
+description: "Compilado × interpretado, JIT, benchmarks e por que algoritmo e arquitetura pesam mais que a linguagem — com código executável no navegador para medir você mesmo. O futuro é poliglota."
 date: "2025-10-05"
-tags: ["DEV", "DEVOPS", "PROGRAMMING"]
-description: "Não se preocupe, o futuro é trans..."
+updated: "2026-10-13"
+tags: ["programacao", "devops", "python", "rust", "webassembly"]
+labs: ["Playground JavaScript: algoritmo × linguagem", "Playground Python (Pyodide): meça você mesmo"]
+references:
+  - id: knuth-1974
+    type: article
+    authors: ["Knuth, Donald E."]
+    title: "Structured programming with go to statements"
+    container: "ACM Computing Surveys"
+    volume: "6"
+    issue: "4"
+    pages: "261-301"
+    year: 1974
+    doi: "10.1145/356635.356640"
+  - id: pereira-2017
+    type: conference
+    authors: ["Pereira, Rui", "Couto, Marco", "Ribeiro, Francisco", "Rua, Rui", "Cunha, Jácome", "Fernandes, João Paulo", "Saraiva, João"]
+    title: "Energy efficiency across programming languages: how do energy, time, and memory relate?"
+    container: "PROCEEDINGS OF THE 10TH ACM SIGPLAN INTERNATIONAL CONFERENCE ON SOFTWARE LANGUAGE ENGINEERING (SLE)"
+    place: "Vancouver"
+    publisher: "ACM"
+    year: 2017
+    pages: "256-267"
+    doi: "10.1145/3136014.3136031"
+  - id: pereira-2021
+    type: article
+    authors: ["Pereira, Rui", "Couto, Marco", "Ribeiro, Francisco", "Rua, Rui", "Cunha, Jácome", "Fernandes, João Paulo", "Saraiva, João"]
+    title: "Ranking programming languages by energy efficiency"
+    container: "Science of Computer Programming"
+    volume: "205"
+    pages: "102609"
+    year: 2021
+    doi: "10.1016/j.scico.2021.102609"
+  - id: benchmarks-game
+    type: web
+    authors: ["Gouy, Isaac"]
+    title: "The Computer Language Benchmarks Game"
+    container: "benchmarksgame-team.pages.debian.net"
+    year: 2026
+    url: "https://benchmarksgame-team.pages.debian.net/benchmarksgame/"
+    accessed: "2026-10-13"
+  - id: vanderplas-2014
+    type: web
+    authors: ["VanderPlas, Jake"]
+    title: "Why Python is Slow: Looking Under the Hood"
+    container: "Pythonic Perambulations"
+    year: 2014
+    url: "https://jakevdp.github.io/blog/2014/05/09/why-python-is-slow/"
+    accessed: "2026-10-13"
+  - id: ritchie-1993
+    type: article
+    authors: ["Ritchie, Dennis M."]
+    title: "The development of the C language"
+    container: "ACM SIGPLAN Notices"
+    volume: "28"
+    issue: "3"
+    pages: "201-208"
+    year: 1993
+    doi: "10.1145/155360.155580"
+  - id: haas-2017
+    type: conference
+    authors: ["Haas, Andreas", "Rossberg, Andreas", "Schuff, Derek L.", "Titzer, Ben L.", "Holman, Michael", "Gohman, Dan", "Wagner, Luke", "Zakai, Alon", "Bastien, JF"]
+    title: "Bringing the web up to speed with WebAssembly"
+    container: "PROCEEDINGS OF THE 38TH ACM SIGPLAN CONFERENCE ON PROGRAMMING LANGUAGE DESIGN AND IMPLEMENTATION (PLDI)"
+    place: "Barcelona"
+    publisher: "ACM"
+    year: 2017
+    pages: "185-200"
+    doi: "10.1145/3062341.3062363"
+  - id: pep-703
+    type: web
+    authors: ["Gross, Sam"]
+    title: "PEP 703: Making the Global Interpreter Lock Optional in CPython"
+    container: "Python Enhancement Proposals"
+    year: 2023
+    url: "https://peps.python.org/pep-0703/"
+    accessed: "2026-10-13"
+  - id: pep-779
+    type: web
+    authors: ["Wouters, Thomas", "Page, Matt", "Gross, Sam"]
+    title: "PEP 779: Criteria for supported status for free-threaded Python"
+    container: "Python Enhancement Proposals"
+    year: 2025
+    url: "https://peps.python.org/pep-0779/"
+    accessed: "2026-10-13"
+  - id: pep-744
+    type: web
+    authors: ["Bucher, Brandt", "Ostrowski, Savannah"]
+    title: "PEP 744: JIT Compilation"
+    container: "Python Enhancement Proposals"
+    year: 2024
+    url: "https://peps.python.org/pep-0744/"
+    accessed: "2026-10-13"
+  - id: python-ctypes
+    type: web
+    authors: ["Python Software Foundation"]
+    title: "ctypes: a foreign function library for Python"
+    container: "Python 3 Documentation"
+    year: 2026
+    url: "https://docs.python.org/3/library/ctypes.html"
+    accessed: "2026-10-13"
+  - id: pyo3
+    type: web
+    authors: ["PyO3 Project"]
+    title: "The PyO3 user guide"
+    container: "pyo3.rs"
+    year: 2026
+    url: "https://pyo3.rs/"
+    accessed: "2026-10-13"
+  - id: mdn-wasm
+    type: web
+    authors: ["MDN Contributors"]
+    title: "WebAssembly"
+    container: "MDN Web Docs"
+    year: 2026
+    url: "https://developer.mozilla.org/en-US/docs/WebAssembly"
+    accessed: "2026-10-13"
+  - id: cgo
+    type: web
+    authors: ["The Go Authors"]
+    title: "cgo command"
+    container: "Go Packages"
+    year: 2026
+    url: "https://pkg.go.dev/cmd/cgo"
+    accessed: "2026-10-13"
+  - id: discord-rust
+    type: web
+    authors: ["Howarth, Jesse"]
+    title: "Why Discord is switching from Go to Rust"
+    container: "Discord Blog"
+    year: 2020
+    url: "https://discord.com/blog/why-discord-is-switching-from-go-to-rust"
+    accessed: "2026-10-13"
+  - id: dropbox-sync
+    type: web
+    authors: ["Jayakar, Sujay"]
+    title: "Rewriting the heart of our sync engine"
+    container: "Dropbox Tech Blog"
+    year: 2020
+    url: "https://dropbox.tech/infrastructure/rewriting-the-heart-of-our-sync-engine"
+    accessed: "2026-10-13"
+  - id: gorelick-2020
+    type: book
+    authors: ["Gorelick, Micha", "Ozsvald, Ian"]
+    title: "High Performance Python"
+    subtitle: "practical performant programming for humans"
+    edition: "2"
+    place: "Sebastopol"
+    publisher: "O'Reilly Media"
+    year: 2020
+  - id: blandy-2021
+    type: book
+    authors: ["Blandy, Jim", "Orendorff, Jason", "Tindall, Leonora F. S."]
+    title: "Programming Rust"
+    subtitle: "fast, safe systems development"
+    edition: "2"
+    place: "Sebastopol"
+    publisher: "O'Reilly Media"
+    year: 2021
+  - id: pragmatic-2019
+    type: book
+    authors: ["Thomas, David", "Hunt, Andrew"]
+    title: "The Pragmatic Programmer"
+    subtitle: "your journey to mastery"
+    edition: "2"
+    place: "Boston"
+    publisher: "Addison-Wesley"
+    year: 2019
 ---
 
-# Velocidade de linguagens de programação importa, mas não deve ser a sua maior preocupação.
+<Figure
+  src="https://storage.googleapis.com/cdn.thenewstack.io/media/2018/05/3730357d-results-energy-time-and-memory-usage-screenshot-from-research-paper.png"
+  alt="Tabela com consumo de energia, tempo e memória por linguagem de programação"
+  caption="Energia, tempo e memória normalizados por linguagem."
+  source="Pereira et al. (2017), via The New Stack"
+  sourceUrl="https://doi.org/10.1145/3136014.3136031"
+/>
 
----
+## 1. Por que as linguagens têm velocidades diferentes?
 
-<p align="center">
-  <img src="https://storage.googleapis.com/cdn.thenewstack.io/media/2018/05/3730357d-results-energy-time-and-memory-usage-screenshot-from-research-paper.png" />
-</p>
+Se todas rodam no mesmo hardware, por que algumas são mais rápidas? Pense em línguas humanas. Em português:
 
----
-
-## 1. Por que as linguagens de programação têm diferentes velocidades
-
-Se, afinal de contas, as linguagens de programação rodam em um computador e compartilham o mesmo hardware, por que algumas são mais rápidas 
-e outras são mais lentas? Bem, como você deve imaginar, as coisas não são tão simples assim. Vamos pensar em termos de linguagem humana, 
-como o português e mandarim. No português você fala:
-
-```portugues
+```text
 Eu gosto de comer arroz de noite.
 ```
 
-Em mandarim, ficaria dessa forma:
+Em mandarim:
 
-```mandarim
+```text
 我 喜欢 晚上 吃 米饭。(Wǒ xǐhuān wǎnshàng chī mǐfàn.)
 ```
 
-Por que o mandarim é muito menor que o português? Bem, o mandarim apresenta maior densidade informacional que o português devido à sua 
-estrutura logográfica. Cada caractere chinês representa um morfema ou palavra completa, condensando significado em uma única unidade 
-visual.
+O mandarim é mais **denso**: cada caractere representa um morfema ou palavra. O preço é uma barreira de entrada maior — milhares de caracteres e muita dependência de contexto. O português prioriza clareza estrutural em detrimento da economia de símbolos.
 
-O trade-off principal reside na complexidade de aquisição e processamento cognitivo. O mandarim demanda memorização de milhares de 
-caracteres e forte dependência do contexto para desambiguação, já que homófonos são frequentes e a ausência de marcadores gramaticais 
-explícitos pode gerar ambiguidade. Em termos práticos, o mandarim otimiza espaço textual à custa de maior barreira de entrada, 
-enquanto o português prioriza clareza estrutural em detrimento da economia de caracteres.
+Linguagens de programação enfrentam trade-offs parecidos: **densidade × curva de aprendizado**, **compilada × interpretada**, **controle × abstração**.
 
-**Então você quer dizer que algo semelhante existe nas linguagens de programação?!**
+## 2. Uma breve história: do Assembly aos LLMs
 
-Sim, é mais ou menos essa linha de raciocínio. Linguagens de programação enfrentam o mesmo trade-off entre `densidade / curva de aprendizado`, 
-`compilada / interpretada`, `clareza/abstração do interpretador`, etc. Vamos detalhar tudo isso abaixo.
+### Assembly: conversando com o processador
 
----
-
-## 2. A história das linguagens de programação: da pedra lascada ao "ChatLGBT"
-
-Para entender por que existem linguagens rápidas e lentas, precisamos voltar no tempo.
-
-### Os primórdios: Assembly e a linguagem das máquinas
-
-No começo, programar era basicamente conversar diretamente com o processador. Imagine que você precise dar instruções para um robô 
-extremamente burro, mas extremamente rápido. Você não pode dizer "faça café". Você precisa dizer:
-
-```assembly
-MOV AX, 01    ; Pegue o valor 1
-ADD AX, 02    ; Some com 2
-MOV [1000], AX ; Guarde o resultado na memória
+```asm
+MOV AX, 01      ; carrega 1
+ADD AX, 02      ; soma 2
+MOV [1000], AX  ; guarda o resultado na memória
 ```
 
-Era trabalhoso? Muito. Era rápido? **Extremamente**. Você controlava cada ciclo de processador, cada byte de memória. Era como dirigir 
-um carro de Fórmula 1 sem direção assistida - difícil, mas com performance máxima.
+Trabalhoso? Muito. Rápido? Extremamente: você controla cada ciclo e cada byte.
 
-### A revolução C: "Portable Assembly"
+### C: o "Assembly portátil"
 
-Em 1972, Dennis Ritchie criou o C e mudou o jogo. A ideia? "E se pudéssemos escrever algo mais humano, mas que ainda virasse código de 
-máquina super eficiente?"
+Em 1972, Dennis Ritchie criou o C nos Bell Labs, junto ao desenvolvimento do Unix: algo mais legível que ainda compilasse para código de máquina eficiente<Cite id="ritchie-1993" />.
 
 ```c
 int resultado = 1 + 2;
 ```
 
-Pronto. Isso compila para praticamente o mesmo Assembly que escrevemos antes, mas é infinitamente mais legível. O C se tornou o "Assembly 
-portátil" - você escreve uma vez, compila para qualquer processador.
-
 ### A era da abstração: Python, Ruby, JavaScript
 
-Conforme os computadores ficaram mais poderosos, programadores pensaram: "Espera, por que eu preciso me preocupar com memória? Com tipos 
-de dados? Deixa o computador fazer isso!"
+Com computadores mais potentes, surgiu a pergunta: por que se preocupar com memória e tipos? Compare:
 
-Nasceram as linguagens interpretadas. Compare:
-
-**C (compilado):**
 ```c
-char* nome = malloc(50 * sizeof(char));
+char *nome = malloc(50);
 strcpy(nome, "João");
-// ... usa a variável ...
-free(nome); // tem que lembrar de liberar!
+/* … usa a variável … */
+free(nome); /* esqueceu? vazamento. Liberou duas vezes? vulnerabilidade. */
 ```
 
-**Python (interpretado):**
 ```python
-nome = "João"
-# Pronto. Acabou.
+nome = "João"  # pronto
 ```
 
-O Python é como um mordomo digital: você pede algo, ele cuida de todos os detalhes. O problema? Mordomos cobram caro - em performance.
+O Python é um mordomo: cuida dos detalhes — e cobra em desempenho.
 
 ### A síntese moderna: Go, Rust, Swift
 
-As linguagens modernas tentam o melhor dos dois mundos:
+- **Go**: compilação rápida, concorrência simples e binários estáticos.
+- **Rust**: desempenho de C **com** segurança de memória verificada em tempo de compilação<Cite id="blandy-2021" />.
+- **Swift**: segurança e ergonomia no ecossistema Apple.
 
-- **Go**: "E se compilássemos rápido IGUAL Python e rápido de escrever?"
-- **Rust**: "E se tivéssemos velocidade de C COM segurança de memória?"
-- **Swift**: "E se programar fosse... prazeroso?"
+E hoje os assistentes baseados em LLMs escrevem boa parte do código *boilerplate* — o que torna ainda mais importante entender os trade-offs por trás do que é gerado.
 
-É a evolução natural - cada geração aprende com os erros da anterior.
+## 3. Compiladas × interpretadas: o Uber e o carro próprio
 
----
+**Compilada (C, Rust, Go)** — carro próprio: investimento inicial (compilação), rota planejada (otimizações), execução direta.
 
-## 3. Linguagens Compiladas x Interpretadas: O Uber vs. o Carro Próprio
+**Interpretada (Python, Ruby)** — Uber: sem manutenção (coletor de lixo), pede e sai (sem compilação), mas pode pegar trânsito (overhead do interpretador).
 
-Agora que conhecemos a história, vamos ao cerne da questão: por que Python é "lento" e C é "rápido"?
+### O que acontece em resultado = 5 + 3
 
-### A metáfora do transporte
-
-**Linguagem compilada (C, Rust, Go)** é como ter um carro próprio:
-- Você investe tempo inicial (compra o carro = compilação)
-- Planeja a rota antes de sair (otimizações do compilador)
-- Quando sai, vai direto ao destino, sem paradas
-- Resultado: **rápido na execução**
-
-**Linguagem interpretada (Python, Ruby, JavaScript)** é como chamar um Uber:
-- Você não precisa se preocupar com manutenção (garbage collector)
-- Pede e ele aparece rapidinho (sem compilação)
-- Mas... ele pode pegar trânsito, fazer rotas subótimas (overhead do interpretador)
-- Resultado: **rápido para desenvolver, lento para executar**
-
-### O que acontece por baixo dos panos
-
-Quando você escreve `resultado = 5 + 3`, coisas muito diferentes acontecem:
-
-**Em C (compilado):**
-
-```markdown
-1. Compilador vê o código ANTES de rodar
-2. Converte para Assembly otimizado
-3. Assembly vira código de máquina (010101...)
-4. Processador executa DIRETAMENTE
-⚡ Tempo: ~1 nanosegundo
+```text
+C (compilado)                          CPython (bytecode interpretado)
+1. compilado antes da execução         1. compila para bytecode e interpreta
+2. vira poucas instruções de máquina   2. verifica tipos dos objetos em tempo de execução
+3. executa direto na CPU               3. despacha para a função de soma do tipo int
+                                       4. aloca o objeto do resultado e ajusta contagens
+ordem de grandeza: ~1 ns               ordem de grandeza: dezenas de ns
 ```
 
-**Em Python (interpretado):**
+Os números são ordens de grandeza: em loops de milhões de iterações, a diferença vira milissegundos contra segundos<Cite id="vanderplas-2014" />.
 
-```markdown
-1. Python vê o código DURANTE a execução
-2. Verifica: "5 é número? 3 é número? Posso somar?"
-3. Chama função C interna para somar
-4. Verifica se precisa coletar lixo na memória
-5. Retorna o resultado
-⚡ Tempo: ~50-100 nanosegundos
-```
+### E o Java (e o JavaScript)?
 
-Parece pouco? Em um loop de 1 milhão de iterações, vira 0.001s vs 0.1s. Em sistemas reais, vira segundos vs minutos.
+A JVM compila para *bytecode* e usa um **JIT** (*Just-In-Time*): observa os trechos mais executados e os compila para código de máquina em tempo de execução. Os motores JavaScript (como o V8) fazem o mesmo — por isso o JavaScript moderno costuma ser bem mais rápido que o Python puro em laços numéricos.
 
-### E o Java? Ele é o quê?
+<Callout type="info" title="O Python também está mudando">
+O CPython 3.13 trouxe um JIT experimental<Cite id="pep-744" /> e uma build opcional **sem GIL** (*free-threaded*)<Cite id="pep-703" />; no Python 3.14, essa build passou a ser oficialmente suportada<Cite id="pep-779" />, permitindo paralelismo real com threads em CPU.
+</Callout>
 
-Java é o primo esquisito da família: ele **compila** para bytecode, mas esse bytecode é **interpretado** pela JVM (Java Virtual Machine). 
+## 4. A medição das linguagens faz sentido?
 
-Porém, a JVM tem um truque na manga: o **JIT (Just-In-Time) Compiler**. Ela observa o código rodando e pensa: "Hmm, esse trecho roda muito... vou compilar ele AGORA para código de máquina!"
+### O Benchmarks Game: a corrida em pista fechada
 
-É como se seu Uber, depois de fazer a mesma rota 10 vezes, comprasse um carro só para aquele trajeto. Esperto, né?
+Aquele gráfico "C é 100× mais rápido que Python" costuma vir do Computer Language Benchmarks Game<Cite id="benchmarks-game" />, que mede algoritmos numéricos e manipulação de strings — e de estudos que mostram como energia, tempo e memória se relacionam<Cite id="pereira-2017,pereira-2021" />. É como comparar carros apenas em arrancada: a Ferrari vence, mas tente fazer baliza com ela.
 
----
+### O que esses benchmarks não medem
 
-## 4. Será que a medição das linguagens faz sentido? Como medir?
+1. **Tempo de desenvolvimento**:
 
-Aqui está o problema: comparar velocidade de linguagens é como comparar a velocidade de carros em condições completamente diferentes.
-
-### O benchmarks game: a corrida injusta
-
-Você já viu aquele gráfico que mostra "C é 100x mais rápido que Python"? Geralmente vem do [Computer Language Benchmarks Game](https://benchmarksgame-team.pages.debian.net/benchmarksgame/).
-
-Mas há um problema. Esses benchmarks testam coisas como:
-
-- Cálculo de números primos
-- Manipulação de strings
-- Algoritmos matemáticos puros
-
-É como testar carros APENAS em drag race. Um Fusca perde feio para uma Ferrari. Mas tenta fazer baliza com a Ferrari...
-
-### O que eles NÃO medem
-
-**1. Tempo de desenvolvimento**
 ```python
-# Python: 5 minutos para escrever
 import requests
-dados = requests.get('api.com/users').json()
-print([u['name'] for u in dados if u['age'] > 18])
+
+usuarios = requests.get("https://api.exemplo.com/users", timeout=10).json()
+print([u["name"] for u in usuarios if u["age"] > 18])
 ```
 
-```c
-// C: 2 horas para escrever (com malloc, parsing JSON, etc.)
-// ... 150 linhas de código ...
+Em C, o mesmo exige cliente HTTP, parser de JSON e gerenciamento manual de memória.
+
+2. **Manutenibilidade**: código legível é código que você entende seis meses depois.
+3. **Ecossistema**: o PyPI reúne centenas de milhares de projetos.
+4. **Segurança de memória**: C é rápido — até um *buffer overflow* virar uma CVE crítica.
+
+### Meça você mesmo: algoritmo × linguagem
+
+Execute os dois blocos abaixo. Primeiro em JavaScript (motor V8/SpiderMonkey com JIT); depois o mesmo em Python, rodando no seu navegador via **Pyodide** (CPython compilado para WebAssembly — mais lento que o CPython nativo, então compare apenas **proporções**).
+
+```javascript runnable title="Fibonacci: recursão ingênua × iteração (JavaScript)"
+function fibRecursivo(n) {
+  return n < 2 ? n : fibRecursivo(n - 1) + fibRecursivo(n - 2);
+}
+
+function fibIterativo(n) {
+  let [a, b] = [0n, 1n];
+  for (let i = 0; i < n; i++) [a, b] = [b, a + b];
+  return a;
+}
+
+console.time("recursivo fib(30)");
+console.log(fibRecursivo(30));
+console.timeEnd("recursivo fib(30)");
+
+console.time("iterativo fib(30)");
+console.log(fibIterativo(30));
+console.timeEnd("iterativo fib(30)");
+
+console.time("iterativo fib(1000)");
+console.log(String(fibIterativo(1000)).slice(0, 20) + "…");
+console.timeEnd("iterativo fib(1000)");
 ```
 
-**2. Manutenibilidade**
-Código legível é código que você entende 6 meses depois. Python ganha de lavada aqui.
+```python runnable title="O mesmo experimento em Python (Pyodide)"
+import time
+from functools import lru_cache
 
-**3. Ecossistema**
-Python tem 400.000+ pacotes no PyPI. Boa sorte encontrando uma lib de machine learning em Assembly.
+def fib_recursivo(n):
+    return n if n < 2 else fib_recursivo(n - 1) + fib_recursivo(n - 2)
 
-**4. Segurança de memória**
-C é rápido... até você ter um buffer overflow e criar uma vulnerabilidade crítica.
+@lru_cache(maxsize=None)
+def fib_memo(n):
+    return n if n < 2 else fib_memo(n - 1) + fib_memo(n - 2)
 
-### Então como medir corretamente?
+def medir(rotulo, func, n):
+    inicio = time.perf_counter()
+    resultado = func(n)
+    print(f"{rotulo:>16}: fib({n}) = {resultado}  em {(time.perf_counter() - inicio) * 1000:.2f} ms")
 
-A resposta honesta? **Depende do contexto**.
+medir("recursivo", fib_recursivo, 25)
+medir("memoizado", fib_memo, 25)
+medir("memoizado", fib_memo, 300)
+```
 
-**Para processamento numérico intensivo (ML, física, simulações):**
-- Use benchmarks tradicionais
-- C/Rust/Fortran brilham aqui
-
-**Para APIs web, CRUD, automação:**
-- Meça: tempo de desenvolvimento + tempo de execução + custo de servidor
-- Go/Python/Node.js geralmente vencem
-
-**Para sistemas críticos (aviões, marca-passos):**
-- Ignore velocidade, priorize **garantias formais**
-- Rust/Ada/SPARK entram em cena
+Repare: trocar o **algoritmo** (exponencial → linear) muda o tempo em ordens de grandeza, muito mais do que trocar de linguagem. É exatamente o ponto deste artigo.
 
 ### A falácia da otimização prematura
 
-Donald Knuth, autor do livro The Art of Computer Programming, disse: *"Premature optimization is the root of all evil"* (Otimização prematura é a raiz de todo mal).
+Donald Knuth escreveu: *"devemos esquecer as pequenas eficiências, digamos em 97% do tempo: a otimização prematura é a raiz de todo mal"* — e completou que não devemos desperdiçar as oportunidades nos 3% críticos<Cite id="knuth-1974" page="268" />. A estratégia pragmática<Cite id="pragmatic-2019" />:
 
-Traduzindo: 
-- 90% do código roda 10% do tempo
-- 10% do código roda 90% do tempo
-
-Escreva tudo em Python. Identifique os 10% lentos. **Aí sim** reescreva em Rust. Parabéns, FINALMENTE VOCÊ SE TORNOU um desenvolvedor pragmático.
-
-### O que REALMENTE importa
-
-**1. Produtividade > Performance pura**
-
-Se você economiza 50ms de latência mas gasta 100 horas a mais desenvolvendo, você perdeu.
-
-**2. Ecossistema > Velocidade**
-
-Precisa integrar com 15 APIs diferentes? Python/JavaScript têm libs para TUDO. Boa sorte fazendo isso em C.
-
-**3. Conhecimento do time > Novidades**
-
-Time sabe Java? Usa Java. Não adianta escolher Rust "porque é moderno" se ninguém sabe escrever código sem criar deadlocks.
-
-### A estratégia do "bom o suficiente"
-
-Aqui está um framework mental:
-
-```markdown
-1. Seu código processa < 1000 requisições/segundo? 
-   → Use a linguagem que você JÁ conhece.
-
-2. Tem partes críticas lentas?
-   → Perfila. Identifica gargalos.
-
-3. Gargalos são algoritmo ruim?
-   → Otimiza o algoritmo (Big O), não a linguagem.
-
-4. AINDA está lento após otimizar algoritmos?
-   → Aí sim, reescreve as partes críticas em C/Rust.
+```text
+1. Atende ao requisito com a linguagem que o time domina?  → siga em frente.
+2. Ficou lento?                                            → meça com um profiler; não adivinhe.
+3. O gargalo é algoritmo/I/O?                              → corrija o algoritmo (Big-O), cache, índices.
+4. Ainda é CPU-bound depois disso?                         → reescreva só o trecho crítico em C/Rust.
 ```
 
 ### Prepare o ambiente, não a linguagem
 
-Spoiler: **infraestrutura importa mais que linguagem**.
+Infraestrutura costuma pesar mais que a linguagem: cache (Redis), balanceamento de carga, CDN e índices no banco. Um exemplo clássico com o ORM do Django:
 
-Um Python bem configurado vence um C mal implementado:
-
-- **Caching**: Redis/Memcached pode tornar qualquer coisa "instantânea"
-- **Load balancing**: Distribua a carga, não otimize um único core
-- **CDN**: As vezes 80% da "lentidão web" que você enfrenta é rede, não código
-- **Database indexing**: Muita das vezes query SQL lenta não é culpa do Python
-
-Exemplo real:
 ```python
-# "Lento" (500ms)
-users = User.objects.all()
-for user in users:
-    print(user.address.city)  # N+1 queries!
+# "Lento": N+1 consultas (uma por usuário)
+for user in User.objects.all():
+    print(user.address.city)
 
-# "Rápido" (5ms) - MESMA LINGUAGEM
-users = User.objects.select_related('address').all()
-for user in users:
+# "Rápido": um JOIN — mesma linguagem
+for user in User.objects.select_related("address"):
     print(user.address.city)
 ```
 
-A diferença? Saber usar a ferramenta, não trocar de ferramenta.
+## 5. O futuro é poliglota: FFI
 
----
+O futuro não é escolher **uma** linguagem — é **combinar** várias. Uma orquestra só de violinos é possível, mas por quê?
 
-## 6. O futuro é trans... - Foreign Function Interface (FFI)
+**FFI (*Foreign Function Interface*)** é a capacidade de uma linguagem chamar código de outra.
 
-Finalmente chegamos ao ponto principal: **o futuro não é escolher uma linguagem, é combinar várias**.
+### Python chamando C com ctypes
 
-### A metáfora da orquestra
-
-Imagine tentar fazer uma orquestra sinfônica com apenas violinos. Tecnicamente possível, mas... por quê?
-
-Violinos (Python) fazem melodias bonitas. Contrabaixes (C) dão a base pesada. Trompetes (Rust) trazem potência quando necessário.
-
-Uma orquestra moderna de software funciona igual.
-
-### O que é FFI (Foreign Function Interface)?
-
-É a capacidade de uma linguagem chamar código de outra. Simples assim.
-
-**Exemplo prático:**
-
-```python
-# Python (facilidade de usar)
-import ctypes
-
-# Carrega biblioteca C compilada
-lib_rapida = ctypes.CDLL('./calculo_pesado.so')
-
-# Define a função C
-lib_rapida.fibonacci.argtypes = [ctypes.c_int]
-lib_rapida.fibonacci.restype = ctypes.c_longlong
-
-# Usa a velocidade do C com a conveniência do Python
-resultado = lib_rapida.fibonacci(50)
-print(f"Fibonacci(50) = {resultado}")
-```
-
-```c
-// calculo_pesado.c (velocidade pura)
+```c title="calculo_pesado.c"
 long long fibonacci(int n) {
-    if (n <= 1) return n;
-    long long a = 0, b = 1, temp;
-    for (int i = 2; i <= n; i++) {
-        temp = a + b;
+    long long a = 0, b = 1;
+    for (int i = 0; i < n; i++) {
+        long long t = a + b;
         a = b;
-        b = temp;
+        b = t;
     }
-    return b;
+    return a;
 }
 ```
 
-Compilando: `gcc -shared -o calculo_pesado.so -fPIC calculo_pesado.c`
-
-**Resultado:** Velocidade de C, ergonomia de Python. Win-win.
-
-### Exemplos reais de sistemas híbridos
-
-**NumPy (Python + C)**
-```python
-import numpy as np
-
-# Você escreve Python...
-array = np.array([1, 2, 3, 4, 5])
-resultado = array * 2
-
-# Mas executa C otimizado por baixo!
+```bash
+gcc -O2 -shared -fPIC -o calculo_pesado.so calculo_pesado.c
 ```
 
-NumPy é ~90% C. Você usa Python, mas a matemática pesada roda em C puro.
+```python title="usa_c.py"
+import ctypes
 
-**Node.js (JavaScript + C++)**
-```javascript
-// JavaScript de alto nível
-const cripto = require('crypto');
-const hash = cripto.createHash('sha256').update('dados').digest('hex');
+lib = ctypes.CDLL("./calculo_pesado.so")
+lib.fibonacci.argtypes = [ctypes.c_int]
+lib.fibonacci.restype = ctypes.c_longlong
 
-// A criptografia? C++ otimizado.
+print(lib.fibonacci(50))  # velocidade de C, ergonomia de Python
 ```
 
-**Rust + Python (PyO3)**
-```rust
-// arquivo: lib.rs
+Declarar `argtypes` e `restype` não é opcional: sem isso, o `ctypes` assume `int` e o resultado pode ser truncado ou corrompido<Cite id="python-ctypes" />.
+
+### Python chamando Rust com PyO3
+
+```rust title="src/lib.rs"
 use pyo3::prelude::*;
 
 #[pyfunction]
-fn processar_milhoes(dados: Vec<i32>) -> i32 {
-    // Processamento paralelo em Rust
+fn soma(dados: Vec<i64>) -> i64 {
     dados.iter().sum()
 }
 
 #[pymodule]
-fn minha_lib(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(processar_milhoes, m)?)?;
+fn minha_lib(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(soma, m)?)?;
     Ok(())
 }
 ```
 
-```python
-# Python usa sem perceber que é Rust
-import minha_lib
-
-resultado = minha_lib.processar_milhoes([1, 2, 3, ...])
+```bash
+pip install maturin && maturin develop --release
+python -c "import minha_lib; print(minha_lib.soma([1, 2, 3]))"
 ```
 
-### WebAssembly: O FFI do navegador
+A API `Bound<'_, PyModule>` substituiu a antiga `&PyModule` (usada na versão anterior deste artigo) a partir do PyO3 0.21<Cite id="pyo3" />.
 
-WASM permite rodar **qualquer linguagem** no browser:
+### Ecossistemas híbridos que você já usa
+
+- **NumPy**: você escreve Python; as operações vetoriais rodam em C otimizado.
+- **Node.js**: `createHash` do módulo `node:crypto` executa C/C++ (OpenSSL) por baixo.
+
+```javascript
+import { createHash } from "node:crypto";
+console.log(createHash("sha256").update("dados").digest("hex"));
+```
+
+### WebAssembly: o FFI do navegador
+
+O WebAssembly é um formato binário portátil e seguro que roda em velocidade próxima da nativa no navegador<Cite id="haas-2017,mdn-wasm" />. Rust, C/C++ e Go compilam para ele. É, aliás, como o Python do playground acima roda na sua máquina.
 
 ```rust
-// Rust compilado para WASM
+use wasm_bindgen::prelude::*;
+
 #[wasm_bindgen]
-pub fn processar_imagem(dados: &[u8]) -> Vec<u8> {
-    // Processamento pesado em Rust
-    // Roda no navegador!
+pub fn inverter_pixels(dados: &[u8]) -> Vec<u8> {
+    dados.iter().map(|p| 255 - p).collect()
 }
 ```
 
-```javascript
-// JavaScript chama o Rust
-import { processar_imagem } from './pkg/minha_lib.js';
+Aplicações reais: Figma, AutoCAD Web e Google Earth executam C++ no navegador via WebAssembly.
 
-const resultado = processar_imagem(dadosImagem);
-```
+### Ferramentas de FFI
 
-Aplicações reais: Figma (C++ no browser), AutoCAD Web (C++ via WASM), Google Earth (C++ renderizando no navegador).
+| Origem | Alvo | Ferramenta |
+| --- | --- | --- |
+| Python | C/C++ | ctypes, cffi, Cython |
+| Python | Rust | PyO3 + maturin |
+| JavaScript (Node) | C/C++ | Node-API (node-addon-api) |
+| JavaScript (Node) | Rust | napi-rs, Neon |
+| Go | C | cgo<Cite id="cgo" /> |
+| Qualquer | WebAssembly | Emscripten, wasm-bindgen |
 
-### Ferramentas para FFI
+### Casos reais de migração
 
-```markdown
-| Linguagem Origem | Linguagem Alvo |     Ferramenta     |
-|------------------|----------------|--------------------|
-| Python           | C/C++          | ctypes, cffi       |
-| Python           | Rust           | PyO3, rust-cpython |
-| JavaScript       | C/C++          | node-gyp, N-API    |
-| JavaScript       | Rust           | neon, wasm-bindgen |
-| Go               | C              | cgo                |
-| Ruby             | C              | FFI gem            |
-| Qualquer         | WASM           | wasm-pack          |
-```
----
+- O **Discord** migrou um serviço crítico de Go para Rust para eliminar picos de latência causados pelo coletor de lixo<Cite id="discord-rust" />.
+- O **Dropbox** reescreveu o núcleo do motor de sincronização em Rust<Cite id="dropbox-sync" />.
 
-## 7. Conclusão: velocidade importa, mas não da forma que você pensa
+Note o padrão: reescreveram **partes críticas**, medidas e justificadas — não o sistema inteiro por moda.
 
-Voltando à pergunta inicial: **velocidade de linguagem importa?**
+## 6. Conclusão: velocidade importa, mas não do jeito que você pensa
 
-Sim, mas...
+Em ordem de prioridade:
 
-### O que realmente importa (em ordem de prioridade):
+1. **Resolver o problema** — código que não existe não roda rápido.
+2. **Manutenibilidade** — código que ninguém entende vira legado.
+3. **Produtividade** — tempo é dinheiro.
+4. **Ecossistema** — não reinvente a roda.
+5. **Desempenho** — quando medido e necessário<Cite id="gorelick-2020" />.
 
-1. **Resolver o problema** - código que não existe não roda rápido
-2. **Manutenibilidade** - código que ninguém entende vira legado
-3. **Produtividade** - tempo é dinheiro
-4. **Ecossistema** - não reinvente a roda
-5. **Performance** - aí sim, quando necessário
+A mentalidade vencedora: **MVP** na linguagem que você domina → **perfilamento** para achar gargalos reais → **hibridização** apenas do que é crítico.
 
-### As verdades inconvenientes:
-
-- 95% dos projetos nunca precisam otimizar além de "escrever código decente"
-- A maior lentidão vem de algoritmos ruins, não de linguagens lentas
-- Infraestrutura > linguagem na maioria dos casos
-- O futuro já é híbrido - grandes empresas usam 10+ linguagens
-
-### A mentalidade vencedora:
-
-**Fase 1: MVP (Minimum Viable Product)**
-- Use a linguagem que você domina
-- Foque em funcionalidade
-- Ignore performance (sério)
-
-**Fase 2: Otimização**
-- Perfila o sistema
-- Identifica gargalos REAIS (não suposições)
-- Otimiza algoritmos primeiro
-
-**Fase 3: Hibridização**
-- Reescreve apenas as partes críticas
-- Usa FFI para integrar linguagens rápidas
-- Mantém a base em linguagem produtiva
-
----
-
-## Referências
-
-### Papers & Benchmarks:
-- [The Computer Language Benchmarks Game](https://benchmarksgame-team.pages.debian.net/benchmarksgame/)
-- [Energy Efficiency across Programming Languages](https://greenlab.di.uminho.pt/wp-content/uploads/2017/10/sleFinal.pdf) - Estudo sobre consumo energético
-- [Why Python is Slow](https://jakevdp.github.io/blog/2014/05/09/why-python-is-slow/) - Jake VanderPlas
-
-### Documentação FFI:
-- [Python ctypes](https://docs.python.org/3/library/ctypes.html)
-- [PyO3 - Rust bindings for Python](https://pyo3.rs/)
-- [WebAssembly MDN](https://developer.mozilla.org/en-US/docs/WebAssembly)
-- [cgo - Go and C](https://pkg.go.dev/cmd/cgo)
-
-### Livros:
-- "High Performance Python" - Micha Gorelick & Ian Ozsvald
-- "Programming Rust" - Jim Blandy & Jason Orendorff
-- "The Pragmatic Programmer" - David Thomas & Andrew Hunt
-
-### Artigos & Blogs:
-- [Premature Optimization - Donald Knuth](https://wiki.c2.com/?PrematureOptimization)
-- [Discord's Switch from Go to Rust](https://discord.com/blog/why-discord-is-switching-from-go-to-rust)
-- [Dropbox's Migration to Rust](https://dropbox.tech/infrastructure/rewriting-the-heart-of-our-sync-engine)
-
----
-
+<Quiz
+  question="Seu serviço Python está lento. Qual deve ser o primeiro passo?"
+  options={[
+    "Reescrever tudo em Rust",
+    "Medir com um profiler para encontrar o gargalo real",
+    "Trocar o servidor por um maior",
+    "Ativar o JIT experimental",
+  ]}
+  answer={1}
+  explanation="Sem medição, qualquer otimização é chute. Com frequência o gargalo está em I/O, consultas N+1 ou no algoritmo — e não na linguagem."
+/>

@@ -1,528 +1,226 @@
-# Leonardo Saads - DevSecOps Blog
+# Leonardo Saads — Blog DevSecOps
 
-Modern and minimalist blog built with Next.js 15, focused on DevSecOps, Information Security, Development, and Technology topics.
+Blog técnico **interativo** sobre DevSecOps, observabilidade, Linux, Kubernetes e telecomunicações ópticas, com laboratórios executáveis no navegador e loja de modelos 3D.
 
-**Live Demo:** [https://blog.leonardosaads.com.br](https://blog.leonardosaads.com.br)
-
----
-
-## Table of Contents
-
-- [About](#about)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Project Structure](#project-structure)
-- [Usage](#usage)
-  - [Adding New Posts](#adding-new-posts)
-  - [Customizing Content](#customizing-content)
-  - [Configuring Comments](#configuring-comments)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+**Produção:** [blog.leonardosaads.com.br](https://blog.leonardosaads.com.br)
 
 ---
 
-## About
+## Sumário
 
-This is a personal blog template designed for technical content creators, specifically those working in DevSecOps, cybersecurity, and software development fields. The blog is built with modern web technologies, prioritizing performance, simplicity, and ease of content management.
-
-Key principles:
-- **Build and Exit**: Write posts in Markdown, commit, and deploy automatically
-- **Zero Backend**: Static site generation with no database or server management
-- **Performance First**: Optimized for speed and SEO
-- **Developer Friendly**: Clean codebase following React and Next.js best practices
-
----
-
-## Features
-
-- ✅ **MDX Support**: Write posts in Markdown with React component support
-- ✅ **Syntax Highlighting**: Beautiful code blocks with highlight.js
-- ✅ **Dark Mode**: Automatic theme switching with persistent preference
-- ✅ **Responsive Design**: Mobile-first approach using Tailwind CSS 4.1
-- ✅ **Tag System**: Organize and filter posts by topics
-- ✅ **Reading Time**: Automatic calculation of estimated reading time
-- ✅ **SEO Optimized**: Meta tags, semantic HTML, and OpenGraph support
-- ✅ **Comments**: Integration with Giscus (GitHub Discussions)
-- ✅ **Fast Loading**: Image optimization with next/image
-- ✅ **Projects Showcase**: Dedicated page for portfolio projects
-- ✅ **About Page**: Professional profile with social links
+- [Visão geral](#visão-geral)
+- [Stack](#stack)
+- [Requisitos](#requisitos)
+- [Início rápido](#início-rápido)
+- [Scripts](#scripts)
+- [Estrutura de pastas](#estrutura-de-pastas)
+- [Escrevendo artigos](#escrevendo-artigos)
+- [Laboratórios interativos](#laboratórios-interativos)
+- [Loja 3D](#loja-3d)
+- [Segurança](#segurança)
+- [Testes e CI](#testes-e-ci)
+- [Deploy](#deploy)
+- [Licença](#licença)
 
 ---
 
-## Tech Stack
+## Visão geral
 
-- **Framework**: [Next.js 15.5](https://nextjs.org/) with App Router
-- **Language**: JavaScript (ES6+)
-- **Styling**: [Tailwind CSS 4.1](https://tailwindcss.com/)
-- **Content**: MDX (Markdown + JSX)
-- **Deployment**: [Vercel](https://vercel.com/)
-- **Comments**: [Giscus](https://giscus.app/)
-- **Icons**: [React Icons](https://react-icons.github.io/react-icons/)
+| Recurso           | Descrição                                                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Artigos revisados | MDX validado por esquema (Zod); build falha com frontmatter inválido                                                               |
+| Referências ABNT  | Toda publicação exige referências; `<Cite id>` gera citações numeradas e a lista NBR 6023                                          |
+| Laboratórios      | Simulador de Kubernetes, calculadoras ópticas (grid DWDM, OSNR, Q/BER, constelações), permissões Unix, diagramas animados, quizzes |
+| Código executável | JavaScript e Python (Pyodide/WebAssembly) em Web Workers isolados, com CSP própria e timeout                                       |
+| Loja 3D           | Visualizador three.js (STL/GLB), cor do filamento, malha, tela cheia; pedido por e-mail ou checkout externo                        |
+| Leitura           | Sumário com scroll-spy, progresso de leitura (CSS), busca Ctrl+K, tema claro/escuro/sistema, "Como citar"                          |
+| SEO               | Metadados, Open Graph gerado, JSON-LD (`BlogPosting` com `citation`, `Product`), sitemap, robots, RSS                              |
+| Qualidade         | TypeScript estrito, ESLint, Vitest, Playwright + axe (WCAG 2.2 AA) e CI no GitHub Actions                                          |
 
----
+## Stack
 
-## Prerequisites
+- **Next.js 16** (App Router, Turbopack, SSG) + **React 19**
+- **TypeScript 6** (estrito; o TypeScript 7 nativo ainda não expõe a API usada pelo `typescript-eslint`)
+- **Tailwind CSS 4** + `@tailwindcss/typography`
+- **MDX 3** (`@mdx-js/mdx`) com remark-gfm, remark-math/rehype-katex, rehype-slug, Shiki
+- **Zod 4** (validação de conteúdo e catálogo)
+- **three.js** (visualizador 3D, carregado sob demanda)
+- **Vitest 5** + Testing Library · **Playwright** + **axe-core**
+- **Giscus** (comentários via GitHub Discussions, carregados sob demanda)
 
-- **Node.js**: Version 18.x or higher (recommended: 22.x)
-- **npm**: Version 9.x or higher
-- **Git**: For version control
+## Requisitos
 
-Check your versions:
+- Node.js **22.12+** (CI usa a versão de `.nvmrc`, Node 24 LTS)
+- npm 10+
 
-```bash
-node --version  # Should output v18.x.x or higher
-npm --version   # Should output 9.x.x or higher
-```
-
----
-
-## Installation
-
-### 1. Clone the Repository
+## Início rápido
 
 ```bash
 git clone https://github.com/leonardoSaaads/blog-devsecops.git
 cd blog-devsecops
+npm ci
+npm run dev            # http://localhost:3000
 ```
 
-### 2. Install Dependencies
+Variável opcional:
 
-```bash
-npm install
-```
+| Variável               | Padrão                              | Uso                                       |
+| ---------------------- | ----------------------------------- | ----------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL` | `https://blog.leonardosaads.com.br` | URLs canônicas, sitemap, RSS e Open Graph |
 
-### 3. Run Development Server
+## Scripts
 
-```bash
-npm run dev
-```
+| Comando                              | Descrição                                                 |
+| ------------------------------------ | --------------------------------------------------------- |
+| `npm run dev`                        | Servidor de desenvolvimento                               |
+| `npm run build` / `npm start`        | Build de produção (estático) e servidor                   |
+| `npm run lint`                       | ESLint (regras do Next, React Hooks, a11y, TypeScript)    |
+| `npm run typecheck`                  | Gera os tipos de rota e executa `tsc --noEmit`            |
+| `npm test` / `npm run test:coverage` | Testes unitários e de componentes (Vitest)                |
+| `npm run test:e2e`                   | Testes ponta a ponta (Playwright; requer `npm run build`) |
+| `npm run models:generate`            | Regenera os modelos STL de exemplo em `public/models/`    |
+| `npm run check`                      | lint + typecheck + testes + build                         |
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the blog.
+> Em ambientes com Chromium pré-instalado, aponte o executável com `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/caminho/do/chrome npm run test:e2e`.
 
-### 4. Build for Production
+## Estrutura de pastas
 
-```bash
-npm run build
-npm start
-```
-
----
-
-## Project Structure
-
-```
+```text
 blog-devsecops/
-├── src/
-│   ├── app/
-│   │   ├── layout.js              # Root layout with header and footer
-│   │   ├── page.js                # Homepage with hero and latest posts
-│   │   ├── globals.css            # Global styles and Tailwind imports
-│   │   ├── blog/
-│   │   │   ├── page.js           # Blog listing page
-│   │   │   └── [slug]/
-│   │   │       └── page.js       # Individual post page
-│   │   ├── tags/
-│   │   │   ├── page.js           # All tags listing
-│   │   │   └── [tag]/
-│   │   │       └── page.js       # Posts filtered by tag
-│   │   ├── projects/
-│   │   │   └── page.js           # Projects showcase page
-│   │   └── about/
-│   │       └── page.js           # About/profile page
-│   ├── components/
-│   │   ├── Header.js             # Navigation header with theme toggle
-│   │   ├── PostCard.js           # Post preview card component
-│   │   ├── MDXComponents.js      # Custom MDX component styling
-│   │   └── Comments.js           # Giscus comments wrapper
-│   └── lib/
-│       ├── posts.js              # Post reading and processing functions
-│       └── utils.js              # Utility functions (date, reading time)
+├── .github/
+│   ├── workflows/ci.yml            # lint, typecheck, testes, auditoria, build e E2E
+│   └── dependabot.yml              # atualizações semanais (npm e Actions)
 ├── content/
-│   └── posts/
-│       └── *.mdx                 # Your blog posts go here
+│   ├── posts/*.mdx                 # artigos (frontmatter YAML + MDX)
+│   └── products.json               # catálogo da loja 3D (validado por Zod)
+├── e2e/                            # Playwright: jornadas de usuário, labs, loja, SEO/segurança, a11y, mobile
 ├── public/
-│   ├── images/                   # Post images
-│   ├── project-images/           # Project showcase images
-│   └── profile-image.png         # Your profile photo
-├── next.config.mjs               # Next.js configuration
-├── tailwind.config.js            # Tailwind CSS configuration
-├── jsconfig.json                 # JavaScript/path configuration
-└── package.json                  # Dependencies and scripts
+│   ├── images/                     # imagens dos artigos
+│   ├── models/                     # modelos STL e pôsteres (posters/*.png)
+│   ├── videos/                     # vídeos dos artigos
+│   ├── workers/
+│   │   ├── js-runner.js            # executor JavaScript (worker clássico, sem rede)
+│   │   └── py-runner.mjs           # executor Python (Pyodide sob demanda)
+│   └── icon.svg, easter-egg.png, profile-image.jpg
+├── scripts/
+│   └── generate-models.mjs         # gera os STL de exemplo com three.js
+├── src/
+│   ├── app/                        # rotas (App Router)
+│   │   ├── layout.tsx              # HTML raiz, fontes, tema, cabeçalho/rodapé
+│   │   ├── page.tsx                # home
+│   │   ├── blog/page.tsx           # listagem com busca e filtros (?q=&tag=)
+│   │   ├── blog/[slug]/            # artigo + imagem Open Graph por artigo
+│   │   ├── tags/, shop/, projects/, about/
+│   │   ├── feed.xml/route.ts       # RSS
+│   │   ├── sitemap.ts, robots.ts, manifest.ts, opengraph-image.tsx
+│   │   ├── not-found.tsx, error.tsx
+│   │   └── globals.css             # tokens de design (claro/escuro) e estilos de artigo
+│   ├── components/
+│   │   ├── layout/                 # cabeçalho, navegação, busca (Ctrl+K), tema, rodapé
+│   │   ├── blog/                   # cards, filtros, sumário, referências, citação, comentários
+│   │   ├── mdx/                    # mapa de componentes MDX, código, callouts, figuras, abas, quiz, Cite
+│   │   ├── labs/                   # laboratórios interativos e playground de código
+│   │   ├── shop/                   # visualizador 3D e cards de produto
+│   │   └── home/                   # terminal animado do hero
+│   ├── hooks/                      # tema, media queries, visibilidade, valores só-cliente
+│   ├── lib/
+│   │   ├── content/                # carregamento, esquema, MDX, ABNT, tempo de leitura, plugins
+│   │   ├── labs/                   # lógica pura dos laboratórios (óptica, k8s, permissões, playground)
+│   │   ├── shop/                   # esquema e catálogo
+│   │   ├── security/headers.ts     # CSP e cabeçalhos de segurança
+│   │   └── site.ts, search.ts, feed.ts, structured-data.ts, og.tsx, format.ts, theme.ts
+│   └── test/                       # setup do Vitest e substitutos de módulos do Next
+├── next.config.ts                  # cabeçalhos, redirecionamentos, rotas tipadas
+├── playwright.config.ts
+├── vitest.config.mts
+├── eslint.config.mjs
+├── tsconfig.json
+└── package.json
 ```
 
+## Escrevendo artigos
+
+Crie `content/posts/meu-artigo.mdx` (o nome do arquivo é o slug):
+
+````mdx
+---
+title: "Título do artigo"
+description: "Resumo de 20 a 300 caracteres exibido nos cards e no SEO."
+date: "2026-10-13"
+updated: "2026-10-20" # opcional
+tags: ["kubernetes", "devsecops"] # kebab-case minúsculo
+labs: ["Simulador de Deployment"] # opcional: laboratórios do artigo
+references:
+  - id: k8s-docs
+    type: web # book | article | conference | standard | report | web | software
+    authors: ["The Kubernetes Authors"] # pessoas: "Sobrenome, Prenome"
+    title: "Deployments"
+    container: "Kubernetes Documentation"
+    year: 2026
+    url: "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/"
+    accessed: "2026-10-13"
 ---
 
-## Usage
+O Deployment mantém o número desejado de réplicas<Cite id="k8s-docs" />.
 
-### Adding New Posts
+<Callout type="security">Nunca versione segredos.</Callout>
 
-Posts are written in MDX format and stored in `content/posts/`.
-
-#### 1. Create a New MDX File
-
-Create a file in `content/posts/` with a URL-friendly name:
-
-```bash
-content/posts/my-first-post.mdx
+```python runnable title="Execute no navegador"
+print("olá")
 ```
+````
 
-#### 2. Add Frontmatter
+Regras verificadas automaticamente (build e testes):
 
-Every post must start with frontmatter (metadata) in YAML format:
+- frontmatter válido, com **pelo menos uma referência**;
+- todo `<Cite id>` aponta para uma referência existente e toda referência é citada;
+- imagens locais existem; links internos `/blog/...` apontam para artigos existentes;
+- todos os artigos compilam e renderizam.
 
-```mdx
----
-title: "My First DevSecOps Post"
-date: "2025-10-03"
-tags: ["devsecops", "security", "kubernetes"]
-description: "A comprehensive guide to implementing security in Kubernetes clusters"
-image: "/images/kubernetes-security.png"
----
+Componentes disponíveis no MDX: `Cite`, `Callout`, `Figure`, `Video`, `Tabs`/`Tab`, `Quiz`, `FlowDiagram`, `CodePlayground` (ou blocos `runnable`), `PermissionLab`, `K8sSimulator`, `DwdmGridCalculator`, `OsnrCalculator`, `QBerCalculator`, `ConstellationViewer`, `FiberBandsChart`, `OtnHierarchy`. Fórmulas: `$$ … $$` (KaTeX).
 
-# Your Content Starts Here
+## Laboratórios interativos
 
-Write your post content in Markdown...
+A lógica de cada laboratório fica em `src/lib/labs/` como funções puras com testes; os componentes em `src/components/labs/` apenas desenham o estado. Os playgrounds executam código em **Web Workers**:
 
-## Code Examples
+| Executor        | Isolamento                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `js-runner.js`  | Worker novo por execução; CSP `default-src 'none'; script-src 'unsafe-eval'` (sem rede); timeout de 5 s; saída limitada   |
+| `py-runner.mjs` | Pyodide 314.0.7 baixado sob demanda de `cdn.jsdelivr.net` (única origem permitida); namespace limpo por execução; timeout |
 
-```python
-def secure_deployment():
-    print("Implementing security best practices")
-```
+## Loja 3D
 
-You can also use React components if needed!
-```
+Edite `content/products.json`. Campos principais: `slug`, `name`, `price.amount` (centavos), `status` (`available`, `made-to-order`, `coming-soon`), `model.src` (`/models/*.stl|glb`), `poster` e, opcionalmente, `checkoutUrl` (HTTPS — ex.: Stripe Payment Link, Mercado Pago, Gumroad). Sem `checkoutUrl`, o botão abre um pedido por e-mail.
 
-#### 3. Frontmatter Fields
+> Os três produtos atuais são **exemplos** gerados por `scripts/generate-models.mjs`; substitua pelos seus modelos, preços e links de pagamento.
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `title` | Yes | Post title (displayed in cards and page header) |
-| `date` | Yes | Publication date (YYYY-MM-DD format) |
-| `tags` | Yes | Array of tags for categorization |
-| `description` | Yes | Short summary (displayed in post cards) |
-| `image` | No | Featured image path (relative to `public/`) |
+## Segurança
 
-#### 4. Deploy
+- **CSP** restritiva (`default-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`); iframes apenas do Giscus. `script-src` permite `'unsafe-inline'` por ser um site estático (nonces exigiriam renderização por requisição).
+- **HSTS** com preload, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `COOP`, sem `X-Powered-By`.
+- Workers com CSP própria; JSON-LD serializado com escape; slugs resolvidos somente a partir da lista carregada (sem path traversal).
+- Fontes auto-hospedadas; comentários e three.js carregados sob demanda.
+- Auditoria de dependências de produção no CI e Dependabot semanal.
 
-Commit and push your changes:
+## Testes e CI
 
-```bash
-git add content/posts/my-first-post.mdx
-git commit -m "Add new post about Kubernetes security"
-git push origin main
-```
+| Camada         | Ferramenta                       | Cobertura                                                                                                      |
+| -------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Unitários      | Vitest                           | conteúdo (todos os artigos), ABNT, óptica, k8s, permissões, playground/worker, catálogo, CSP, RSS, busca, tema |
+| Componentes    | Vitest + Testing Library (jsdom) | laboratórios, playground, tema, busca, filtros, abas, quiz, easter egg                                         |
+| E2E            | Playwright                       | jornada do leitor, navegação, busca, tema, laboratórios, loja 3D (WebGL), cabeçalhos, SEO, mobile              |
+| Acessibilidade | axe-core                         | WCAG 2.2 AA nos temas claro e escuro                                                                           |
 
-If connected to Vercel, your site will automatically rebuild and deploy.
+O workflow `.github/workflows/ci.yml` roda em cada push/PR com permissões mínimas (`contents: read`).
 
----
+## Deploy
 
-### Customizing Content
+Compatível com Vercel ou qualquer plataforma que execute `next start`. Na Vercel, importe o repositório; o build é detectado automaticamente. Defina `NEXT_PUBLIC_SITE_URL` se o domínio mudar. Os cabeçalhos de segurança são aplicados pelo próprio Next (`next.config.ts`).
 
-#### Personal Information
+Links antigos continuam válidos: `/blog/hello-world` → `/blog/bastidores-do-blog` e `/tags/MAIUSCULA` → `/tags/minuscula` (308). Os slugs dos artigos foram preservados para manter a associação com as discussões do Giscus.
 
-**File: `src/app/about/page.js`**
+## Licença
 
-Update your profile information:
+Código sob licença [MIT](LICENSE). O conteúdo dos artigos pertence ao autor.
 
-```javascript
-// Update profile image path
-<Image src="/profile-image.png" ... />
-
-// Update bio text
-<p>Your bio here...</p>
-
-// Update social links
-<a href="mailto:your-email@example.com" ...>
-<a href="https://github.com/your-username" ...>
-<a href="https://linkedin.com/in/your-profile" ...>
-```
-
-**Required Files:**
-- Add your profile photo to `public/profile-image.png`
-
-#### Projects
-
-**File: `src/app/projects/page.js`**
-
-Add or modify projects in the `projects` array:
-
-```javascript
-const projects = [
-  {
-    title: 'Project Name',
-    description: 'Project description...',
-    image: '/project-images/project-screenshot.png',
-    url: 'https://project-url.com',
-  },
-  // Add more projects...
-]
-```
-
-**Required Files:**
-- Add project images to `public/project-images/`
-
-#### Site Metadata
-
-**File: `src/app/layout.js`**
-
-Update site-wide metadata:
-
-```javascript
-export const metadata = {
-  title: 'Your Name - Blog Title',
-  description: 'Your blog description',
-  keywords: ['keyword1', 'keyword2', ...],
-}
-```
-
-#### Header/Branding
-
-**File: `src/components/Header.js`**
-
-Update logo and site name:
-
-```javascript
-// Update logo initials
-<span className="text-white font-bold text-xl">YI</span>
-
-// Update site name
-<span className="text-xl font-bold...">Your Name</span>
-```
-
----
-
-### Configuring Comments
-
-This blog uses [Giscus](https://giscus.app/) for comments, powered by GitHub Discussions.
-
-#### Setup Steps
-
-1. **Enable GitHub Discussions**
-   - Go to your repository on GitHub
-   - Navigate to `Settings` → `General` → `Features`
-   - Check "Discussions"
-
-2. **Install Giscus App**
-   - Visit [github.com/apps/giscus](https://github.com/apps/giscus)
-   - Click "Install" and authorize for your repository
-
-3. **Get Configuration**
-   - Visit [giscus.app](https://giscus.app/)
-   - Enter your repository: `username/blog-devsecops`
-   - Choose settings (category, reactions, etc.)
-   - Copy the generated configuration
-
-4. **Update Comments Component**
-
-**File: `src/components/Comments.js`**
-
-Replace the configuration:
-
-```javascript
-<Giscus
-  repo="your-username/blog-devsecops"
-  repoId="YOUR_REPO_ID"
-  category="General"
-  categoryId="YOUR_CATEGORY_ID"
-  mapping="pathname"
-  strict="0"
-  reactionsEnabled="1"
-  emitMetadata="0"
-  inputPosition="top"
-  theme="preferred_color_scheme"
-  lang="pt"
-  loading="lazy"
-/>
-```
-
-#### Disable Comments
-
-If you prefer not to have comments:
-
-**File: `src/components/Comments.js`**
-
-```javascript
-export default function Comments() {
-  return null // or remove the component import from post page
-}
-```
-
----
-
-## Deployment
-
-### Deploy to Vercel (Recommended)
-
-#### One-Click Deploy
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/leonardoSaaads/blog-devsecops)
-
-#### Manual Deployment
-
-1. **Create Vercel Account**
-   - Sign up at [vercel.com](https://vercel.com/)
-   - Connect your GitHub account
-
-2. **Import Repository**
-   - Click "Add New Project"
-   - Select your forked/cloned repository
-   - Vercel will auto-detect Next.js settings
-
-3. **Configure Domain (Optional)**
-   - Go to Project Settings → Domains
-   - Add your custom domain (e.g., `blog.leonardosaads.com.br`)
-   - Follow DNS configuration instructions
-
-4. **Environment Variables (if needed)**
-   - Add any required environment variables in Project Settings
-
-5. **Deploy**
-   - Click "Deploy"
-   - Future commits to `main` branch will auto-deploy
-
-### Build Commands
-
-```bash
-# Development
-npm run dev
-
-# Production build
-npm run build
-
-# Start production server
-npm start
-
-# Linting
-npm run lint
-```
-
----
-
-## Contributing
-
-Contributions are welcome for bug fixes and minor improvements. However, major UI/UX changes will not be accepted to maintain the blog's design consistency.
-
-### How to Contribute
-
-1. **Fork the Repository**
-
-```bash
-git clone https://github.com/your-username/blog-devsecops.git
-cd blog-devsecops
-```
-
-2. **Create a Feature Branch**
-
-```bash
-git checkout -b fix/your-bug-fix
-```
-
-3. **Make Your Changes**
-   - Fix bugs
-   - Improve documentation
-   - Optimize performance
-   - Add tests
-
-4. **Commit with Clear Messages**
-
-```bash
-git commit -m "Fix: Resolve mobile navigation issue"
-```
-
-5. **Push and Create Pull Request**
-
-```bash
-git push origin fix/your-bug-fix
-```
-
-Then open a Pull Request on GitHub with a clear description.
-
-### Contribution Guidelines
-
-✅ **Accepted Contributions:**
-- Bug fixes
-- Performance improvements
-- Documentation updates
-- Accessibility enhancements
-- Code refactoring
-- Security patches
-
-❌ **Not Accepted:**
-- Major UI redesigns
-- New features that change core functionality
-- Changes to color schemes or layout
-- Adding external services without discussion
-
----
-
-## License
-
-This project is licensed under the **MIT License** - you are free to use, modify, and distribute this software.
-
-See the [LICENSE](LICENSE) file for full details.
-
-### MIT License Summary
-
-✅ Commercial use  
-✅ Modification  
-✅ Distribution  
-✅ Private use  
-
-⚠️ Liability and warranty not provided
-
----
-
-## Contact
-
-**Leonardo Saads Pinto**
-
-- Website: [blog.leonardosaads.com.br](https://blog.leonardosaads.com.br)
-- GitHub: [@leonardoSaaads](https://github.com/leonardoSaaads)
-
-For bugs and feature requests, please [open an issue](https://github.com/leonardoSaaads/blog-devsecops/issues) on GitHub.
-
----
-
-## Acknowledgments
-
-Built with:
-- [Next.js](https://nextjs.org/) - The React Framework
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
-- [MDX](https://mdxjs.com/) - Markdown for the component era
-- [Vercel](https://vercel.com/) - Deployment platform
-
----
-
-
-## Arquivo de Licença
-
-**Arquivo: `LICENSE`**
-
-```
-MIT License
-
-Copyright (c) 2025 Leonardo Saads Pinto
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+**Contato:** [GitHub](https://github.com/leonardoSaaads) · [LinkedIn](https://www.linkedin.com/in/leonardo-saads-pinto-5a61731b4/)

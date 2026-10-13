@@ -1,0 +1,74 @@
+[
+  {
+    "slug": "case-raspberry-pi-homeserver",
+    "name": "Case ventilado para Raspberry Pi",
+    "summary": "Case compacto com ventilação lateral e furos para fixação em parede — ideal para o seu homeserver.",
+    "description": [
+      "Projetado para quem roda serviços 24/7 em uma Raspberry Pi: grelhas de ventilação nas laterais favorecem a convecção natural e reduzem o thermal throttling.",
+      "A base possui furos para parafusos M2.5 e a tampa encaixa por pressão, sem cola. Imprime sem suportes na orientação indicada."
+    ],
+    "category": "Homelab",
+    "tags": ["raspberry-pi", "homelab", "homeserver"],
+    "price": { "amount": 2490, "currency": "BRL" },
+    "status": "made-to-order",
+    "model": { "src": "/models/case-raspberry-pi.stl", "format": "stl", "defaultColor": "#22d3ee" },
+    "poster": "/models/posters/case-raspberry-pi.png",
+    "license": "Uso pessoal (não comercial)",
+    "files": ["base.stl", "tampa.stl", "guia-de-impressao.pdf"],
+    "print": {
+      "materials": ["PETG", "PLA"],
+      "layerHeight": "0,2 mm",
+      "infill": "20%",
+      "supports": false,
+      "estimatedTime": "≈ 4 h"
+    }
+  },
+  {
+    "slug": "organizador-transceivers-sfp",
+    "name": "Organizador de transceivers SFP/QSFP",
+    "summary": "Bandeja com 12 baias para transceivers ópticos: fim dos módulos soltos na gaveta do NOC.",
+    "description": [
+      "Cada baia comporta um módulo SFP/SFP+ (ou QSFP com o divisor removido) protegendo a interface óptica contra poeira e impactos.",
+      "Etiquetas podem ser coladas na face frontal para identificar comprimento de onda, alcance e fabricante."
+    ],
+    "category": "Telecom",
+    "tags": ["telecom", "noc", "fibra-optica"],
+    "price": { "amount": 3490, "currency": "BRL" },
+    "status": "made-to-order",
+    "model": { "src": "/models/organizador-sfp.stl", "format": "stl", "defaultColor": "#f59e0b" },
+    "poster": "/models/posters/organizador-sfp.png",
+    "license": "Uso pessoal (não comercial)",
+    "files": ["organizador-sfp.stl", "etiquetas.svg"],
+    "print": {
+      "materials": ["PLA", "PETG"],
+      "layerHeight": "0,2 mm",
+      "infill": "15%",
+      "supports": false,
+      "estimatedTime": "≈ 5 h 30 min"
+    }
+  },
+  {
+    "slug": "vaso-parametrico-onda",
+    "name": "Vaso paramétrico Onda",
+    "summary": "Vaso gerado por código: superfície de revolução modulada por uma senoide.",
+    "description": [
+      "Geometria criada proceduralmente — o perfil é uma função seno aplicada ao raio ao longo da altura, resultando em ondas suaves que refletem a luz.",
+      "Pensado para o modo vaso (spiral mode) dos fatiadores: uma única parede contínua, impressão rápida e sem costura aparente."
+    ],
+    "category": "Decoração",
+    "tags": ["parametrico", "decoracao"],
+    "price": { "amount": 1990, "currency": "BRL" },
+    "status": "available",
+    "model": { "src": "/models/vaso-onda.stl", "format": "stl", "defaultColor": "#a78bfa" },
+    "poster": "/models/posters/vaso-onda.png",
+    "license": "Uso pessoal (não comercial)",
+    "files": ["vaso-onda.stl", "vaso-onda.3mf"],
+    "print": {
+      "materials": ["PLA", "PLA Silk"],
+      "layerHeight": "0,24 mm",
+      "infill": "0% (modo vaso)",
+      "supports": false,
+      "estimatedTime": "≈ 2 h 15 min"
+    }
+  }
+]
