@@ -1,242 +1,249 @@
 ---
 title: "Como monitorar o seu homeserver (ou qualquer coisa)"
+description: "Stack de observabilidade com Node Exporter, Prometheus e Grafana provisionados como código, contêineres endurecidos e acesso remoto seguro via Cloudflare Tunnel."
 date: "2025-10-16"
-tags: ["DEVOPS", "DOCKER", "PROMETHEUS", "GRAFANA"]
-description: "Da maneira fácil, segura e sem dor de cabeça"
+updated: "2026-10-13"
+tags: ["devops", "docker", "prometheus", "grafana", "observabilidade"]
+category: infraestrutura
+art: ridgeline
+abstract: "Guia prático para montar a observabilidade de um servidor doméstico com Node Exporter, Prometheus e Grafana, executados em Docker Compose com versões fixadas, segredos fora do código, contêineres endurecidos e redes internas isoladas. Discute o que monitorar segundo os quatro sinais de ouro e o método USE, provisiona datasources e dashboards como código e explica, com uma figura interativa, como o PromQL transforma contadores em taxas com rate() e increase(). O acesso remoto usa Cloudflare Tunnel com autenticação na borda."
+keyPoints:
+  - "O Prometheus coleta métricas no modelo pull e as guarda em séries temporais; o Grafana apenas consulta e desenha."
+  - "Contadores só crescem: rate() os converte em taxa por segundo, corrigindo reinícios e extrapolando até as bordas da janela."
+  - "Datasources e dashboards provisionados como código tornam a stack reproduzível, sem cliques na interface."
+  - "Redes Docker internas aplicam o menor privilégio: só o Prometheus alcança o Node Exporter."
+references:
+  - id: sre-book
+    type: book
+    authors: ["Beyer, Betsy", "Jones, Chris", "Petoff, Jennifer", "Murphy, Niall Richard"]
+    title: "Site Reliability Engineering"
+    subtitle: "how Google runs production systems"
+    place: "Sebastopol"
+    publisher: "O'Reilly Media"
+    year: 2016
+    url: "https://sre.google/sre-book/monitoring-distributed-systems/"
+    accessed: "2026-10-13"
+  - id: gregg-use
+    type: web
+    authors: ["Gregg, Brendan"]
+    title: "The USE Method"
+    container: "brendangregg.com"
+    year: 2012
+    url: "https://www.brendangregg.com/usemethod.html"
+    accessed: "2026-10-13"
+  - id: prom-overview
+    type: web
+    authors: ["Prometheus Authors"]
+    title: "Overview"
+    container: "Prometheus Documentation"
+    year: 2026
+    url: "https://prometheus.io/docs/introduction/overview/"
+    accessed: "2026-10-13"
+  - id: node-exporter
+    type: software
+    authors: ["Prometheus Authors"]
+    title: "node_exporter"
+    subtitle: "exporter for machine metrics"
+    container: "GitHub"
+    year: 2026
+    url: "https://github.com/prometheus/node_exporter"
+    accessed: "2026-10-13"
+  - id: grafana-provisioning
+    type: web
+    authors: ["Grafana Labs"]
+    title: "Provision Grafana"
+    container: "Grafana Documentation"
+    year: 2026
+    url: "https://grafana.com/docs/grafana/latest/administration/provisioning/"
+    accessed: "2026-10-13"
+  - id: grafana-docker
+    type: web
+    authors: ["Grafana Labs"]
+    title: "Configure a Grafana Docker image"
+    container: "Grafana Documentation"
+    year: 2026
+    url: "https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/"
+    accessed: "2026-10-13"
+  - id: docker-logging
+    type: web
+    authors: ["Docker Inc."]
+    title: "Configure logging drivers"
+    container: "Docker Docs"
+    year: 2026
+    url: "https://docs.docker.com/engine/logging/configure/"
+    accessed: "2026-10-13"
+  - id: compose-secrets
+    type: web
+    authors: ["Docker Inc."]
+    title: "Manage secrets securely in Docker Compose"
+    container: "Docker Docs"
+    year: 2026
+    url: "https://docs.docker.com/compose/how-tos/use-secrets/"
+    accessed: "2026-10-13"
+  - id: cf-run-parameters
+    type: web
+    authors: ["Cloudflare"]
+    title: "Tunnel run parameters"
+    container: "Cloudflare One Docs"
+    year: 2026
+    url: "https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/configure-tunnels/run-parameters/"
+    accessed: "2026-10-13"
+  - id: grafana-dashboard-1860
+    type: web
+    authors: ["Rfmoz"]
+    title: "Node Exporter Full"
+    container: "Grafana Labs Dashboards"
+    year: 2026
+    url: "https://grafana.com/grafana/dashboards/1860-node-exporter-full/"
+    accessed: "2026-10-13"
+  - id: prom-metric-types
+    type: web
+    authors: ["Prometheus Authors"]
+    title: "Metric types"
+    container: "Prometheus Documentation"
+    year: 2026
+    url: "https://prometheus.io/docs/concepts/metric_types/"
+    accessed: "2026-10-13"
+  - id: prom-functions
+    type: web
+    authors: ["Prometheus Authors"]
+    title: "Query functions"
+    container: "Prometheus Documentation"
+    year: 2026
+    url: "https://prometheus.io/docs/prometheus/latest/querying/functions/"
+    accessed: "2026-10-13"
+  - id: prom-migration
+    type: web
+    authors: ["Prometheus Authors"]
+    title: "Prometheus 3.0 migration guide"
+    container: "Prometheus Documentation"
+    year: 2026
+    url: "https://prometheus.io/docs/prometheus/latest/migration/"
+    accessed: "2026-10-13"
 ---
 
-<div align="center">
-  <img src="https://i.imgflip.com/a98k0g.jpg" alt="Meme sobre homeserver" />
-</div>
+<Figure src="https://i.imgflip.com/a98k0g.jpg" alt="Meme sobre montar um homeserver" source="imgflip (meme criado pelo autor)" sourceUrl="https://imgflip.com/i/a98k0g" maxWidth={480} />
 
-# Um homeserver 😈
+## Um homeserver 😈
 
-Primeiro de tudo... Não tem escapatória. Mesmo que você tente fugir, não tem como se desprender totalmente das **AMARRAS CLOUD**. 
+Primeiro de tudo: não tem escapatória. Mesmo buscando autonomia total sobre seus dados, você continua dependendo de uma malha — muitas vezes invisível — de datacenters espalhados pelo mundo.
 
-Em outras palavras, quero transmitir a ideia de que, mesmo você tentando ter autonomia sobre toda a infraestrutura de seus dados, não tem como ficarmos alheios a uma malha - muitas das vezes invisível - que são diversos datacenters espalhados pelo mundo. Isso tem um lado bom e também um lado ruim. 
-
-O lado ruim é que seus dados podem ser vazados, podem ser capturados, ficam armazenados nesses gigantes "Bancos Virtuais" e podem ser utilizados para o benefício mais da empresa do que seu. Por outro lado, muitas das vezes esses datacenters são praticamente fortalezas digitais, preparados para terremotos, furacões e seus dados - no pior dos casos - devem ficar inacessíveis por uns 4 minutos devido a algum bug maluco.
-
-Nesse sentido, é interessante você entender o que ocorre um pouco por baixo dos panos nesses datacenters, como você pode ter um pouco mais de autonomia e como um homeserver é interessante nesse cenário.
+Isso tem dois lados. O ruim: seus dados ficam em "bancos virtuais" de terceiros, sujeitos a vazamentos e a usos que beneficiam mais a empresa do que você. O bom: esses datacenters são fortalezas preparadas para falhas de energia, desastres naturais e ataques. Um homeserver não substitui a nuvem — ele devolve a você **controle** sobre parte da sua infraestrutura.
 
 ## O que é um homeserver?
 
-Como o nome já diz, é literalmente um servidor doméstico, é um computador pessoal que funciona como um hub central para armazenar dados, fazer backup de arquivos, gerenciar a automação residencial e permitir acesso remoto a informações. É uma forma de centralizar os dados da casa e controlar seus serviços digitais, eliminando a necessidade de serviços na nuvem.
+É literalmente um servidor doméstico: um computador que funciona como hub para armazenamento, backup, automação residencial e acesso remoto.
 
-**Você pode estar se perguntando: Léo, pra que diabos eu preciso disso?!**
+- **Armazenamento e backup**: aquelas fotos de família de 1839 deixam de depender do plano de R$ 29,90 da nuvem.
+- **Casa inteligente**: peça central da automação residencial.
+- **Acesso remoto**: de qualquer lugar (veja o [artigo sobre Cloudflare Tunnel](/blog/cloudflared-tunnel-tutorail)).
+- **Hospedagem**: sites, bancos de dados e serviços rodando 24/7.
 
-E eu te respondo que essas são as principais razões:
+Para começar, um PC antigo ou mini PC com Linux resolve. Sistemas como o ZimaOS facilitam a instalação de aplicativos por meio de uma loja integrada.
 
-- **Armazenamento e Backup**: Sabe aquelas fotos de 1839 da sua família? Então, coloque no homeserver (se ele for aqueles com muita memória) e você não precisa ficar pagando R$ 29,90 pro OneDrive toda hora porque o seu limite de 15 gigas estorou.
-- **Casa inteligente**: Sim, pode servir como automação para a sua casa e ser a peça central da SmartHome.
-- **Acesso Remoto**: Serve pra você acessar de qualquer lugar da internet (leia meu post sobre cloudflare tunnel).
-- **Hospedagem gratuita**: Ele fica lá rodando 24 horas pra manter o seu site, seu banco de dados e o que você desejar.
-- **Proxy**: Quando você está naquele país duvidoso ou em um local que você desconfia, esse proxy pode te ajudar.
+## Por que monitorar?
 
-## Quer ter um home server?
+Um servidor sem monitoramento é um carro sem painel: você só descobre o problema quando ele já aconteceu. O disco encheu e o banco parou; a CPU está em 100% há três dias; a memória esgotou e o kernel começou a matar processos (<Term def="Out-Of-Memory killer: mecanismo do kernel que, sem memória disponível, escolhe e encerra processos para manter o sistema de pé.">OOM killer</Term>).
 
-É literalmente um PC velho com Linux. Sem zoeira, é literalmente isso. Você pode usar um PC antigo, um laptop, ou mini PCs como um Raspberry Pi ou coisas assim. 
+Dois métodos ajudam a decidir **o que** observar:
 
-Existem sistemas operacionais específicos para servidores, como zimaOS, que facilitam a instalação e o gerenciamento de aplicativos através de uma loja integrada. A configuração pode variar, mas geralmente envolve conectar o dispositivo à rede local, instalar o sistema operacional e configurar os serviços desejados através do IP do servidor. 
+<CardGrid>
+<Card title="Quatro sinais de ouro" icon="activity">Latência, tráfego, erros e saturação — a visão de quem **usa** o serviço<Cite id="sre-book" />.</Card>
+<Card title="Método USE" icon="gauge" tone="signal">Utilização, saturação e erros de cada **recurso**: CPU, memória, disco e rede<Cite id="gregg-use" />.</Card>
+</CardGrid>
 
-Não é necessário ter um grande conhecimento em computação para começar, especialmente com o uso de sistemas operacionais fáceis de usar, como o zimaOS.
+## O trio: Node Exporter, Prometheus e Grafana
 
----
+<Figure src="/images/linux/BackgroundMonitoramento.png" alt="Logotipos do Prometheus, Grafana e Node Exporter" maxWidth={560} />
 
-## Por que raios eu preciso monitorar isso? 🤔
+<CardGrid>
+<Card title="Node Exporter" icon="cpu">Expõe métricas do sistema operacional e do hardware em `:9100/metrics`; não armazena nada<Cite id="node-exporter" />.</Card>
+<Card title="Prometheus" icon="activity" tone="signal">Coleta (*scrape*) as métricas no modelo **pull** e as guarda em um banco de séries temporais, consultável com PromQL<Cite id="prom-overview" />.</Card>
+<Card title="Grafana" icon="gauge" tone="success">Transforma consultas em dashboards e alertas.</Card>
+<Card title="Cloudflare Tunnel" icon="shield">Acesso remoto com HTTPS e sem abrir portas no roteador.</Card>
+</CardGrid>
 
-Beleza, você montou seu homeserver, colocou uns containers rodando, tá tudo funcionando... **Mas será mesmo?**
+<FlowDiagram
+  title="Do kernel ao dashboard"
+  steps={[
+    { title: "Kernel Linux", detail: "Contadores em /proc e /sys: CPU, memória, discos, rede." },
+    { title: "Node Exporter :9100", detail: "Lê /proc e /sys do host (montados somente leitura) e expõe no formato de texto do Prometheus." },
+    { title: "Prometheus :9090", detail: "Faz o scrape a cada 15 s e armazena as amostras no TSDB local (retenção de 15 dias)." },
+    { title: "Grafana :3000", detail: "Consulta o Prometheus via PromQL e renderiza painéis e alertas." },
+    { title: "Cloudflare Tunnel", detail: "Publica o Grafana com HTTPS e autenticação na borda, sem portas abertas." },
+    { title: "Você, de qualquer lugar 🌍", detail: "Acesso pelo navegador ou celular." },
+  ]}
+/>
 
-Aqui vai a real: um servidor sem monitoramento é como dirigir um carro sem painel. Você não sabe se está acabando a gasolina, se o motor está esquentando, ou se aquele barulho estranho é normal. Quando você percebe o problema, **já é tarde demais**.
+## Estrutura do projeto
 
-No mundo dos servidores, isso significa:
-
-- **Seu HD encheu** e você só descobriu quando o banco de dados parou de funcionar
-- **A CPU estava a 100%** há 3 dias e você nem sabia
-- **A memória RAM esgotou** e o sistema começou a matar processos aleatórios
-- **Alguém tentou invadir** seu servidor 47 vezes ontem (sim, acontece)
-
-É por isso que empresas sérias têm salas inteiras cheias de dashboards piscando. Não é porque fica bonito (ok, também é por isso 😎), mas porque **prevenção é melhor que apagar incêndio**.
-
-E o melhor? Você vai conseguir montar exatamente isso no seu homeserver, de graça, e sem precisar de um curso de 6 meses.
-
----
-
-# Monitorando um homeserver: O trio perfeito 🎯
-
-Existem MUITAS ferramentas de monitoramento por aí: Zabbix, Nagios, Datadog, New Relic... Mas vou te mostrar a stack que considero ideal para homeservers: **Prometheus + Grafana + Node Exporter**.
-
-<div align="center">
-  <img src="/images/linux/BackgroundMonitoramento.png" alt="Softwares de monitoramento" />
-</div>
-
-## Por que essas três?
-
-### 🔍 **Node Exporter** - O Espião do Sistema
-
-Pense nele como um agente da CIA instalado no seu sistema operacional. Ele fica lá, quietinho, coletando informações sobre **tudo**:
-
-- Uso de CPU, memória, disco
-- Tráfego de rede
-- Processos rodando
-- Temperatura (se seu hardware suportar)
-- Até quantas vezes seu disco foi lido/escrito
-
-Ele não salva nada, não mostra nada. Apenas **expõe** essas métricas em um endpoint HTTP (geralmente `:9100/metrics`). É tipo deixar uma janela aberta com os dados, mas só quem você autorizar pode olhar.
-
-### 📊 **Prometheus** - O Coletor Obsessivo
-
-Se o Node Exporter é o espião, o Prometheus é o arquivista maníaco. Ele:
-
-1. Acessa o endpoint do Node Exporter a cada 15 segundos (configurável)
-2. **Raspa** (scrape) todas as métricas disponíveis
-3. Armazena tudo em um banco de dados de séries temporais otimizado
-4. Fica pronto para responder perguntas tipo: "Qual era o uso de CPU às 14h37 de ontem?"
-
-Ele funciona no modelo **pull** (ele busca os dados), diferente de ferramentas que funcionam no modelo **push** (os dados são enviados para elas). Isso é mais seguro e escalável porque o Prometheus controla o que coleta e quando coleta.
-
-### 📈 **Grafana** - O Visual
-
-Aqui é onde a mágica acontece. Grafana pega aqueles dados todos do Prometheus e transforma em:
-
-- Dashboards interativos
-- Alertas personalizados
-- Relatórios automatizados
-
-É basicamente o PowerPoint dos dados, mas útil de verdade. Você consegue ver em tempo real o que está acontecendo no seu servidor de uma forma que até sua vó entenderia (talvez).
-
-### 🌐 **Cloudflare Tunnel** - O Porteiro Seguro
-
-Permite acessar seu Grafana de qualquer lugar do mundo, com HTTPS automático e **sem abrir portas no roteador**. Segurança de graça? RECEBA! Caso queira saber mais, leia o meu post anterior.
-
----
-
-## O Fluxo Completo
-
-```bash
-[SISTEMA LINUX] 
-    ↓ (coleta métricas do hardware e SO)
-[NODE EXPORTER :9100] 
-    ↓ (scrape a cada 15 segundos)
-[PROMETHEUS :9090] 
-    ↓ (consulta e processa dados)
-[GRAFANA :3000] 
-    ↓ (túnel seguro com HTTPS)
-[CLOUDFLARE TUNNEL]
-    ↓
-[VOCÊ, de qualquer lugar do mundo 🌍]
-```
-
-Entendeu o esquema? Cada peça tem um papel específico, e juntas formam um sistema completo de observabilidade. É como uma linha de produção onde cada estação faz exatamente o que precisa fazer.
-
-Agora sim, mãos à obra! 🛠️
-
----
-
-## Estruturando o projeto
-
-A primeira parte que precisamos fazer é estruturar o projeto que estamos criando. Ou seja, criar as pastas, montar o esqueleto, para que posteriormente ganhe o corpo. Vamos criar uma pasta chamada `homeserver-stack`:
-
-```bash
-mkdir homeserver-stack
-cd homeserver-stack
-```
-
-Com a pasta feita, vamos seguir essa estrutura:
-
-```bash
+```text
 homeserver-stack/
-├── .gitignore                     # Segurança (CRIE ISSO PRIMEIRO!)
-├── docker-compose.yml             # Orquestrador dos containers
-├── grafana/                       
-│   ├── dashboards/
-│   │   └── node-exporter.json     # Dashboard padrão já configurado
+├── .gitignore
+├── compose.yaml
+├── grafana/
+│   ├── dashboards/node-exporter.json
 │   └── provisioning/
-│       ├── dashboards/
-│       │   └── dashboard.yml      # Config automática de dashboards
-│       └── datasources/
-│           └── datasource.yml     # Config automática do Prometheus
+│       ├── dashboards/dashboard.yml
+│       └── datasources/datasource.yml
 ├── prometheus/
-│   ├── prometheus.yml             # Configurações gerais do Prometheus
-│   └── rules/                     # Regras de alerta (vazio por ora)
-└── secrets/
-    ├── cloudflare_token.txt       # Token do túnel Cloudflare
-    └── grafana_password.txt       # Senha do admin no Grafana
+│   ├── prometheus.yml
+│   └── rules/
+└── secrets/                    # nunca versionar
+    ├── cloudflare_token.txt
+    └── grafana_password.txt
 ```
 
-## Entendendo a estrutura 🗂️
+Isso é **infraestrutura como código**: tudo definido em arquivos versionáveis e replicáveis. Se o servidor queimar, você sobe tudo de novo em minutos.
 
-Essa organização não é à toa. Quando os containers subirem, cada um vai buscar suas configurações nas respectivas pastas:
+### Crie o .gitignore primeiro
 
-- **`prometheus/`**: O Prometheus vai ler `prometheus.yml` para saber **o que** monitorar e **como**
-- **`grafana/provisioning/`**: O Grafana vai auto-configurar datasources e dashboards **sem você precisar clicar em nada**
-- **`grafana/dashboards/`**: Dashboards prontos que aparecem magicamente após o primeiro login
-- **`secrets/`**: Senhas isoladas com permissão adequada.
-
-É o que chamamos de **Infrastructure as Code**: tudo definido em arquivos, versionável, replicável. Se seu servidor explodir, você sobe tudo de novo em 5 minutos.
-
-### ⚠️ IMPORTANTE: Crie o .gitignore AGORA
-
-Antes de fazer qualquer coisa, crie o arquivo `.gitignore` na raiz do projeto. Não deixe para depois. Sério. Eu já vi gente commitando senha de produção no GitHub porque "ia fazer depois".
-
-**homeserver-stack/.gitignore**
-
-```bash
-# Secrets (NUNCA commitar)
+```bash title="homeserver-stack/.gitignore"
 secrets/
 *.token
-*.secret
 *.key
-
-# Dados dos volumes Docker
-prometheus_data/
-grafana_data/
-
-# Logs
 *.log
 ```
 
-### Criando as senhas
-
-Agora vamos criar as senhas de forma segura. Use o `openssl` para gerar uma senha forte:
+### Gerando os segredos
 
 ```bash
-# Cria a pasta secrets
 mkdir -p secrets
-
-# Gera senha para o Grafana (guarde isso!)
 openssl rand -base64 32 > secrets/grafana_password.txt
+# Token do túnel (veja o artigo sobre Cloudflare Tunnel); read -s não ecoa nem grava no histórico
+read -rs TOKEN && printf '%s' "$TOKEN" > secrets/cloudflare_token.txt && unset TOKEN
 
-# O token do Cloudflare você pega no dashboard deles
-# (veja meu outro post sobre Cloudflare Tunnel)
-echo "SEU_TOKEN_AQUI" > secrets/cloudflare_token.txt
-
-# Protege os arquivos
-chmod 700 secrets
-chmod 644 secrets/grafana_password.txt
-chmod 644 secrets/cloudflare_token.txt
+chmod 700 secrets            # só o seu usuário atravessa a pasta
+chmod 644 secrets/*.txt      # legível pelos usuários não-root dos containers
 ```
 
----
+<Callout type="info" title="Por que 700 na pasta e 644 nos arquivos?">
+Os *secrets* do Compose (fora do Swarm) são montados como arquivos dentro do container, com as mesmas permissões do host<Cite id="compose-secrets" />. Os containers rodam com usuários não-root (UID 472 no Grafana, 65532 no cloudflared), que precisam ler o arquivo. A pasta `700` impede que outros usuários **do host** cheguem até ele.
+</Callout>
 
-## O Docker Compose: Orquestrando tudo
+## O Docker Compose
 
-Agora vem a parte mais importante: o arquivo que vai subir todos os containers de forma coordenada. Esse arquivo é o cérebro da operação.
+```yaml title="homeserver-stack/compose.yaml"
+x-logging: &logging
+  driver: local          # rotação embutida no Docker; dispensa contêiner de logrotate
+  options:
+    max-size: "10m"
+    max-file: "3"
 
-**homeserver-stack/docker-compose.yml**
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  logging: *logging
 
-```yaml
+networks:
+  monitoring: {}          # Grafana, Prometheus e cloudflared
+  metrics:
+    internal: true        # Node Exporter só fala com o Prometheus
+
 volumes:
   prometheus_data: {}
   grafana_data: {}
-
-networks:
-  monitoring:
-    driver: bridge
-    internal: false  # Precisa de acesso externo para Cloudflared
-  metrics:
-    driver: bridge
-    internal: true   # Rede interna apenas para coleta de métricas
 
 secrets:
   cloudflare_token:
@@ -245,395 +252,178 @@ secrets:
     file: ./secrets/grafana_password.txt
 
 services:
-  # ========== NODE EXPORTER ==========
   node-exporter:
-    image: prom/node-exporter:v1.8.2
-    container_name: node-exporter
-    restart: unless-stopped
-    
+    <<: *hardening
+    image: prom/node-exporter:v1.12.1
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
-      - /:/rootfs:ro,rslave  # rslave previne propagação de montagens
-    
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--path.rootfs=/rootfs'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-      - '--no-collector.ipvs'  # Desabilita coletores desnecessários
-    
-    ports:
-      - "127.0.0.1:9100:9100"  # APENAS localhost
-    
-    networks:
-      - metrics
-    
-    # SEGURANÇA
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - SYS_TIME  # Necessário para métricas de tempo
-    
-    # LIMITES DE RECURSOS
+      - /:/rootfs:ro,rslave
+    networks: [metrics]
+    read_only: true
     deploy:
       resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
-        reservations:
-          cpus: '0.1'
-          memory: 64M
-    
-    # HEALTHCHECK
+        limits: { cpus: "0.5", memory: 128M }
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9100/"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9100/metrics"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
-      start_period: 10s
 
-  # ========== PROMETHEUS ==========
   prometheus:
-    image: prom/prometheus:v3.6.0
-    container_name: prometheus
-    restart: unless-stopped
-    
+    <<: *hardening
+    image: prom/prometheus:v3.15.0
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
-    
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=15d'  # Reduzido para 15 dias
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
-      - '--web.listen-address=:9090'
-    
     ports:
-      - "127.0.0.1:9090:9090"  # APENAS localhost
-    
-    networks:
-      - monitoring
-      - metrics
-    
-    depends_on:
-      node-exporter:
-        condition: service_healthy
-    
-    # SEGURANÇA
-    user: "65534"  # nobody
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
+      - "127.0.0.1:9090:9090"
+    networks: [monitoring, metrics]
+    user: "65534:65534"
     read_only: true
-    tmpfs:
-      - /tmp
-    
-    # LIMITES DE RECURSOS
+    tmpfs: [/tmp]
+    depends_on:
+      node-exporter: { condition: service_healthy }
     deploy:
       resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    
-    # HEALTHCHECK
+        limits: { cpus: "1.0", memory: 1G }
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 30s
 
-  # ========== GRAFANA ==========
   grafana:
-    image: grafana/grafana:12.2.0
-    container_name: grafana
-    restart: unless-stopped
-    
+    <<: *hardening
+    image: grafana/grafana:13.2.4
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_SERVER_ROOT_URL: https://grafana.seudominio.com
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+      GF_SNAPSHOTS_EXTERNAL_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    secrets: [grafana_admin_password]
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-    
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_password
-      - GF_SERVER_ROOT_URL=https://grafana.seudominio.com
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_USERS_ALLOW_ORG_CREATE=false
-      - GF_AUTH_ANONYMOUS_ENABLED=false
-      - GF_SECURITY_DISABLE_GRAVATAR=true
-      - GF_SNAPSHOTS_EXTERNAL_ENABLED=false
-      - GF_LOG_MODE=console
-      - GF_LOG_LEVEL=info
-    
-    secrets:
-      - grafana_admin_password
-    
     ports:
-      - "127.0.0.1:3000:3000"  # APENAS localhost
-    
-    networks:
-      - monitoring
-    
-    depends_on:
-      prometheus:
-        condition: service_healthy
-    
-    # SEGURANÇA
+      - "127.0.0.1:3000:3000"
+    networks: [monitoring]
     user: "472"
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    
-    # LIMITES DE RECURSOS
+    depends_on:
+      prometheus: { condition: service_healthy }
     deploy:
       resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    
-    # HEALTHCHECK
+        limits: { cpus: "1.0", memory: 512M }
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 30s
 
-  # ========== CLOUDFLARED ==========
   cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: cloudflared
-    restart: unless-stopped
-
+    <<: *hardening
+    image: cloudflare/cloudflared:2026.10.0
+    # --metrics expõe /metrics e /ready para o Prometheus monitorar o túnel
+    command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 run
     environment:
-      - TUNNEL_TOKEN_FILE=/run/secrets/cloudflare_token  # Usar arquivo de segredo
-    
-    secrets:
-      - cloudflare_token
-    
-    command: tunnel --no-autoupdate run
-    
-    networks:
-      - monitoring
-    
-    depends_on:
-      prometheus:
-        condition: service_healthy
-      grafana:
-        condition: service_healthy
-    
-    # SEGURANÇA
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
+      TUNNEL_TOKEN_FILE: /run/secrets/cloudflare_token
+    secrets: [cloudflare_token]
+    networks: [monitoring]
     read_only: true
-    tmpfs:
-      - /tmp
-      - /root/.cloudflared
-    
-    # LIMITES DE RECURSOS
+    tmpfs: [/tmp]
+    depends_on:
+      grafana: { condition: service_healthy }
     deploy:
       resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
-        reservations:
-          cpus: '0.1'
-          memory: 64M
-    
-    # HEALTHCHECK
-    healthcheck:
-      test: ["CMD", "cloudflared", "tunnel", "info"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
-
-  # ========== LOG ROTATION (Previne crescimento ilimitado) ==========
-  logrotate:
-    image: blacklabelops/logrotate:latest
-    container_name: logrotate
-    restart: unless-stopped
-    
-    volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/log:/var/log
-    
-    environment:
-      - LOGS_DIRECTORIES=/var/lib/docker/containers
-      - LOGROTATE_INTERVAL=daily
-      - LOGROTATE_COPIES=7
-      - LOGROTATE_SIZE=10M
-    
-    # SEGURANÇA
-    security_opt:
-      - no-new-privileges:true
-    
-    # LIMITES DE RECURSOS
-    deploy:
-      resources:
-        limits:
-          cpus: '0.1'
-          memory: 32M
+        limits: { cpus: "0.5", memory: 128M }
 ```
 
-## Destrinchando o Docker Compose 🔬
+## Destrinchando o Compose 🔬
 
-Sei que foi muita informação de uma vez, então vamos entender os pontos críticos:
+**Redes isoladas.** Duas redes aplicam o princípio do menor privilégio: o Node Exporter fica numa rede `internal` (sem saída para a internet) acessível apenas pelo Prometheus. Se o Grafana for comprometido, ele não alcança o exporter diretamente.
 
-### Redes isoladas 🕸️
+**Portas só em localhost.** `127.0.0.1:3000:3000` deixa o Grafana acessível apenas a partir do próprio servidor. O Node Exporter nem publica porta: o Prometheus o alcança pela rede interna.
 
-```yaml
-networks:
-  monitoring:  # Grafana, Prometheus, Cloudflare conversam aqui
-    internal: false
-  metrics:     # Node Exporter só fala com Prometheus (segurança!)
-    internal: true
-```
+**Healthchecks.** O Docker verifica periodicamente se cada serviço responde, e o `depends_on` com `service_healthy` sobe a stack na ordem certa. O `cloudflared` não tem healthcheck interno porque sua imagem é *distroless* (sem shell nem `wget`); em vez disso, ele expõe `/ready` e `/metrics` com a flag `--metrics`<Cite id="cf-run-parameters" />, e o próprio Prometheus passa a monitorá-lo.
 
-Por que duas redes? **Princípio do menor privilégio**. O Node Exporter não precisa falar com o Grafana diretamente, então nem deixamos essa possibilidade existir. Se alguém comprometer o Grafana, não consegue acessar diretamente as métricas brutas.
+**Senha do Grafana via arquivo.** Qualquer opção de configuração do Grafana aceita o sufixo `__FILE` para ler o valor de um arquivo — por isso usamos `GF_SECURITY_ADMIN_PASSWORD__FILE` apontando para o *secret*, em vez da senha em texto puro no Compose<Cite id="grafana-docker" />.
 
-### Portas em localhost 🔒
+**Limites de recursos.** Evitam que um container descontrolado derrube a máquina inteira.
 
-```yaml
-ports:
-  - "127.0.0.1:9100:9100"  # SÓ acessível de dentro da máquina
-```
+**Hardening.** `no-new-privileges`, `cap_drop: [ALL]`, usuários não-root e sistemas de arquivos *read-only* reduzem drasticamente o que um invasor consegue fazer dentro de um container.
 
-Viu esse `127.0.0.1`? Isso significa que **apenas processos rodando no seu servidor** conseguem acessar essas portas. Nada de expor serviços para a internet. Só o Cloudflare Tunnel tem acesso externo, e de forma controlada.
+**Logs com rotação nativa.** A versão anterior usava a imagem `blacklabelops/logrotate`, sem manutenção há anos e com acesso de escrita a `/var/log` do host. O driver `local` do Docker já faz rotação e compressão<Cite id="docker-logging" />.
 
-### Health Checks ❤️‍🩹
-
-```yaml
-healthcheck:
-  test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9100/"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
-```
-
-O Docker vai verificar a cada 30 segundos se o serviço está respondendo. Se falhar 3 vezes seguidas, ele reinicia o container automaticamente. É como ter um médico verificando o pulso do paciente constantemente.
-
-### Limites de recursos 💪
-
-```yaml
-deploy:
-  resources:
-    limits:
-      cpus: '0.5'
-      memory: 128M
-```
-
-Isso evita que um container enlouqueça e consuma todos os recursos da máquina. É tipo colocar um freio de mão: pode acelerar, mas não passa daqui.
-
-### Segurança hardening 🛡️
-
-```yaml
-security_opt:
-  - no-new-privileges:true
-cap_drop:
-  - ALL
-cap_add:
-  - SYS_TIME
-read_only: true
-```
-
-Essas configurações são **nível paranoia**:
-- `no-new-privileges`: Impede escalação de privilégios
-- `cap_drop: ALL`: Remove todas as capacidades do Linux
-- `cap_add: SYS_TIME`: Adiciona apenas o necessário
-- `read_only: true`: Sistema de arquivos apenas leitura
-
-É como trancar todas as portas e janelas e só abrir aquela que você realmente precisa usar.
-
----
+<Callout type="warning" title="Métricas de rede em rede bridge">
+Em uma rede bridge, o Node Exporter enxerga a interface de rede **do próprio container**, e não a do host: os painéis de tráfego mostrarão pouco movimento. Para medir a rede real do servidor, execute o exporter com `network_mode: host` e `pid: host` — e, nesse caso, bloqueie a porta 9100 no firewall do host, já que ela deixa de ser isolada pelo Docker<Cite id="node-exporter" />.
+</Callout>
 
 ## Configurando o Prometheus
 
-Agora vamos configurar o cérebro da coleta de métricas. Crie a estrutura de pastas:
-
-```bash
-mkdir -p prometheus/rules
-```
-
-**homeserver-stack/prometheus/prometheus.yml**
-
-```yaml
+```yaml title="homeserver-stack/prometheus/prometheus.yml"
 global:
-  scrape_interval: 15s       # Coleta métricas a cada 15 segundos
-  evaluation_interval: 15s   # Avalia regras de alerta a cada 15 segundos
-  
+  scrape_interval: 15s
+  evaluation_interval: 15s
   external_labels:
-    monitor: 'homeserver'
-    environment: 'production'
+    environment: "homelab"
 
-# Configurações de coleta
 scrape_configs:
-  # Monitorar o próprio Prometheus
-  - job_name: 'prometheus'
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
-        labels:
-          instance: 'prometheus-server'
-          service: 'prometheus'
+      - targets: ["localhost:9090"]
 
-  # Monitorar o host (seu PC/Servidor)
-  - job_name: 'node-exporter'
+  - job_name: "node"
     static_configs:
-      - targets: ['node-exporter:9100']
+      - targets: ["node-exporter:9100"]
         labels:
-          instance: 'homeserver-host'
-          service: 'node-exporter'
-          hostname: 'meu-homeserver'
+          hostname: "meu-homeserver"
+
+  # Monitore o monitoramento: estado do túnel
+  - job_name: "cloudflared"
+    static_configs:
+      - targets: ["cloudflared:2000"]
 ```
 
-### O que está acontecendo aqui?
+### De contadores a taxas: rate() e increase()
 
-Esse arquivo diz ao Prometheus:
+A maioria das métricas do Node Exporter é de contadores: `node_cpu_seconds_total` e `node_network_receive_bytes_total` só crescem desde a inicialização do host<Cite id="node-exporter" />.
 
-1. **"Vá buscar métricas a cada 15 segundos"** (`scrape_interval`)
-2. **"Monitore você mesmo"** (job `prometheus`)
-3. **"Monitore o Node Exporter"** (job `node-exporter`)
+<Definition term="Contador (counter)">
+Métrica cumulativa que só aumenta — ou volta a zero quando o processo reinicia. O valor absoluto quase nunca interessa: o que importa é a variação por unidade de tempo<Cite id="prom-metric-types" />.
+</Definition>
 
-Os `labels` são tags que você pode usar depois para filtrar e agrupar dados no Grafana. É tipo colocar etiquetas em caixas de mudança.
+A função `rate(x[5m])` calcula a taxa média por segundo dentro da janela, corrigindo os reinícios do contador e extrapolando até as bordas; `increase()` é a mesma conta multiplicada pela duração da janela<Cite id="prom-functions" />. Por isso não se usa `delta()` em contadores: no reinício, a diferença fica negativa.<Sidenote>No Prometheus 3, as janelas são abertas à esquerda: uma amostra exatamente no início da janela é excluída<Cite id="prom-migration" />.</Sidenote>
 
----
+<RateExplainer />
 
-## Configurando o Grafana
+Na prática, use janelas de pelo menos quatro intervalos de scrape — com scrape de 15 s, `[1m]` ou mais — para que sempre haja amostras suficientes, mesmo que uma coleta falhe.
 
-Aqui vem a mágica: vamos fazer o Grafana se auto-configurar. Sem precisar clicar em nada!
+## Configurando o Grafana como código
 
-### Configurando o Datasource (Prometheus)
+O Grafana lê arquivos de *provisioning* na inicialização: datasources e dashboards aparecem sem nenhum clique<Cite id="grafana-provisioning" />. O `uid` fixo do datasource permite que os dashboards o referenciem de forma estável.
 
-```bash
-mkdir -p grafana/provisioning/datasources
-```
-
-**homeserver-stack/grafana/provisioning/datasources/datasource.yml**
-
-```yaml
+```yaml title="grafana/provisioning/datasources/datasource.yml"
 apiVersion: 1
-
 datasources:
   - name: Prometheus
+    uid: prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090
@@ -643,854 +433,139 @@ datasources:
       timeInterval: 15s
 ```
 
-Isso diz ao Grafana: **"Ei, tem um Prometheus rodando em `prometheus:9090`, conecta nele automaticamente e usa ele como fonte de dados padrão"**.
-
-### Configurando Dashboards automáticos
-
-```bash
-mkdir -p grafana/provisioning/dashboards
-mkdir -p grafana/dashboards
-```
-
-**homeserver-stack/grafana/provisioning/dashboards/dashboard.yml**
-
-```yaml
+```yaml title="grafana/provisioning/dashboards/dashboard.yml"
 apiVersion: 1
-
 providers:
-  - name: 'Default'
-    orgId: 1
-    folder: 'Homeserver'
+  - name: homeserver
+    folder: Homeserver
     type: file
-    disableDeletion: false
-    updateIntervalSeconds: 10
-    allowUiUpdates: true
+    disableDeletion: true
+    allowUiUpdates: false
     options:
       path: /var/lib/grafana/dashboards
 ```
 
-Isso cria automaticamente uma pasta chamada "Homeserver" no Grafana e carrega todos os dashboards que estiverem em `/var/lib/grafana/dashboards`.
-
-### Dashboard do Node Exporter
-
-Agora vem a parte mais legal: um dashboard completo com todas as métricas do seu sistema. Mas como é um arquivo JSON gigante (4000+ linhas), vou facilitar sua vida:
-
 <details>
-<summary><strong>📊 Clique aqui para ver como obter o dashboard completo do Node Exporter</strong></summary>
+<summary><strong>📊 Dashboard "Homeserver — Sistema" (JSON enxuto)</strong></summary>
 
-<br />
-
-> ⚠️ **Atenção:** O dashboard completo possui mais de 1.000 linhas de JSON. Copie com atenção!
-
-```json
+```json title="grafana/dashboards/node-exporter.json"
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 3,
-  "links": [],
+  "title": "Homeserver — Sistema",
+  "uid": "homeserver-system",
+  "tags": ["node-exporter", "homeserver"],
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "schemaVersion": 42,
   "panels": [
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 0,
-        "y": 0
-      },
-      "id": 2,
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "12.2.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "builder",
-          "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Uso de CPU",
-      "transparent": true,
-      "type": "gauge"
+      "id": 1, "type": "gauge", "title": "CPU",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100,
+        "thresholds": { "mode": "absolute", "steps": [
+          { "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 } ] } } },
+      "targets": [{ "refId": "A", "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))" }]
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 6,
-        "y": 0
-      },
-      "id": 3,
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "12.2.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "100 * (1 - ((node_memory_MemAvailable_bytes) / (node_memory_MemTotal_bytes)))",
-          "refId": "A"
-        }
-      ],
-      "title": "Uso de Memória",
-      "transparent": true,
-      "type": "gauge"
+      "id": 2, "type": "gauge", "title": "Memória",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } },
+      "targets": [{ "refId": "A", "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)" }]
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 12,
-        "y": 0
-      },
-      "id": 4,
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "12.2.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "100 - ((node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"rootfs\"} * 100) / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"rootfs\"})",
-          "refId": "A"
-        }
-      ],
-      "title": "Uso de Disco",
-      "transparent": true,
-      "type": "gauge"
+      "id": 3, "type": "gauge", "title": "Disco (/)",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } },
+      "targets": [{ "refId": "A", "expr": "100 * (1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})" }]
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "dtdhms"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 18,
-        "y": 0
-      },
-      "id": 11,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.2.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "builder",
-          "expr": "time() - node_boot_time_seconds",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Uptime",
-      "transparent": true,
-      "type": "stat"
+      "id": 4, "type": "stat", "title": "Uptime",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "dtdurations" } },
+      "targets": [{ "refId": "A", "expr": "time() - node_boot_time_seconds" }]
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 6
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.2.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "rate(node_cpu_seconds_total{mode=\"system\"}[5m]) * 100",
-          "legendFormat": "System",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "rate(node_cpu_seconds_total{mode=\"user\"}[5m]) * 100",
-          "legendFormat": "User",
-          "refId": "B"
-        }
-      ],
-      "title": "CPU Usage por Modo",
-      "transparent": true,
-      "type": "timeseries"
+      "id": 5, "type": "timeseries", "title": "CPU por modo",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent" } },
+      "targets": [{ "refId": "A", "expr": "100 * sum by (mode) (rate(node_cpu_seconds_total{mode!=\"idle\"}[5m])) / scalar(count(count by (cpu) (node_cpu_seconds_total)))", "legendFormat": "{{mode}}" }]
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "Bps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 6
-      },
-      "id": 7,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.2.0",
+      "id": 6, "type": "timeseries", "title": "Load average",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "rate(node_network_receive_bytes_total[5m])",
-          "legendFormat": "{{device}} - Recebido",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "rate(node_network_transmit_bytes_total[5m])",
-          "legendFormat": "{{device}} - Transmitido",
-          "refId": "B"
-        }
-      ],
-      "title": "Tráfego de Rede",
-      "transparent": true,
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "bytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 24,
-        "x": 0,
-        "y": 14
-      },
-      "id": 6,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.2.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
-          "legendFormat": "Usado",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "node_memory_MemAvailable_bytes",
-          "legendFormat": "Disponível",
-          "refId": "B"
-        }
-      ],
-      "title": "Memória (Bytes)",
-      "transparent": true,
-      "type": "timeseries"
+        { "refId": "A", "expr": "node_load1", "legendFormat": "1 min" },
+        { "refId": "B", "expr": "node_load15", "legendFormat": "15 min" }
+      ]
     }
-  ],
-  "preload": false,
-  "refresh": "30s",
-  "schemaVersion": 42,
-  "tags": [
-    "node-exporter",
-    "homeserver"
-  ],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
-  "timepicker": {},
-  "timezone": "",
-  "title": "Homeserver - Métricas do Sistema Copy",
-  "uid": "ad8k974",
-  "version": 21
+  ]
 }
 ```
 
 </details>
 
----
+Prefere algo completo? O dashboard comunitário **Node Exporter Full** (ID 1860) é a referência da comunidade — importe-o pela interface ou salve o JSON na pasta de dashboards<Cite id="grafana-dashboard-1860" />.
 
-## Subindo tudo! 🚀
-
-Agora que tudo está configurado, é hora da verdade. Vamos subir a stack completa:
+## Subindo tudo 🚀
 
 ```bash
-# Verifica se está tudo ok (sintaxe do YAML)
-docker compose config
-
-# Sobe todos os containers em background
+docker compose config --quiet && echo "ok"
 docker compose up -d
-
-# Acompanha os logs em tempo real
-docker compose logs -f
+docker compose ps                               # todos "healthy"
+curl -s http://127.0.0.1:9090/-/healthy
+curl -s http://127.0.0.1:3000/api/health
 ```
 
-Se tudo deu certo, você vai ver algo assim:
+Acesse `http://127.0.0.1:3000` (usuário `admin`, senha em `secrets/grafana_password.txt`). Remotamente, publique `grafana:3000` no túnel — **com Cloudflare Access na frente** — e acesse `https://grafana.seudominio.com`.
 
-```
-✔ Container node-exporter  Started
-✔ Container prometheus     Started
-✔ Container grafana        Started
-✔ Container cloudflared    Started
-✔ Container logrotate      Started
-```
-
-### Verificando se está funcionando
-
-```bash
-# Verifica status dos containers
-docker compose ps
-
-# Testa se o Prometheus está respondendo
-curl http://localhost:9090/-/healthy
-
-# Testa se o Grafana está respondendo
-curl http://localhost:3000/api/health
-```
-
----
-
-## Acessando o Grafana
-
-### Localmente
-
-Acesse `http://localhost:3000` no seu navegador.
-
-- **Usuário:** `admin`
-- **Senha:** A que você gerou em `secrets/grafana_password.txt`
-
-Para ver sua senha:
-
-```bash
-cat secrets/grafana_password.txt
-```
-
-### Remotamente (via Cloudflare Tunnel)
-
-Se você configurou o Cloudflare Tunnel, acesse pelo domínio que você definiu:
-
-`https://grafana.seudominio.com` ou `https://view.seudominio.com`, por exmeplo
-
----
-
-## Explorando o Dashboard
-
-Depois de fazer login:
-
-1. Menu lateral → **"Dashboards"**
-2. Abra a pasta **"Homeserver"**
-3. Clique no dashboard **"Node Exporter Full"**
-
-Você vai ver gráficos mostrando:
-
-- **CPU**: Uso por core, modo (user, system, idle)
-- **Memória**: Usada, livre, cache, buffers
-- **Disco**: Espaço disponível, I/O por segundo, latência
-- **Rede**: Taxa de transferência, pacotes por segundo, erros
-- **Sistema**: Uptime, load average, número de processos
-
-É como um raio-X do seu servidor em tempo real!
-
----
+Em **Status → Target health** no Prometheus, os três jobs (`prometheus`, `node`, `cloudflared`) devem estar `UP`.
 
 ## Comandos úteis
 
 ```bash
-# Para tudo
-docker compose down
-
-# Para e remove volumes (CUIDADO: apaga dados históricos)
-docker compose down -v
-
-# Reinicia um serviço específico
-docker compose restart grafana
-
-# Ver logs de um serviço específico
-docker compose logs -f prometheus
-
-# Atualizar imagens
-docker compose pull
-docker compose up -d
-
-# Ver uso de recursos
-docker stats
+docker compose logs -f prometheus     # logs de um serviço
+docker compose pull && docker compose up -d   # atualizar (após revisar as release notes)
+docker stats                          # consumo em tempo real
+docker compose down                   # parar (mantém os volumes)
 ```
-
----
 
 ## Troubleshooting
 
-### Grafana não conecta no Prometheus
-
 ```bash
-# Verifica se estão na mesma rede
-docker network inspect homeserver-stack_monitoring
+# Grafana não conecta no Prometheus
+docker compose exec grafana wget -qO- http://prometheus:9090/-/healthy
 
-# Testa conectividade
-docker exec -it grafana wget -O- http://prometheus:9090/-/healthy
+# Targets do Prometheus
+curl -s http://127.0.0.1:9090/api/v1/targets | head -c 600
+
+# Container reiniciando: veja o motivo
+docker inspect --format '{{json .State.Health}}' prometheus
 ```
-
-### Node Exporter não aparece no Prometheus
-
-```bash
-# Verifica targets no Prometheus
-curl http://localhost:9090/api/v1/targets
-
-# Ou acesse: http://localhost:9090/targets
-```
-
-### Container reiniciando constantemente
-
-```bash
-# Veja o que está acontecendo
-docker compose logs nome-do-container
-
-# Verifica health check
-docker inspect nome-do-container | grep -A 10 Health
-```
-
----
 
 ## Próximos passos
 
-Agora que você tem seu monitoramento funcionando:
+1. **Alertas**: regras no Prometheus + Alertmanager (disco acima de 85%, target fora, túnel desconectado).
+2. **Mais exporters**: cAdvisor (containers), PostgreSQL, Nginx, SNMP.
+3. **Backups** dos volumes `grafana_data` e `prometheus_data`.
+4. **PromQL**: além de `rate()` e `increase()`, aprenda agregações `by (...)` e `histogram_quantile()`.
 
-1. **Configure alertas** no Prometheus para ser notificado quando algo der errado
-2. **Adicione mais dashboards** do Grafana Labs
-3. **Monitore outros serviços** (Docker, Nginx, PostgreSQL, etc.)
-4. **Configure backups** dos dados do Grafana e Prometheus
-5. **Explore o PromQL** para criar suas próprias queries
-
----
+<Quiz
+  question="Por que o Node Exporter fica numa rede Docker marcada como internal?"
+  options={[
+    "Para que ele colete métricas mais rápido",
+    "Para que apenas o Prometheus o alcance e ele não tenha saída para a internet",
+    "Porque o Grafana exige isso",
+    "Para economizar memória",
+  ]}
+  answer={1}
+  explanation="Redes internas não têm rota para fora e só os containers conectados a elas se enxergam: é o princípio do menor privilégio aplicado à rede."
+/>
 
 ## Conclusão
 
-Parabéns! Você acabou de montar um sistema de monitoramento profissional no seu homeserver. O mesmo tipo de stack que empresas como Uber, SoundCloud e DigitalOcean usam em produção.
-
-Agora você tem:
-- ✅ Visibilidade completa do seu servidor
-- ✅ Dashboards bonitos e informativos
-- ✅ Acesso seguro de qualquer lugar
-- ✅ Uma base sólida para expandir
-
-E o melhor: **tudo open-source e de graça**.
-
-Curtiu? Compartilha aí e me marca! Tem dúvidas? Comenta que eu respondo.
-
-Até a próxima!
-
----
-
-**Links úteis:**
-- [Documentação do Prometheus](https://prometheus.io/docs/)
-- [Documentação do Grafana](https://grafana.com/docs/)
-- [Dashboards da comunidade](https://grafana.com/grafana/dashboards/)
-- [Meu post sobre Cloudflare Tunnel](/blog/cloudflared-tunnel-tutorail)
+Você montou uma stack de observabilidade com práticas de produção — versões fixadas, segredos fora do código, containers endurecidos, logs com rotação e acesso remoto autenticado. É o mesmo tipo de stack usado em empresas de todos os tamanhos, agora no seu homelab — e tudo open source.

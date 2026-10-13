@@ -1,528 +1,264 @@
-# Leonardo Saads - DevSecOps Blog
+# Leonardo Saads — Engenharia, Telecomunicações e Software
 
-Modern and minimalist blog built with Next.js 15, focused on DevSecOps, Information Security, Development, and Technology topics.
+Blog técnico com projeto editorial de **publicação acadêmica** — resumo, figuras e equações numeradas, notas de margem e referências ABNT — e **figuras interativas no próprio texto**: simuladores, calculadoras, um modelo 3D de fibra óptica e código executável no navegador. Cada artigo tem uma ilustração gerada por código a partir do seu tema.
 
-**Live Demo:** [https://blog.leonardosaads.com.br](https://blog.leonardosaads.com.br)
-
----
-
-## Table of Contents
-
-- [About](#about)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Project Structure](#project-structure)
-- [Usage](#usage)
-  - [Adding New Posts](#adding-new-posts)
-  - [Customizing Content](#customizing-content)
-  - [Configuring Comments](#configuring-comments)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+**Produção:** [blog.leonardosaads.com.br](https://blog.leonardosaads.com.br)
 
 ---
 
-## About
+## Sumário
 
-This is a personal blog template designed for technical content creators, specifically those working in DevSecOps, cybersecurity, and software development fields. The blog is built with modern web technologies, prioritizing performance, simplicity, and ease of content management.
-
-Key principles:
-- **Build and Exit**: Write posts in Markdown, commit, and deploy automatically
-- **Zero Backend**: Static site generation with no database or server management
-- **Performance First**: Optimized for speed and SEO
-- **Developer Friendly**: Clean codebase following React and Next.js best practices
-
----
-
-## Features
-
-- ✅ **MDX Support**: Write posts in Markdown with React component support
-- ✅ **Syntax Highlighting**: Beautiful code blocks with highlight.js
-- ✅ **Dark Mode**: Automatic theme switching with persistent preference
-- ✅ **Responsive Design**: Mobile-first approach using Tailwind CSS 4.1
-- ✅ **Tag System**: Organize and filter posts by topics
-- ✅ **Reading Time**: Automatic calculation of estimated reading time
-- ✅ **SEO Optimized**: Meta tags, semantic HTML, and OpenGraph support
-- ✅ **Comments**: Integration with Giscus (GitHub Discussions)
-- ✅ **Fast Loading**: Image optimization with next/image
-- ✅ **Projects Showcase**: Dedicated page for portfolio projects
-- ✅ **About Page**: Professional profile with social links
+- [Visão geral](#visão-geral)
+- [Stack](#stack)
+- [Requisitos](#requisitos)
+- [Início rápido](#início-rápido)
+- [Scripts](#scripts)
+- [Estrutura de pastas](#estrutura-de-pastas)
+- [Escrevendo artigos](#escrevendo-artigos)
+- [Projeto editorial](#projeto-editorial)
+- [Figuras interativas](#figuras-interativas)
+- [Arte generativa](#arte-generativa)
+- [Segurança](#segurança)
+- [Testes e CI](#testes-e-ci)
+- [Deploy](#deploy)
+- [Licença](#licença)
 
 ---
 
-## Tech Stack
+## Visão geral
 
-- **Framework**: [Next.js 15.5](https://nextjs.org/) with App Router
-- **Language**: JavaScript (ES6+)
-- **Styling**: [Tailwind CSS 4.1](https://tailwindcss.com/)
-- **Content**: MDX (Markdown + JSX)
-- **Deployment**: [Vercel](https://vercel.com/)
-- **Comments**: [Giscus](https://giscus.app/)
-- **Icons**: [React Icons](https://react-icons.github.io/react-icons/)
+| Recurso           | Descrição                                                                                                                         |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Artigos revisados | MDX validado por esquema (Zod); build falha com frontmatter inválido                                                              |
+| Referências ABNT  | Toda publicação exige referências; `<Cite id>` gera citações numeradas e a lista NBR 6023                                         |
+| Projeto editorial | Resumo, palavras-chave e pontos-chave por artigo; figuras, listagens, definições e equações numeradas; notas de margem; glossário |
+| Figuras no texto  | Fibra óptica 3D, sinais/PID 1, FHS, exposição de portas, PromQL `rate()`, OIDs SNMP, complexidade, Kubernetes, DWDM/OSNR/Q/OTN    |
+| Código executável | JavaScript e Python (Pyodide/WebAssembly) em Web Workers isolados, com CSP própria e timeout                                      |
+| Arte generativa   | SVG determinístico por artigo (semente = slug) na capa, nos cards e na imagem Open Graph                                          |
+| Leitura           | Sumário com scroll-spy, progresso de leitura (CSS), busca Ctrl+K, filtros por área/tag, tema claro/escuro/sistema, "Como citar"   |
+| SEO               | Metadados, Open Graph gerado, JSON-LD (`BlogPosting` com `abstract`, `articleSection` e `citation`), sitemap, robots, RSS         |
+| Qualidade         | TypeScript estrito, ESLint, Vitest, Playwright + axe (WCAG 2.2 AA) e CI no GitHub Actions                                         |
 
----
+## Stack
 
-## Prerequisites
+- **Next.js 16** (App Router, Turbopack, SSG) + **React 19**
+- **TypeScript 6** (estrito; o TypeScript 7 nativo ainda não expõe a API usada pelo `typescript-eslint`)
+- **Tailwind CSS 4** + `@tailwindcss/typography`
+- **MDX 3** (`@mdx-js/mdx`) com remark-gfm, remark-math/rehype-katex, rehype-slug, Shiki
+- **Zod 4** (validação do frontmatter)
+- **three.js** (modelo 3D da fibra, carregado sob demanda)
+- **Source Serif 4** (leitura) e **Geist** (interface), auto-hospedadas
+- **Vitest 5** + Testing Library · **Playwright** + **axe-core**
+- **Giscus** (comentários via GitHub Discussions, carregados sob demanda)
 
-- **Node.js**: Version 18.x or higher (recommended: 22.x)
-- **npm**: Version 9.x or higher
-- **Git**: For version control
+## Requisitos
 
-Check your versions:
+- Node.js **22.12+** (CI usa a versão de `.nvmrc`, Node 24 LTS)
+- npm 10+
 
-```bash
-node --version  # Should output v18.x.x or higher
-npm --version   # Should output 9.x.x or higher
-```
-
----
-
-## Installation
-
-### 1. Clone the Repository
+## Início rápido
 
 ```bash
 git clone https://github.com/leonardoSaaads/blog-devsecops.git
 cd blog-devsecops
+npm ci
+npm run dev            # http://localhost:3000
 ```
 
-### 2. Install Dependencies
+Variável opcional:
 
-```bash
-npm install
-```
+| Variável               | Padrão                              | Uso                                       |
+| ---------------------- | ----------------------------------- | ----------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL` | `https://blog.leonardosaads.com.br` | URLs canônicas, sitemap, RSS e Open Graph |
 
-### 3. Run Development Server
+## Scripts
 
-```bash
-npm run dev
-```
+| Comando                              | Descrição                                                 |
+| ------------------------------------ | --------------------------------------------------------- |
+| `npm run dev`                        | Servidor de desenvolvimento                               |
+| `npm run build` / `npm start`        | Build de produção (estático) e servidor                   |
+| `npm run lint`                       | ESLint (regras do Next, React Hooks, a11y, TypeScript)    |
+| `npm run typecheck`                  | Gera os tipos de rota e executa `tsc --noEmit`            |
+| `npm test` / `npm run test:coverage` | Testes unitários e de componentes (Vitest)                |
+| `npm run test:e2e`                   | Testes ponta a ponta (Playwright; requer `npm run build`) |
+| `npm run check`                      | lint + typecheck + testes + build                         |
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the blog.
+> Em ambientes com Chromium pré-instalado, aponte o executável com `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/caminho/do/chrome npm run test:e2e`.
 
-### 4. Build for Production
+## Estrutura de pastas
 
-```bash
-npm run build
-npm start
-```
-
----
-
-## Project Structure
-
-```
+```text
 blog-devsecops/
-├── src/
-│   ├── app/
-│   │   ├── layout.js              # Root layout with header and footer
-│   │   ├── page.js                # Homepage with hero and latest posts
-│   │   ├── globals.css            # Global styles and Tailwind imports
-│   │   ├── blog/
-│   │   │   ├── page.js           # Blog listing page
-│   │   │   └── [slug]/
-│   │   │       └── page.js       # Individual post page
-│   │   ├── tags/
-│   │   │   ├── page.js           # All tags listing
-│   │   │   └── [tag]/
-│   │   │       └── page.js       # Posts filtered by tag
-│   │   ├── projects/
-│   │   │   └── page.js           # Projects showcase page
-│   │   └── about/
-│   │       └── page.js           # About/profile page
-│   ├── components/
-│   │   ├── Header.js             # Navigation header with theme toggle
-│   │   ├── PostCard.js           # Post preview card component
-│   │   ├── MDXComponents.js      # Custom MDX component styling
-│   │   └── Comments.js           # Giscus comments wrapper
-│   └── lib/
-│       ├── posts.js              # Post reading and processing functions
-│       └── utils.js              # Utility functions (date, reading time)
+├── .github/
+│   ├── workflows/ci.yml            # lint, typecheck, testes, auditoria, build e E2E
+│   └── dependabot.yml              # atualizações semanais (npm e Actions)
 ├── content/
-│   └── posts/
-│       └── *.mdx                 # Your blog posts go here
+│   └── posts/*.mdx                 # artigos (frontmatter YAML + MDX)
+├── e2e/                            # Playwright: jornada do leitor, figuras, SEO/segurança, a11y, mobile
 ├── public/
-│   ├── images/                   # Post images
-│   ├── project-images/           # Project showcase images
-│   └── profile-image.png         # Your profile photo
-├── next.config.mjs               # Next.js configuration
-├── tailwind.config.js            # Tailwind CSS configuration
-├── jsconfig.json                 # JavaScript/path configuration
-└── package.json                  # Dependencies and scripts
+│   ├── images/                     # imagens dos artigos
+│   ├── videos/                     # vídeos dos artigos
+│   ├── workers/
+│   │   ├── js-runner.js            # executor JavaScript (worker clássico, sem rede)
+│   │   └── py-runner.mjs           # executor Python (Pyodide sob demanda)
+│   └── icon.svg, easter-egg.png, profile-image.jpg
+├── src/
+│   ├── app/                        # rotas (App Router)
+│   │   ├── layout.tsx              # HTML raiz, fontes, tema, cabeçalho/rodapé
+│   │   ├── page.tsx                # home (capa, destaque, áreas, recentes, guia de leitura)
+│   │   ├── blog/page.tsx           # listagem com busca e filtros (?q=&area=&tag=)
+│   │   ├── blog/[slug]/            # artigo (capa, resumo, pontos-chave) + Open Graph por artigo
+│   │   ├── tags/                   # tópicos: áreas e palavras-chave
+│   │   ├── projects/, about/
+│   │   ├── feed.xml/route.ts       # RSS
+│   │   ├── sitemap.ts, robots.ts, manifest.ts, opengraph-image.tsx
+│   │   ├── not-found.tsx, error.tsx
+│   │   └── globals.css             # tokens de design (claro/escuro) e estilos de artigo
+│   ├── components/
+│   │   ├── art/                    # CoverArt: renderização SVG da arte generativa
+│   │   ├── layout/                 # cabeçalho, navegação, busca (Ctrl+K), tema, rodapé
+│   │   ├── blog/                   # cards, filtros, sumário, referências, citação, comentários
+│   │   ├── mdx/                    # mapa MDX, Cite, callouts, figuras, cards, notas de margem, termos, definições
+│   │   └── figures/                # figuras interativas numeradas e playground de código
+│   ├── hooks/                      # tema, media queries, visibilidade, valores só-cliente
+│   ├── lib/
+│   │   ├── art/                    # motivos generativos determinísticos e exportação SVG/OG
+│   │   ├── content/                # carregamento, esquema, áreas, MDX, ABNT, tempo de leitura, plugins
+│   │   ├── simulations/            # lógica pura das figuras (óptica, fibra, k8s, sinais, PromQL, SNMP…)
+│   │   ├── security/headers.ts     # CSP e cabeçalhos de segurança
+│   │   └── site.ts, search.ts, feed.ts, structured-data.ts, og.tsx, format.ts, theme.ts
+│   └── test/                       # setup do Vitest e substitutos de módulos do Next
+├── next.config.ts                  # cabeçalhos, redirecionamentos, rotas tipadas
+├── playwright.config.ts
+├── vitest.config.mts
+├── eslint.config.mjs
+├── tsconfig.json
+└── package.json
 ```
 
+## Escrevendo artigos
+
+Crie `content/posts/meu-artigo.mdx` (o nome do arquivo é o slug):
+
+````mdx
+---
+title: "Título do artigo"
+description: "Resumo de 20 a 300 caracteres exibido nos cards e no SEO."
+date: "2026-10-13"
+updated: "2026-10-20" # opcional
+tags: ["kubernetes", "devsecops"] # kebab-case minúsculo
+category: infraestrutura # telecomunicacoes | infraestrutura | seguranca | software
+art: lattice # spectrum | lattice | bits | network | ridgeline | radar | flamegraph | circuit | eye
+abstract: "Resumo acadêmico de 120 a 900 caracteres, exibido no topo do artigo."
+keyPoints: # de 3 a 4 conclusões principais
+  - "O controlador compara o estado desejado ao atual."
+  - "O Service oferece um endereço estável."
+  - "Secrets são apenas codificados em base64."
+references:
+  - id: k8s-docs
+    type: web # book | article | conference | standard | report | web | software
+    authors: ["The Kubernetes Authors"] # pessoas: "Sobrenome, Prenome"
+    title: "Deployments"
+    container: "Kubernetes Documentation"
+    year: 2026
+    url: "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/"
+    accessed: "2026-10-13"
 ---
 
-## Usage
+O Deployment mantém o número desejado de réplicas<Cite id="k8s-docs" />.
 
-### Adding New Posts
+<Definition term="Reconciliação">
+  Ciclo em que o controlador aproxima o estado atual do desejado.
+</Definition>
 
-Posts are written in MDX format and stored in `content/posts/`.
+Texto com nota<Sidenote>Comentário na margem.</Sidenote> e <Term def="Definição em balão.">termo</Term>.
 
-#### 1. Create a New MDX File
+<CardGrid>
+  <Card title="Pod" icon="box">
+    Menor unidade implantável.
+  </Card>
+  <Card title="Service" icon="network" tone="signal">
+    Endereço estável.
+  </Card>
+</CardGrid>
 
-Create a file in `content/posts/` with a URL-friendly name:
+<K8sSimulator />
 
-```bash
-content/posts/my-first-post.mdx
+```python runnable title="Execute no navegador"
+print("olá")
 ```
+````
 
-#### 2. Add Frontmatter
+Regras verificadas automaticamente (build e testes):
 
-Every post must start with frontmatter (metadata) in YAML format:
+- frontmatter válido, com **pelo menos uma referência**;
+- todo `<Cite id>` aponta para uma referência existente e toda referência é citada;
+- imagens locais existem; links internos `/blog/...` apontam para artigos existentes;
+- todos os artigos compilam e renderizam.
 
-```mdx
----
-title: "My First DevSecOps Post"
-date: "2025-10-03"
-tags: ["devsecops", "security", "kubernetes"]
-description: "A comprehensive guide to implementing security in Kubernetes clusters"
-image: "/images/kubernetes-security.png"
----
+Componentes de texto: `Cite`, `Callout`, `Figure`, `Video`, `Tabs`/`Tab`, `Quiz`, `Sidenote`, `Term`, `Definition`, `PullQuote`, `Card`/`CardGrid` (ícones de uma lista fechada). Fórmulas: `$$ … $$` (KaTeX, numeradas automaticamente).
 
-# Your Content Starts Here
+## Projeto editorial
 
-Write your post content in Markdown...
+- **Capa** com a arte do artigo, área, título em serifa, linha fina e autor; em seguida o **Resumo** com palavras-chave e metadados, e os **Pontos-chave** em cards.
+- **Numeração automática** por contadores CSS: `Figura n.`, `Listagem n.` (código executável), `Definição n.` e equações `(n)`, na ordem em que aparecem — sem JavaScript.
+- **Notas de margem** (`<Sidenote>`): flutuam na coluna direita a partir de 80rem; em telas menores aparecem em linha.
+- **Glossário em linha** (`<Term def>`): abre no hover, foco ou toque e fecha com Esc (WCAG 1.4.13).
+- Layout em três colunas em telas largas: sumário à esquerda, texto (≈42rem) e margem para notas; figuras interativas avançam sobre a margem.
 
-## Code Examples
+## Figuras interativas
 
-```python
-def secure_deployment():
-    print("Implementing security best practices")
-```
+Cada figura é um componente MDX numerado (`InteractiveFigure`) inserido no fluxo do texto. A lógica fica em `src/lib/simulations/` como funções puras com testes; os componentes em `src/components/figures/` apenas desenham o estado.
 
-You can also use React components if needed!
-```
+| Figura                                                                                                                        | Artigo                  |
+| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `Fiber3D`, `DwdmGridCalculator`, `FiberBandsChart`, `OsnrCalculator`, `QBerCalculator`, `ConstellationViewer`, `OtnHierarchy` | DWDM                    |
+| `PermissionLab`, `SignalSimulator`, `FilesystemExplorer`                                                                      | Linux                   |
+| `PortExposure`                                                                                                                | Cloudflare Tunnel       |
+| `RateExplainer`                                                                                                               | Monitoramento           |
+| `MibExplorer`                                                                                                                 | Zabbix/SNMP             |
+| `K8sSimulator`                                                                                                                | Kubernetes              |
+| `ComplexityChart`, `CodePlayground`                                                                                           | Velocidade de linguagem |
+| `ArtExplorer`, `CodePlayground`                                                                                               | Bastidores              |
 
-#### 3. Frontmatter Fields
+O modelo 3D usa three.js importado dinamicamente quando a figura entra na tela, pausa fora dela, não captura o zoom da página e tem corte transversal em SVG como alternativa sem WebGL. Os playgrounds executam código em **Web Workers**:
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `title` | Yes | Post title (displayed in cards and page header) |
-| `date` | Yes | Publication date (YYYY-MM-DD format) |
-| `tags` | Yes | Array of tags for categorization |
-| `description` | Yes | Short summary (displayed in post cards) |
-| `image` | No | Featured image path (relative to `public/`) |
+| Executor        | Isolamento                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `js-runner.js`  | Worker novo por execução; CSP `default-src 'none'; script-src 'unsafe-eval'` (sem rede); timeout de 5 s; saída limitada   |
+| `py-runner.mjs` | Pyodide 314.0.7 baixado sob demanda de `cdn.jsdelivr.net` (única origem permitida); namespace limpo por execução; timeout |
 
-#### 4. Deploy
+## Arte generativa
 
-Commit and push your changes:
+`src/lib/art/motifs.ts` define nove motivos ligados aos temas (espectro DWDM, malha de nós, matriz de bits, rede e túneis, séries temporais, radar, flame graph, circuito e diagrama de olho). A semente é o hash FNV-1a do slug e o PRNG é o mulberry32: a mesma entrada gera sempre o mesmo SVG. A arte é renderizada no servidor (`CoverArt`), reaproveitada nos cards e convertida em data URI para as imagens Open Graph. As capas são **estáticas** (só uma revelação inicial): animar elementos internos de um SVG de tela cheia força a re-rasterização a cada quadro e, medido sem GPU, ocupava dois núcleos de CPU com a página parada; o E2E garante que a capa não tenha animações infinitas.
 
-```bash
-git add content/posts/my-first-post.mdx
-git commit -m "Add new post about Kubernetes security"
-git push origin main
-```
+## Segurança
 
-If connected to Vercel, your site will automatically rebuild and deploy.
+- **CSP** restritiva (`default-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`); iframes apenas do Giscus. `script-src` permite `'unsafe-inline'` por ser um site estático (nonces exigiriam renderização por requisição).
+- **HSTS** com preload, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `COOP`, sem `X-Powered-By`.
+- Workers com CSP própria; JSON-LD serializado com escape; slugs resolvidos somente a partir da lista carregada (sem path traversal).
+- Fontes auto-hospedadas; comentários e three.js carregados sob demanda; nenhuma imagem de capa externa.
+- Auditoria de dependências de produção no CI e Dependabot semanal.
 
----
+## Testes e CI
 
-### Customizing Content
+| Camada         | Ferramenta                       | Cobertura                                                                                                                |
+| -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Unitários      | Vitest                           | conteúdo (todos os artigos), ABNT, arte, óptica, fibra, k8s, sinais, exposição, PromQL, SNMP, complexidade, CSP          |
+| Componentes    | Vitest + Testing Library (jsdom) | figuras interativas, glossário, notas, cards, playground, tema, busca, filtros, abas, quiz                               |
+| E2E            | Playwright                       | jornada do leitor, layout acadêmico, figuras (inclusive WebGL), busca, tema, cabeçalhos, SEO, mobile sem rolagem lateral |
+| Acessibilidade | axe-core                         | WCAG 2.2 AA nos temas claro e escuro                                                                                     |
 
-#### Personal Information
+O workflow `.github/workflows/ci.yml` roda em cada push/PR com permissões mínimas (`contents: read`).
 
-**File: `src/app/about/page.js`**
+## Deploy
 
-Update your profile information:
+Compatível com Vercel ou qualquer plataforma que execute `next start`. Na Vercel, importe o repositório; o build é detectado automaticamente. Defina `NEXT_PUBLIC_SITE_URL` se o domínio mudar. Os cabeçalhos de segurança são aplicados pelo próprio Next (`next.config.ts`).
 
-```javascript
-// Update profile image path
-<Image src="/profile-image.png" ... />
+Links antigos continuam válidos: `/blog/hello-world` → `/blog/bastidores-do-blog` e `/tags/MAIUSCULA` → `/tags/minuscula` (308). Os slugs dos artigos foram preservados para manter a associação com as discussões do Giscus.
 
-// Update bio text
-<p>Your bio here...</p>
+## Licença
 
-// Update social links
-<a href="mailto:your-email@example.com" ...>
-<a href="https://github.com/your-username" ...>
-<a href="https://linkedin.com/in/your-profile" ...>
-```
+Código sob licença [MIT](LICENSE). O conteúdo dos artigos pertence ao autor.
 
-**Required Files:**
-- Add your profile photo to `public/profile-image.png`
-
-#### Projects
-
-**File: `src/app/projects/page.js`**
-
-Add or modify projects in the `projects` array:
-
-```javascript
-const projects = [
-  {
-    title: 'Project Name',
-    description: 'Project description...',
-    image: '/project-images/project-screenshot.png',
-    url: 'https://project-url.com',
-  },
-  // Add more projects...
-]
-```
-
-**Required Files:**
-- Add project images to `public/project-images/`
-
-#### Site Metadata
-
-**File: `src/app/layout.js`**
-
-Update site-wide metadata:
-
-```javascript
-export const metadata = {
-  title: 'Your Name - Blog Title',
-  description: 'Your blog description',
-  keywords: ['keyword1', 'keyword2', ...],
-}
-```
-
-#### Header/Branding
-
-**File: `src/components/Header.js`**
-
-Update logo and site name:
-
-```javascript
-// Update logo initials
-<span className="text-white font-bold text-xl">YI</span>
-
-// Update site name
-<span className="text-xl font-bold...">Your Name</span>
-```
-
----
-
-### Configuring Comments
-
-This blog uses [Giscus](https://giscus.app/) for comments, powered by GitHub Discussions.
-
-#### Setup Steps
-
-1. **Enable GitHub Discussions**
-   - Go to your repository on GitHub
-   - Navigate to `Settings` → `General` → `Features`
-   - Check "Discussions"
-
-2. **Install Giscus App**
-   - Visit [github.com/apps/giscus](https://github.com/apps/giscus)
-   - Click "Install" and authorize for your repository
-
-3. **Get Configuration**
-   - Visit [giscus.app](https://giscus.app/)
-   - Enter your repository: `username/blog-devsecops`
-   - Choose settings (category, reactions, etc.)
-   - Copy the generated configuration
-
-4. **Update Comments Component**
-
-**File: `src/components/Comments.js`**
-
-Replace the configuration:
-
-```javascript
-<Giscus
-  repo="your-username/blog-devsecops"
-  repoId="YOUR_REPO_ID"
-  category="General"
-  categoryId="YOUR_CATEGORY_ID"
-  mapping="pathname"
-  strict="0"
-  reactionsEnabled="1"
-  emitMetadata="0"
-  inputPosition="top"
-  theme="preferred_color_scheme"
-  lang="pt"
-  loading="lazy"
-/>
-```
-
-#### Disable Comments
-
-If you prefer not to have comments:
-
-**File: `src/components/Comments.js`**
-
-```javascript
-export default function Comments() {
-  return null // or remove the component import from post page
-}
-```
-
----
-
-## Deployment
-
-### Deploy to Vercel (Recommended)
-
-#### One-Click Deploy
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/leonardoSaaads/blog-devsecops)
-
-#### Manual Deployment
-
-1. **Create Vercel Account**
-   - Sign up at [vercel.com](https://vercel.com/)
-   - Connect your GitHub account
-
-2. **Import Repository**
-   - Click "Add New Project"
-   - Select your forked/cloned repository
-   - Vercel will auto-detect Next.js settings
-
-3. **Configure Domain (Optional)**
-   - Go to Project Settings → Domains
-   - Add your custom domain (e.g., `blog.leonardosaads.com.br`)
-   - Follow DNS configuration instructions
-
-4. **Environment Variables (if needed)**
-   - Add any required environment variables in Project Settings
-
-5. **Deploy**
-   - Click "Deploy"
-   - Future commits to `main` branch will auto-deploy
-
-### Build Commands
-
-```bash
-# Development
-npm run dev
-
-# Production build
-npm run build
-
-# Start production server
-npm start
-
-# Linting
-npm run lint
-```
-
----
-
-## Contributing
-
-Contributions are welcome for bug fixes and minor improvements. However, major UI/UX changes will not be accepted to maintain the blog's design consistency.
-
-### How to Contribute
-
-1. **Fork the Repository**
-
-```bash
-git clone https://github.com/your-username/blog-devsecops.git
-cd blog-devsecops
-```
-
-2. **Create a Feature Branch**
-
-```bash
-git checkout -b fix/your-bug-fix
-```
-
-3. **Make Your Changes**
-   - Fix bugs
-   - Improve documentation
-   - Optimize performance
-   - Add tests
-
-4. **Commit with Clear Messages**
-
-```bash
-git commit -m "Fix: Resolve mobile navigation issue"
-```
-
-5. **Push and Create Pull Request**
-
-```bash
-git push origin fix/your-bug-fix
-```
-
-Then open a Pull Request on GitHub with a clear description.
-
-### Contribution Guidelines
-
-✅ **Accepted Contributions:**
-- Bug fixes
-- Performance improvements
-- Documentation updates
-- Accessibility enhancements
-- Code refactoring
-- Security patches
-
-❌ **Not Accepted:**
-- Major UI redesigns
-- New features that change core functionality
-- Changes to color schemes or layout
-- Adding external services without discussion
-
----
-
-## License
-
-This project is licensed under the **MIT License** - you are free to use, modify, and distribute this software.
-
-See the [LICENSE](LICENSE) file for full details.
-
-### MIT License Summary
-
-✅ Commercial use  
-✅ Modification  
-✅ Distribution  
-✅ Private use  
-
-⚠️ Liability and warranty not provided
-
----
-
-## Contact
-
-**Leonardo Saads Pinto**
-
-- Website: [blog.leonardosaads.com.br](https://blog.leonardosaads.com.br)
-- GitHub: [@leonardoSaaads](https://github.com/leonardoSaaads)
-
-For bugs and feature requests, please [open an issue](https://github.com/leonardoSaaads/blog-devsecops/issues) on GitHub.
-
----
-
-## Acknowledgments
-
-Built with:
-- [Next.js](https://nextjs.org/) - The React Framework
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
-- [MDX](https://mdxjs.com/) - Markdown for the component era
-- [Vercel](https://vercel.com/) - Deployment platform
-
----
-
-
-## Arquivo de Licença
-
-**Arquivo: `LICENSE`**
-
-```
-MIT License
-
-Copyright (c) 2025 Leonardo Saads Pinto
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+**Contato:** [GitHub](https://github.com/leonardoSaaads) · [LinkedIn](https://www.linkedin.com/in/leonardo-saads-pinto-5a61731b4/)

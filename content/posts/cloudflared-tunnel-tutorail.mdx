@@ -1,679 +1,404 @@
 ---
-title: "Como Subir um Serviço para Web (Do Jeito Certo)"
+title: "Como subir um serviço para a web (do jeito certo)"
+description: "Publique serviços com Cloudflare Tunnel e Docker sem abrir portas no firewall — com token protegido, imagens fixadas, contêineres endurecidos e autenticação na borda."
 date: "2025-10-09"
-tags: ["DEVOPS", "DOCKER", "CLOUDFLARE"]
-description: "Da maneira fácil, segura e sem dor de cabeça"
+updated: "2026-10-13"
+tags: ["devops", "docker", "cloudflare", "seguranca", "zero-trust"]
+category: seguranca
+art: network
+abstract: "Tutorial de publicação segura de serviços auto-hospedados com Cloudflare Tunnel e Docker Compose, usando o Prometheus como exemplo. Contrasta o encaminhamento tradicional de portas com o modelo de conexões de saída, apresenta uma arquitetura com rede bridge isolada, segredos montados como arquivo, imagens fixadas e contêineres endurecidos, e completa o modelo Zero Trust com autenticação na borda via Cloudflare Access. Uma figura interativa demonstra por que portas publicadas pelo Docker contornam o firewall UFW."
+keyPoints:
+  - "O cloudflared só abre conexões de saída: nenhuma porta de entrada precisa ser liberada no roteador ou no firewall."
+  - "Portas publicadas sem IP ficam acessíveis em todas as interfaces e contornam o UFW, pois o Docker cria as próprias regras de NAT."
+  - "O túnel resolve a exposição de rede; a autenticação na borda (Cloudflare Access) completa o modelo Zero Trust."
+  - "Tokens são segredos: monte-os como arquivo, nunca no compose.yaml, no Git ou em variáveis visíveis no docker inspect."
+references:
+  - id: cf-tunnel
+    type: web
+    authors: ["Cloudflare"]
+    title: "Cloudflare Tunnel"
+    container: "Cloudflare One Docs"
+    year: 2026
+    url: "https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/"
+    accessed: "2026-10-13"
+  - id: cf-run-parameters
+    type: web
+    authors: ["Cloudflare"]
+    title: "Tunnel run parameters"
+    container: "Cloudflare One Docs"
+    year: 2026
+    url: "https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/configure-tunnels/run-parameters/"
+    accessed: "2026-10-13"
+  - id: cf-one
+    type: web
+    authors: ["Cloudflare"]
+    title: "Cloudflare One documentation"
+    subtitle: "Access, Tunnel e políticas Zero Trust"
+    container: "Cloudflare Docs"
+    year: 2026
+    url: "https://developers.cloudflare.com/cloudflare-one/"
+    accessed: "2026-10-13"
+  - id: nist-800-207
+    type: report
+    authors: ["Rose, Scott", "Borchert, Oliver", "Mitchell, Stu", "Connelly, Sean"]
+    title: "Zero Trust Architecture"
+    note: "NIST Special Publication 800-207"
+    place: "Gaithersburg"
+    publisher: "National Institute of Standards and Technology"
+    year: 2020
+    doi: "10.6028/NIST.SP.800-207"
+  - id: prom-security
+    type: web
+    authors: ["Prometheus Authors"]
+    title: "Security model"
+    container: "Prometheus Documentation"
+    year: 2026
+    url: "https://prometheus.io/docs/operating/security/"
+    accessed: "2026-10-13"
+  - id: prom-migration
+    type: web
+    authors: ["Prometheus Authors"]
+    title: "Prometheus 3.0 migration guide"
+    container: "Prometheus Documentation"
+    year: 2026
+    url: "https://prometheus.io/docs/prometheus/latest/migration/"
+    accessed: "2026-10-13"
+  - id: docker-firewall
+    type: web
+    authors: ["Docker Inc."]
+    title: "Packet filtering and firewalls"
+    container: "Docker Docs"
+    year: 2026
+    url: "https://docs.docker.com/engine/network/packet-filtering-firewalls/"
+    accessed: "2026-10-13"
+  - id: compose-secrets
+    type: web
+    authors: ["Docker Inc."]
+    title: "Manage secrets securely in Docker Compose"
+    container: "Docker Docs"
+    year: 2026
+    url: "https://docs.docker.com/compose/how-tos/use-secrets/"
+    accessed: "2026-10-13"
+  - id: compose-spec
+    type: web
+    authors: ["Docker Inc."]
+    title: "Compose file reference"
+    container: "Docker Docs"
+    year: 2026
+    url: "https://docs.docker.com/reference/compose-file/"
+    accessed: "2026-10-13"
+  - id: owasp-docker
+    type: web
+    authors: ["OWASP Foundation"]
+    title: "Docker Security Cheat Sheet"
+    container: "OWASP Cheat Sheet Series"
+    year: 2026
+    url: "https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html"
+    accessed: "2026-10-13"
 ---
 
-<div align="center">
-  <img src="https://i.imgflip.com/a8iy74.jpg" alt="Meme sobre deploy" />
-</div>
+<Figure src="https://i.imgflip.com/a8iy74.jpg" alt="Meme sobre fazer deploy expondo portas na internet" source="imgflip (meme criado pelo autor)" sourceUrl="https://imgflip.com/i/a8iy74" maxWidth={480} />
 
-___
+## Por que você deveria se importar com isso?
 
-## Por Que Você Deveria Se Importar Com Isso?
+Sabe aquela aplicação que roda na sua máquina e você quer mostrar para o mundo? Ou aquele sistema de monitoramento que precisa ficar acessível de qualquer lugar? O problema é que a maioria dos tutoriais **não** ensina a fazer isso com segurança.
 
-Sabe aquela aplicação que você desenvolveu na sua máquina e quer mostrar pro mundo? Ou aquele sistema de monitoramento que precisa ficar acessível de qualquer lugar? O problema é que a maioria dos tutoriais **NÃO** te ensina a fazer isso de forma **segura**.
+Neste artigo vamos publicar um serviço de forma:
 
-Neste post, vou te mostrar como fazer deploy de forma:
-- **Segura**: Sem expor portas do seu servidor diretamente na internet
-- **Simples**: Usando ferramentas gratuitas e poucas linhas de código
-- **Profissional**: Do jeito que empresas grandes fazem
+- **Segura**: sem expor portas do servidor diretamente na internet.
+- **Simples**: ferramentas gratuitas e poucos arquivos de configuração.
+- **Profissional**: com segredos fora do código, imagens fixadas e autenticação na borda.
 
-**O que vamos usar?**
-- **Docker**: Para empacotar nossa aplicação (pense como se fosse um "zip" que contém tudo que sua aplicação precisa)
-- **Cloudflare Tunnel**: Para criar um caminho seguro da internet até sua aplicação (sem abrir portas no firewall!)
-- **Prometheus**: Nosso exemplo prático (um sistema de monitoramento usado por Netflix, Uber, etc)
+**Ferramentas**: Docker (empacotamento), Cloudflare Tunnel (caminho seguro até a aplicação) e Prometheus (nosso exemplo prático).
 
-___
+## Parte 1: entendendo o Cloudflare Tunnel
 
-## Parte 1: Entendendo o Cloudflare Tunnel
+### O problema tradicional
 
-### O Problema Tradicional
+Para publicar um serviço, o caminho clássico é abrir uma porta no firewall/roteador, ter um IP público e encaminhar o tráfego. Isso deixa o servidor exposto a varreduras e ataques diretos.
 
-Normalmente, para colocar um serviço na web, você faria:
-1. Abrir portas no seu firewall (perigoso! ⚠️)
-2. Configurar um IP público (caro e complexo)
-3. Lidar com ataques diretos no seu servidor (estressante)
+### A solução: conexão de saída
 
-### A Solução: Cloudflare Tunnel
+O Cloudflare Tunnel inverte a lógica: o conector `cloudflared` estabelece conexões **de saída** com a rede da Cloudflare, e as requisições dos usuários chegam por esse canal já aberto. Nenhuma porta de entrada precisa ser liberada<Cite id="cf-tunnel" />.<Sidenote>Por padrão, o cloudflared mantém quatro conexões com pelo menos dois data centers distintos da Cloudflare: a queda de um deles não derruba o serviço.</Sidenote> Compare os dois fluxos — clique em *Reproduzir fluxo*:
 
-O Cloudflare Tunnel inverte a lógica:
+<FlowDiagram
+  title="Método tradicional: porta aberta"
+  steps={[
+    { title: "Internet", detail: "Qualquer pessoa (ou bot de varredura) alcança o IP público." },
+    { title: "Porta 443 aberta no roteador", detail: "Port forwarding expõe o serviço diretamente; scanners encontram a porta em minutos.", tone: "danger" },
+    { title: "Servidor", detail: "Ataques chegam sem filtro: força bruta, exploração de CVEs, DDoS." },
+  ]}
+/>
 
-**Método Tradicional:**
-```markdown
-Internet → [Porta Aberta no Firewall] → Seu Servidor
-           ☠️ Vulnerável a ataques (It's over)
+<FlowDiagram
+  title="Com Cloudflare Tunnel: conexão de saída"
+  steps={[
+    { title: "Usuário", detail: "Acessa https://prom.seudominio.com." },
+    { title: "Borda da Cloudflare", detail: "TLS, WAF, proteção contra DDoS e, opcionalmente, autenticação (Cloudflare Access)." },
+    { title: "Túnel (saída)", detail: "O cloudflared mantém conexões de saída redundantes com a borda; nenhuma porta de entrada é aberta." },
+    { title: "cloudflared", detail: "Container que recebe o tráfego do túnel e o encaminha pela rede Docker interna." },
+    { title: "Prometheus", detail: "Escuta apenas na rede interna (e em 127.0.0.1 para administração local).", tone: "success" },
+  ]}
+/>
+
+**Analogia**: é como ligar para uma central e deixar a linha aberta. Quando alguém quer falar com você, a central transfere a ligação — mas ninguém tem o seu número direto.
+
+<Callout type="info" title="Zero Trust em uma frase">
+"Nunca confie, sempre verifique": nenhum acesso é implicitamente confiável por estar na rede certa; cada requisição é autenticada e autorizada<Cite id="nist-800-207" />. O túnel resolve a exposição de rede; a **autenticação** (Parte 4) completa o modelo.
+</Callout>
+
+### Vocabulário essencial
+
+- **Túnel**: o canal persistente entre seu ambiente e a Cloudflare, identificado por um <Term def="Universally Unique Identifier: identificador de 128 bits, gerado de forma que a colisão seja praticamente impossível.">UUID</Term>.
+- **cloudflared**: o conector (daemon) que cria e mantém o túnel; mantém múltiplas conexões para redundância.
+- **Túnel gerenciado remotamente**: a configuração (rotas) fica no painel da Cloudflare; o conector só precisa do **token**.
+- **Rede bridge** (Docker): rede virtual privada em que os containers se encontram pelo nome do serviço.
+- **Volume**: armazenamento persistente que sobrevive à recriação do container.
+
+## Parte 2: a arquitetura
+
+<Figure src="/images/cloudflare/cloudflare-tunnel/tutorial_diagram.png" alt="Diagrama: usuário, borda da Cloudflare, túnel, container cloudflared e container Prometheus na mesma rede bridge" caption="Arquitetura do tutorial." />
+
+Por que ela é boa?
+
+<CardGrid cols={3}>
+<Card title="Segurança em camadas" icon="shield" tone="success">Nenhuma porta de entrada; containers isolados; Prometheus inacessível de fora.</Card>
+<Card title="Infraestrutura como código" icon="layers">Tudo em dois arquivos versionáveis — fácil de replicar e de fazer backup.</Card>
+<Card title="Escalável" icon="network" tone="signal">Novos serviços entram como novos containers e novas rotas no mesmo túnel.</Card>
+</CardGrid>
+
+## Parte 3: mão na massa
+
+### Estrutura de arquivos
+
+```text
+prometheus-stack/
+├── .gitignore
+├── compose.yaml               # orquestra os containers
+├── secrets/
+│   └── cloudflare_token.txt   # token do túnel (NUNCA versionar)
+└── prometheus/
+    ├── prometheus.yml         # configuração do Prometheus
+    └── rules/                 # regras de alerta (vazio por enquanto)
 ```
-
-**Com Cloudflare Tunnel:**
-```markdown
-Seu Servidor → [Conexão Segura de Saída] → Cloudflare → Internet
-               🛡️ Seu servidor nunca é exposto
-```
-
-**A mágica:** Seu servidor estabelece uma conexão **de dentro para fora** (outbound) com a Cloudflare. Quando alguém acessa seu site, o tráfego passa pela rede global da Cloudflare e chega até você através desse túnel seguro.
-
-**Analogia simples:** É como se você ligasse para uma central telefônica e deixasse a linha aberta. Quando alguém quer falar com você, a central transfere a ligação - mas ninguém tem seu número direto.
-
-### Vocabulário Essencial (Não Pule Isso!)
-
-Antes de continuar, vamos entender os termos que vou usar:
-
-**🔹 Túnel (Tunnel)**
-- O "caminho seguro" entre seu servidor e a Cloudflare
-- Cada túnel tem um ID único (UUID) tipo: `a3f2e8b1-...`
-- Você pode ter vários túneis diferentes, cada um com um propósito
-
-**🔹 Cloudflared**
-- O programa que roda no seu servidor
-- Ele cria e mantém o túnel ativo
-- Pense nele como um "porteiro" que cuida da comunicação
-
-**🔹 Conector**
-- É o cloudflared instalado e rodando
-- Cria 4 conexões simultâneas para ter redundância
-- Se uma conexão cair, as outras mantêm tudo funcionando
-
-**🔹 Túnel Gerenciado Remotamente**
-- Configurado pelo site da Cloudflare (mais fácil!)
-- As configurações ficam na nuvem
-- É o que vamos usar neste tutorial
-
-**🔹 Docker e Containers**
-- **Container**: Como uma "caixa isolada" que roda sua aplicação
-- **Docker Compose**: Arquivo que descreve como os containers devem funcionar
-- **Bridge Network**: Uma "ponte virtual" que permite containers conversarem entre si
-- **Volume**: Espaço para salvar dados que não devem sumir quando o container reinicia
-
-___
-
-## Parte 2: A Arquitetura Que Vamos Construir
-
-Antes de colocar a mão na massa, vamos entender **o que** vamos construir e **por que** cada peça existe.
-
-<div align="center">
-  <img src="/images/cloudflare/cloudflare-tunnel/tutorial_diagram.png" alt="Diagrama da arquitetura" />
-</div>
-
-### O Fluxo Completo (Passo a Passo)
-
-```markdown
-Você no Celular/PC
-    ↓
-[1] Acessa prom.seudominio.com
-    ↓
-[2] Cloudflare Edge Network (Rede Global)
-    ↓
-[3] Túnel Seguro (Conexão Criptografada)
-    ↓
-[4] Container cloudflared (no seu servidor)
-    ↓
-[5] Rede Bridge Interna (comunicação entre containers)
-    ↓
-[6] Container Prometheus (sua aplicação)
-```
-
-### Os Componentes
-
-**1️⃣ Container Cloudflared (O Porteiro)**
-- Função: Gerenciar o túnel com a Cloudflare
-- Conecta-se à internet usando apenas conexões de saída (nenhuma porta aberta!)
-- Redireciona tráfego web para o Prometheus
-
-**2️⃣ Container Prometheus (A Aplicação)**
-- Função: Sistema de monitoramento (nosso exemplo)
-- Roda na porta 9090 **APENAS internamente** (não é acessível da internet)
-- Só o cloudflared consegue falar com ele
-
-**3️⃣ Rede Bridge "monitoring"**
-- Função: Permite os containers conversarem entre si
-- É como uma "rede local virtual" só para os containers
-- Isolada e segura
-
-**4️⃣ Volumes (Armazenamento Persistente)**
-- `prometheus_data`: Guarda dados do Prometheus (não perde quando reinicia)
-- Configurações montadas do seu disco para dentro do container
-
-### Por Que Esta Arquitetura é Boa?
-
-✅ **Segurança em Camadas:**
-- Firewall não precisa abrir portas
-- Containers isolados uns dos outros
-- Prometheus inacessível diretamente
-
-✅ **Facilidade de Gerenciamento:**
-- Tudo configurado em 2 arquivos
-- Fácil de replicar em outros servidores
-- Backup simples (só copiar a pasta)
-
-✅ **Escalabilidade:**
-- Quer adicionar mais serviços? Só adicionar mais containers
-- Cada serviço pode ter seu próprio subdomínio
-
-___
-
-## HANDS-ON: Parte 1 - Preparando o Ambiente
-
-### Estrutura de Arquivos (O Que Vamos Criar)
-
-```markdown
-prometheus-stack/               
-├── docker-compose.yml          # Orquestra os containers
-├── prometheus/                 
-│   ├── prometheus.yml          # Arquivo de configuração principal
-│   └── rules/                  # Regras de alertas (vazio por enquanto)
-└── prometheus_data/            # Será criado automaticamente (dados persistentes)
-```
-
-**Por que essa estrutura?**
-- `docker-compose.yml`: Descreve TODOS os containers e como eles interagem
-- `prometheus/`: Mantém configurações separadas e organizadas
-- `prometheus_data/`: Docker cria automaticamente para salvar dados
-
-### Passo 1: Criar a Estrutura de Pastas
-
-Escolha onde quer trabalhar. Recomendo sua pasta de usuário:
 
 ```bash
-# Navega para sua home
-cd ~
-
-# Cria as pastas de uma vez
-mkdir -p prometheus-stack/prometheus/rules
-
-# Entra na pasta do projeto
-cd prometheus-stack
+mkdir -p ~/prometheus-stack/prometheus/rules ~/prometheus-stack/secrets
+cd ~/prometheus-stack
+printf 'secrets/\n' > .gitignore
 ```
 
-### Passo 2: Criar o docker-compose.yml
+### Passo 1: o compose.yaml
 
-Agora vem a parte gostosa: o arquivo que orquestra tudo. Crie o arquivo abaixo:
+O arquivo segue a especificação Compose: `compose.yaml` é o nome preferido e o atributo `version` é obsoleto<Cite id="compose-spec" />.
 
-**prometheus-stack/docker-compose.yml**
-
-```yaml
-# Define volumes (armazenamento persistente)
-volumes:
-  prometheus_data: {}  # Docker gerencia automaticamente onde salvar
-
-# Define redes (comunicação entre containers)
+```yaml title="prometheus-stack/compose.yaml"
 networks:
   monitoring:
-    driver: bridge  # Tipo de rede: bridge = rede privada virtual
+    driver: bridge
 
-# Define os serviços (containers)
-services:
-  
-  # ========== SERVIÇO 1: PROMETHEUS ==========
-  prometheus:
-    image: prom/prometheus:v3.6.0      # Imagem oficial do Prometheus
-    container_name: prometheus         # Nome para identificar
-    restart: unless-stopped            # Reinicia automaticamente, exceto se parado manualmente
-    
-    # Volumes: mapeia arquivos do host → container
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro  # :ro = read-only
-      - ./prometheus/rules:/etc/prometheus/rules:ro
-      - prometheus_data:/prometheus    # Volume gerenciado (dados persistentes)
-    
-    # Comandos passados para o Prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=15d'  # Guarda dados por 15 dias
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'       # Permite reload sem reiniciar
-      - '--web.enable-admin-api'       # Habilita API administrativa
-    
-    # Portas: host:container
-    ports:
-      - "9090:9090"  # Acessível em localhost:9090 (APENAS localmente!)
-    
-    # Redes às quais este container pertence
-    networks:
-      - monitoring
-    
-    # CONFIGURAÇÕES DE SEGURANÇA
-    user: "nobody"  # Roda como usuário sem privilégios (não é root)
-    security_opt:
-      - no-new-privileges:true  # Impede escalar privilégios
-    read_only: true  # Sistema de arquivos somente leitura (imutável)
-    tmpfs:
-      - /tmp  # Exceção: /tmp precisa ser gravável (temporário)
-  
-  # ========== SERVIÇO 2: CLOUDFLARED ==========
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: cloudflared
-    restart: unless-stopped
-    
-    # IMPORTANTE: Substitua <SEU_TOKEN_AQUI> pelo token da Cloudflare
-    command: tunnel --no-autoupdate run --token <SEU_TOKEN_AQUI>
-    
-    networks:
-      - monitoring
-    
-    # Garante que Prometheus sobe ANTES do Cloudflared
-    depends_on:
-      - prometheus
-```
+volumes:
+  prometheus_data: {}
 
-**Explicando as Configurações de Segurança:**
-
-```yaml
-user: "nobody"
-```
-- Container roda como usuário sem privilégios
-- Se alguém invadir o container, não terá poder de root
-- ⚠️ Nota: Em produção real, crie um usuário específico ⚠️
-
-```yaml
-read_only: true
-```
-- Sistema de arquivos não pode ser modificado
-- Impede que atacantes instalem malware
-- Exceção: `/tmp` via `tmpfs` para arquivos temporários
-
-```yaml
-no-new-privileges:true
-```
-- Mesmo se houver falha de segurança, não pode virar root
-- Camada extra de proteção
-
-### Passo 3: Configurar o Prometheus
-
-Crie a configuração do Prometheus:
-
-**prometheus-stack/prometheus/prometheus.yml**
-
-```yaml
-# ========== CONFIGURAÇÕES GLOBAIS ==========
-global:
-  scrape_interval: 15s      # Coleta métricas a cada 15 segundos
-  evaluation_interval: 15s  # Avalia regras a cada 15 segundos
-  
-  # Labels aplicados a todas as métricas
-  external_labels:
-    monitor: 'production'
-    environment: 'docker'
-
-# ========== REGRAS DE ALERTA ==========
-# (Descomentado quando quiser adicionar alertas)
-# rule_files:
-#   - '/etc/prometheus/rules/*.yml'
-
-# ========== O QUE MONITORAR ==========
-scrape_configs:
-  # Job 1: Monitorar o próprio Prometheus
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']  # Monitora a si mesmo
-        labels:
-          instance: 'prometheus-server'
-          environment: 'production'
-```
-
-**O que esse arquivo faz:**
-- Define **de quanto em quanto tempo** coletar dados (15s)
-- Configura **o que monitorar** (neste caso, o próprio Prometheus)
-- Adiciona **etiquetas** aos dados para organização
-
-### Passo 4: Ajustar Permissões (Importante!)
-
-```bash
-chmod 644 prometheus/prometheus.yml
-```
-
-### Passo 5: Validar Configuração
-
-Antes de subir, vamos verificar se está tudo certo:
-
-```bash
-# Valida o docker-compose.yml
-sudo docker compose config
-```
-
-**O que esse comando faz:**
-- Lê o `docker-compose.yml`
-- Verifica se há erros de sintaxe
-- Mostra a configuração final (com valores padrão expandidos)
-
-**Se houver erro:** Revise os arquivos YAML (cuidado com espaçamento!)
-
-### Passo 6: Subir o Prometheus (Primeira Vez)
-
-Vamos subir só o Prometheus para testar:
-
-```bash
-# Inicia APENAS o container do Prometheus
-sudo docker compose up prometheus -d
-```
-
-**Explicando:**
-- `up`: Cria e inicia containers
-- `prometheus`: Nome do serviço (só sobe esse, não o cloudflared ainda)
-- `-d`: Detached mode (roda em background)
-
-### Passo 7: Verificar Se Funcionou
-
-```bash
-# Ver status dos containers
-sudo docker compose ps
-
-# Ver logs em tempo real
-sudo docker compose logs -f prometheus
-```
-
-**Logs esperados (sucesso):**
-```markdown
-prometheus  | level=INFO msg="Server is ready to receive web requests."
-prometheus  | level=INFO msg="Starting Prometheus Server" version="3.6.0"
-```
-
-**Teste final com o `curl` (LÁ ELE INFINITO 😂)**
-```bash
-# Verifica se Prometheus está saudável
-curl http://localhost:9090/-/healthy
-```
-
-**Resposta esperada:**
-```
-Prometheus Server is Healthy.
-```
-
-** Se chegou aqui: Prometheus está rodando! O PAI É BRABU MESMO**
-
-___
-
-## HANDS-ON: Parte 2 - Conectando com a Cloudflare
-
-Agora vem a parte mágica: tornar o Prometheus acessível da internet **sem abrir portas**!
-
-### Passo 0: Acessar a Cloudflare
-
-1. Acesse [dash.cloudflare.com](https://dash.cloudflare.com)
-2. Faça login (ou crie uma conta gratuita)
-3. Cadastre (ou já possua) um domínio
-
-### Passo 1: Ir para Zero Trust
-
-No menu lateral, clique em **"Zero Trust"**
-
-<div align="center">
-  <img src="/images/cloudflare/cloudflare-tunnel/tutorial_01.png" alt="Zero Trust" />
-</div>
-
-**O que é Zero Trust?**
-- Modelo de segurança moderno onde TUDO precisa provar que é confiável
-- "Nunca confie, sempre verifique"
-- Cloudflare Tunnel faz parte desse ecossistema
-
-### Passo 2: Criar um Túnel
-
-1. Vá em **Networks → Tunnels**
-2. Clique em **"Create a tunnel"** (Criar túnel)
-
-<div align="center">
-  <img src="/images/cloudflare/cloudflare-tunnel/tutorial_02.png" alt="Criar túnel" />
-</div>
-
-
-### Passo 3: Escolher Cloudflared
-
-**Por que Cloudflared?**
-- É o método padrão e mais simples
-- Não precisa configurar manualmente certificados
-- Funciona em qualquer ambiente (Docker, VM, bare metal)
-
-Selecione **"Cloudflared"** como tipo de conector
-
-<div align="center">
-  <img src="/images/cloudflare/cloudflare-tunnel/tutorial_03.png" alt="Tipo Cloudflared" />
-</div>
-
-### Passo 4: Nomear o Túnel
-
-Dê um nome, exemplo: `Exemplo_leo_prom`
-
-<div align="center">
-  <img src="/images/cloudflare/cloudflare-tunnel/tutorial_04.png" alt="Nome do túnel" />
-</div>
-
-### Passo 5: COPIAR O TOKEN (MUITO IMPORTANTE!)
-
-<div align="center">
-  <img src="/images/cloudflare/cloudflare-tunnel/tutorial_05.png" alt="Túnel conectado" />
-</div>
-
-Selecione **"Docker"** na lista de ambientes.
-
-**ATENÇÃO:** Aparecerá um comando semelhante a:
-
-```bash
-docker run cloudflare/cloudflared:latest tunnel --no-autoupdate run --token eyJhIjoiZjU3Y...
-                                                                            ^^^^^^^^^^^^^^^^^^^^
-                                                                            ESSE É O TOKEN!
-```
-
-**COPIE APENAS O TOKEN** (a parte depois de `--token`)
-
-**⚠️ SEGURANÇA: GUARDA ESSA PORRA COMO SE FOSSE A SENHA DO BANCO**
-
-- É sério! Qualquer um com esse token vira dono do seu túnel
-- Vazou no Git? Já era, meu patrão. Revoga e gera outro NA HORA
-- **NUNCA** compartilhe publicamente
-
-**Em produção, use:**
-- Docker Secrets
-- Variáveis de ambiente
-- Vault ou similar
-
-### Passo 6: Adicionar Token no docker-compose.yml
-
-Edite o arquivo `docker-compose.yml` e substitua:
-
-```yaml
-# ANTES
-command: tunnel --no-autoupdate run --token <SEU_TOKEN_AQUI>
-
-# DEPOIS
-command: tunnel --no-autoupdate run --token eyJhIjoiZjU3Y2RlN2ItNmY4Zi00Y...
-```
-
-### Passo 7: Subir o Cloudflared
-
-```bash
-# Para tudo
-sudo docker compose down
-
-# Sobe tudo (Prometheus + Cloudflared)
-sudo docker compose up -d
-```
-
-**Verificar logs:**
-```bash
-sudo docker compose logs -f cloudflared
-```
-
-**Logs esperados (sucesso):**
-```markdown
-cloudflared  | Registered tunnel connection
-cloudflared  | Connection established
-```
-
-**Na interface da Cloudflare:** Deve aparecer "Connected" ✅
-
-### Passo 8: Configurar o Hostname (Subdomínio)
-
-<div align="center">
-  <img src="/images/cloudflare/cloudflare-tunnel/tutorial_06.png" alt="Configurar hostname" />
-</div>
-
-**Public Hostname:**
-- **Subdomain:** `prom` (ou `monit`, `metrics`, etc)
-- **Domain:** Selecione seu domínio
-- **Path:** Deixe vazio se quiser
-
-**Service:**
-- **Type:** `HTTP`
-- **URL:** `prometheus:9090`
-
-**Por que `prometheus:9090`?**
-- `prometheus` é o nome do container (Docker resolve automaticamente)
-- `9090` é a porta interna do Prometheus
-- Cloudflared está na mesma rede bridge, então consegue acessar
-
-**Não use:**
-- ❌ `localhost:9090` (não funciona entre containers)
-- ❌ `127.0.0.1:9090` (idem)
-- ✅ `prometheus:9090` (correto!)
-
-### Passo 9: Salvar e Testar
-
-1. Clique em **"Save tunnel"**
-2. Aguarde 10-30 segundos
-3. Acesse `https://prom.seudominio.com`
-
-**FUNCIONOU? Você deve ver a interface do Prometheus acessível de qualquer lugar! O PAI É BRABU MESMO**
-
-### Passo 10: Testar Fora da Rede Local
-
-<div align="center">
-  <img src="/images/cloudflare/cloudflare-tunnel/tutorial_07.png" alt="Logs do túnel" />
-</div>
-
-**Teste definitivo:**
-
-Hora de ver se a parada tá no ar DE VERDADE ou se é só ilusão:
-
-1. Pega o celular
-2. **Desliga o WiFi** (tem que ser 4G/5G mesmo, sem frescura)
-3. Digita `https://prom.seudominio.com`
-
-**Se funcionar:** Parabéns! Você fez um deploy profissional!
-
-___
-
-## Monitoramento e Logs
-
-### Ver Logs dos Túneis
-
-Na interface da Cloudflare:
-
-**Networks → Tunnels → [Seu Túnel]**
-
-<div align="center">
-  <img src="/images/cloudflare/cloudflare-tunnel/tutorial_09.png" alt="Logs do túnel" />
-</div>
-
-**O que procurar:**
-- Requests bem-sucedidos (status 200)
-- Latência (tempo de resposta)
-- Erros (status 4xx, 5xx)
-
-### Métricas de Tráfego
-
-**Networks → Tunnels → [Seu Túnel] → Metrics**
-
-**Métricas úteis:**
-- Requests por minuto
-- Largura de banda usada
-- Status de saúde do conector
-
-### Ver Todos os Túneis
-
-<div align="center">
-  <img src="/images/cloudflare/cloudflare-tunnel/tutorial_08.png" alt="Lista de túneis" />
-</div>
-
-___
-
-## Bônus: Adicionando Mais Serviços
-
-Quer expor outros serviços? É só adicionar no mesmo túnel!
-
-Você pode ir em "Rotas de aplicativo publicadas" e depois em "Adicionar uma rota de aplicativo publicada"
-___
-
-## Melhorias para Produção (Aquela Ensaboada Bonita Pro Chefe)
-
-Olha, o que fizemos já tá rodando liso. Mas se você quer MESMO impressionar ou colocar isso num ambiente corporativo, tem uns truques aí:
-
-### 1. Autenticação
-
-```yaml
-# Adicionar Cloudflare Access
-# Networks → Access → Applications → Add an application
-```
-
-Proteja com:
-- Login Google/Microsoft
-- One-time PIN por email
-- Múltiplos fatores
-
-### 2. Secrets Management
-
-**Nunca coloque tokens no docker-compose.yml!**
-
-```bash
-# Usando Docker Secrets
-echo "seu_token_aqui" | docker secret create cloudflare_token -
-
-# No docker-compose.yml:
 secrets:
   cloudflare_token:
-    external: true
+    file: ./secrets/cloudflare_token.txt
 
 services:
+  prometheus:
+    image: prom/prometheus:v3.15.0  # versão fixada; atualize via Renovate/Dependabot
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"  # somente na máquina local
+    networks: [monitoring]
+    user: "65534:65534"        # nobody
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+
   cloudflared:
-    secrets:
-      - cloudflare_token
-    command: tunnel run --token $(cat /run/secrets/cloudflare_token)
+    image: cloudflare/cloudflared:2026.10.0
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN_FILE: /run/secrets/cloudflare_token
+    secrets: [cloudflare_token]
+    networks: [monitoring]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    depends_on: [prometheus]
 ```
 
-### 3. HTTPS Interno
+O que mudou em relação à primeira versão deste artigo — e por quê:
 
-```yaml
-# Service Type na Cloudflare: HTTPS (não HTTP)
-# Requer certificado no Prometheus
+| Antes | Agora | Motivo |
+| --- | --- | --- |
+| `ports: "9090:9090"` | `"127.0.0.1:9090:9090"` | Sem o IP, o Docker publica em **todas** as interfaces e suas regras de NAT ignoram o UFW<Cite id="docker-firewall" />. |
+| `--web.enable-admin-api` e `--web.enable-lifecycle` | removidos | Permitem apagar séries e desligar o servidor via HTTP; jamais devem ficar acessíveis pelo túnel<Cite id="prom-security" />. |
+| `--web.console.*` | removidos | Os templates de console deixaram de ser distribuídos a partir do Prometheus 3<Cite id="prom-migration" />. |
+| Token no `command` | `TUNNEL_TOKEN_FILE` + *secret* | O token não aparece no `compose.yaml`, no Git nem no `docker inspect`<Cite id="cf-run-parameters,compose-secrets" />. |
+| Imagens `:latest` | versões fixadas | Builds reproduzíveis e atualizações deliberadas. |
+
+A primeira linha da tabela é o erro mais comum — e o menos intuitivo: o firewall parece ativo, mas a porta continua aberta. Combine as opções na figura e observe quais caminhos chegam ao serviço<Cite id="docker-firewall" />.
+
+<PortExposure />
+
+**Endurecimento dos containers**<Cite id="owasp-docker" />:
+
+<CardGrid cols={3}>
+<Card title="Usuário sem privilégios" icon="lock">`user: "65534:65534"` (nobody): nada roda como root dentro do container.</Card>
+<Card title="Sistema de arquivos imutável" icon="folder" tone="signal">`read_only: true` + `tmpfs`: só `/tmp` é gravável.</Card>
+<Card title="Sem escalonamento" icon="shield" tone="success">`no-new-privileges` e `cap_drop: [ALL]` removem capacidades do kernel desnecessárias.</Card>
+</CardGrid>
+
+### Passo 2: configurar o Prometheus
+
+```yaml title="prometheus-stack/prometheus/prometheus.yml"
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: "homelab"
+
+# rule_files:
+#   - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
 ```
 
-### 4. Rate Limiting
-
-Na Cloudflare, configure:
-- Limite de requisições por IP
-- WAF (Web Application Firewall)
-- Bot protection
-
-### 5. Backup Automatizado
+### Passo 3: validar e subir o Prometheus
 
 ```bash
-# Cron job diário
-0 2 * * * docker run --rm -v prometheus_data:/data -v /backup:/backup ubuntu tar czf /backup/prometheus-$(date +\%Y\%m\%d).tar.gz /data
+docker compose config --quiet && echo "compose.yaml válido"
+docker compose up -d prometheus
+docker compose ps
+curl -s http://127.0.0.1:9090/-/healthy
 ```
 
-### 6. Monitoramento do Monitoramento
+Saída esperada: `Prometheus Server is Healthy.` — se chegou aqui, o Prometheus está rodando.
 
-```yaml
-# Adicione Prometheus Alertmanager
-# Configure alertas para:
-# - Container parou
-# - Disco cheio
-# - Túnel desconectado
+<Callout type="tip">
+Usuários no grupo `docker` não precisam de `sudo`. Mas lembre: pertencer ao grupo `docker` equivale, na prática, a acesso root no host.
+</Callout>
+
+## Parte 4: conectando com a Cloudflare
+
+> As capturas de tela abaixo são de outubro de 2025. O painel da Cloudflare muda com frequência; os nomes de menu podem variar — a documentação oficial é a referência<Cite id="cf-tunnel" />.
+
+1. Acesse o painel da Cloudflare e abra o **Cloudflare One** (antigo Zero Trust).
+
+<Figure src="/images/cloudflare/cloudflare-tunnel/tutorial_01.png" alt="Painel da Cloudflare com o item Zero Trust destacado" />
+
+2. Em **Networks**, abra a seção de **Tunnels** e clique em **Create a tunnel**.
+
+<Figure src="/images/cloudflare/cloudflare-tunnel/tutorial_02.png" alt="Tela de túneis com o botão Create a tunnel" />
+
+3. Selecione o conector **Cloudflared** e dê um nome ao túnel.
+
+<Figure src="/images/cloudflare/cloudflare-tunnel/tutorial_03.png" alt="Seleção do tipo de conector Cloudflared" />
+
+<Figure src="/images/cloudflare/cloudflare-tunnel/tutorial_04.png" alt="Campo para nomear o túnel" />
+
+4. Escolha o ambiente **Docker**. O painel exibirá um comando com `--token eyJ…`. **Copie apenas o token** e grave-o no arquivo de segredo:
+
+<Figure src="/images/cloudflare/cloudflare-tunnel/tutorial_05.png" alt="Instruções de instalação do conector com o token" />
+
+```bash
+# O espaço inicial evita que o comando fique no histórico (com HISTCONTROL=ignorespace)
+ read -rs TOKEN && printf '%s' "$TOKEN" > secrets/cloudflare_token.txt && unset TOKEN
+chmod 700 secrets
+chmod 644 secrets/cloudflare_token.txt  # lido pelo usuário não-root do container
 ```
 
-___
+<Callout type="security" title="Trate o token como uma senha de produção">
+Quem tem o token controla o túnel. Se ele vazar (commit no Git, print em grupo, log de CI), **revogue e gere outro imediatamente** no painel. A pasta `secrets/` com permissão `700` impede que outros usuários do host a leiam; o arquivo `644` é necessário porque o container roda como usuário não-root.
+</Callout>
 
-### Documentação Oficial
+5. Suba o conector e verifique os logs:
 
-- [Cloudflare Tunnels](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
-- [Prometheus Documentation](https://prometheus.io/docs/introduction/overview/)
-- [Docker Compose Reference](https://docs.docker.com/compose/compose-file/)
-___
+```bash
+docker compose up -d
+docker compose logs -f cloudflared   # procure por "Registered tunnel connection"
+```
 
+No painel, o túnel deve aparecer como **Healthy/Connected**.
 
-**Gostou?** Compartilhe com quem está começando em DevSecOps!
-**Dúvidas?** Me chama no LinkedIn.
-**Sugestões?** Comenta abaixo 👇
+6. Publique a rota (*Published application routes*, antigo *Public Hostname*):
+
+<Figure src="/images/cloudflare/cloudflare-tunnel/tutorial_06.png" alt="Configuração de hostname público com subdomínio e serviço HTTP" />
+
+- **Subdomínio**: `prom`; **Domínio**: o seu.
+- **Serviço**: tipo `HTTP`, URL `prometheus:9090`.
+
+Por que `prometheus:9090` e não `localhost:9090`? Dentro do container `cloudflared`, `localhost` é o próprio container. O nome do serviço é resolvido pelo DNS interno da rede `monitoring`.
+
+### Parte 4.1: proteja com Cloudflare Access (obrigatório)
+
+<Callout type="danger" title="O Prometheus não tem autenticação">
+Sem uma camada de autenticação, qualquer pessoa com a URL consulta suas métricas — nomes de hosts, versões, topologia — material valioso para um atacante<Cite id="prom-security" />. Crie uma aplicação **self-hosted** no Cloudflare Access para `prom.seudominio.com` e exija login (Google, Microsoft, GitHub ou PIN por e-mail) antes de liberar a rota<Cite id="cf-one" />.
+</Callout>
+
+### Parte 4.2: teste fora da rede local
+
+<Figure src="/images/cloudflare/cloudflare-tunnel/tutorial_07.png" alt="Prometheus acessado pelo celular via rede móvel" maxWidth={360} />
+
+Desligue o Wi-Fi do celular, use a rede móvel e acesse `https://prom.seudominio.com`. Se pedir login (Access) e depois mostrar o Prometheus, você publicou um serviço do jeito certo.
+
+## Monitoramento do túnel
+
+No painel do túnel você acompanha conexões, requisições e erros:
+
+<Figure src="/images/cloudflare/cloudflare-tunnel/tutorial_09.png" alt="Logs e métricas do túnel no painel" />
+
+<Figure src="/images/cloudflare/cloudflare-tunnel/tutorial_08.png" alt="Lista de túneis com status" />
+
+Para adicionar mais serviços, crie novas rotas publicadas no mesmo túnel — cada uma com seu subdomínio e sua política de acesso.
+
+## Melhorias para produção
+
+**1. Backup.** O Compose prefixa volumes com o nome do projeto (`prometheus-stack_prometheus_data`). Para uma cópia consistente, pare o container antes do `tar`:
+
+```bash
+docker compose stop prometheus
+docker run --rm -v prometheus-stack_prometheus_data:/data:ro -v "$PWD/backup":/backup \
+  alpine:3.22 tar czf "/backup/prometheus-$(date +%F).tar.gz" -C /data .
+docker compose start prometheus
+```
+
+**2. Atualizações.** Com versões fixadas, use Renovate ou Dependabot para receber PRs de atualização — e revise as *release notes*.
+
+**3. Borda.** Configure WAF e *rate limiting* na Cloudflare para os hostnames publicados.
+
+**4. Monitore o monitoramento.** Adicione o Alertmanager e alertas para container parado, disco cheio e túnel desconectado (o `cloudflared` expõe métricas com a flag `--metrics`)<Cite id="cf-run-parameters" />.
+
+<Quiz
+  question="Por que publicar a porta como 127.0.0.1:9090:9090 em vez de 9090:9090?"
+  options={[
+    "Porque deixa o Prometheus mais rápido",
+    "Porque, sem o IP, o Docker publica em todas as interfaces e contorna regras do UFW",
+    "Porque o cloudflared só acessa localhost",
+    "Não há diferença prática",
+  ]}
+  answer={1}
+  explanation="O Docker cria regras de NAT próprias no iptables/nftables; uma porta publicada sem IP fica acessível em todas as interfaces, mesmo com o UFW bloqueando. Já o cloudflared acessa o Prometheus pela rede interna do Docker, não por localhost."
+/>
+
+## Conclusão
+
+Com um túnel de saída, segredos fora do código, containers endurecidos e autenticação na borda, você publica serviços com uma postura de segurança comparável à de ambientes corporativos — sem abrir uma única porta no roteador.
