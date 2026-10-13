@@ -204,7 +204,7 @@ As demais figuras (simulador de Kubernetes, calculadoras ópticas, permissões U
 
 ## Arte generativa: uma ilustração por artigo
 
-Nenhuma capa deste blog é um arquivo de imagem. Cada artigo declara um motivo visual ligado ao tema — o espectro de canais DWDM, uma malha de nós, um diagrama de olho — e a ilustração é gerada no build, como SVG, por um <Term def="Gerador de números pseudoaleatórios: a mesma semente produz sempre a mesma sequência.">PRNG</Term> semeado com o slug. A mesma arte aparece na capa, nos cards e na imagem de compartilhamento (Open Graph), e as animações discretas se desligam com `prefers-reduced-motion`.
+Nenhuma capa deste blog é um arquivo de imagem. Cada artigo declara um motivo visual ligado ao tema — o espectro de canais DWDM, uma malha de nós, um diagrama de olho — e a ilustração é gerada no build, como SVG, por um <Term def="Gerador de números pseudoaleatórios: a mesma semente produz sempre a mesma sequência.">PRNG</Term> semeado com o slug. A mesma arte aparece na capa, nos cards e na imagem de compartilhamento (Open Graph), e a capa é estática de propósito: animar elementos de um SVG de tela cheia obriga o navegador a redesenhá-lo a cada quadro — medido sem GPU, isso ocupava dois núcleos de CPU com a página parada.<Sidenote>O explorador abaixo permite ligar a animação, que só roda enquanto a prévia está visível.</Sidenote>
 
 <ArtExplorer />
 

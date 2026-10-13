@@ -1,4 +1,4 @@
-import { GENERATORS, generateArt, seedFrom, spectralColor } from "./motifs";
+import { GENERATORS, MAX_ANIMATED_SHAPES, generateArt, seedFrom, spectralColor } from "./motifs";
 import { artworkToSvg } from "./render";
 import { MOTIFS, type Shape } from "./types";
 
@@ -31,6 +31,24 @@ describe("arte generativa", () => {
       expect(artworkToSvg(a).length).toBeLessThan(600_000);
     },
   );
+
+  it("limita os elementos animados (custo de repintura sem GPU)", () => {
+    const countAnimated = (shapes: Shape[]): number =>
+      shapes.reduce(
+        (sum, shape) =>
+          sum +
+          (shape.className ? 1 : 0) +
+          (shape.kind === "group" ? countAnimated(shape.children) : 0),
+        0,
+      );
+    for (const motif of MOTIFS) {
+      for (const seed of ["a", "b", "cloudflared-tunnel-tutorail"]) {
+        expect(countAnimated(generateArt(motif, seed).shapes)).toBeLessThanOrEqual(
+          MAX_ANIMATED_SHAPES,
+        );
+      }
+    }
+  });
 
   it("sementes diferentes produzem obras diferentes", () => {
     expect(artworkToSvg(generateArt("lattice", "a"))).not.toBe(

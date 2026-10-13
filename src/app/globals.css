@@ -199,6 +199,21 @@
 .art-blink {
   animation: art-blink 1.1s steps(1) infinite;
 }
+/*
+ * Capas: a arte SVG é estática. Animar elementos internos do SVG obriga o navegador a
+ * re-rasterizar a imagem inteira a cada quadro, e mesmo uma camada animada de tela cheia
+ * custa caro sem GPU (medido: ~2 núcleos ocupados em repouso). Fica só a revelação inicial,
+ * executada uma única vez.
+ */
+.art-reveal {
+  animation: art-reveal 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes art-reveal {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
 
 /* ---------------------------------------------------- progresso de leitura */
 .reading-progress {

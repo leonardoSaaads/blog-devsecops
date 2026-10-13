@@ -28,6 +28,8 @@ test.describe("experiência móvel", () => {
   });
 
   test("nenhuma página tem rolagem horizontal", async ({ page }) => {
+    test.setTimeout(120_000); // 13 navegações completas
+
     const paths = [
       "/",
       "/blog",
@@ -45,7 +47,8 @@ test.describe("experiência móvel", () => {
     ];
     const overflowing: string[] = [];
     for (const path of paths) {
-      await page.goto(path, { waitUntil: "networkidle" });
+      // "load" basta para o layout; "networkidle" depende de imagens e iframes de terceiros.
+      await page.goto(path, { waitUntil: "load" });
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );

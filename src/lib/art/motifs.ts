@@ -668,7 +668,28 @@ export function seedFrom(text: string): number {
   return hash >>> 0;
 }
 
+/**
+ * Máximo de elementos animados por arte. Cada elemento animado força o navegador a
+ * repintar o SVG inteiro a cada quadro; sem GPU (celulares modestos, CI) isso satura a CPU.
+ */
+export const MAX_ANIMATED_SHAPES = 12;
+
+/** Mantém a animação apenas nos primeiros `limit` elementos (ordem do documento). */
+function capAnimations(shapes: Shape[], limit: number): Shape[] {
+  let remaining = limit;
+  const visit = (shape: Shape): Shape => {
+    let next = shape;
+    if (shape.className) {
+      if (remaining > 0) remaining -= 1;
+      else next = { ...shape, className: undefined };
+    }
+    return next.kind === "group" ? { ...next, children: next.children.map(visit) } : next;
+  };
+  return shapes.map(visit);
+}
+
 export function generateArt(motif: keyof typeof GENERATORS, seed: string | number): Artwork {
   const random = mulberry32(typeof seed === "number" ? seed : seedFrom(seed));
-  return GENERATORS[motif](random);
+  const art = GENERATORS[motif](random);
+  return { ...art, shapes: capAnimations(art.shapes, MAX_ANIMATED_SHAPES) };
 }

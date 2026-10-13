@@ -54,6 +54,19 @@ test.describe("jornada do leitor", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/blog/dwdm_intoduction");
     await expect(page.getByTestId("post-hero")).toContainText("Telecomunicações");
+
+    // Desempenho: a capa não pode ter animações contínuas (repintar o SVG ocupa a CPU
+    // inteira em aparelhos sem GPU). Só a revelação inicial, finita, é permitida.
+    const infiniteInHero = await page
+      .getByTestId("post-hero")
+      .evaluate(
+        (hero) =>
+          hero
+            .getAnimations({ subtree: true })
+            .filter((animation) => animation.effect?.getComputedTiming().iterations === Infinity)
+            .length,
+      );
+    expect(infiniteInHero).toBe(0);
     await expect(page.getByTestId("abstract")).toContainText("Resumo");
     await expect(page.getByTestId("abstract")).toContainText("Palavras-chave:");
     await expect(page.getByTestId("key-points").getByRole("listitem")).toHaveCount(4);

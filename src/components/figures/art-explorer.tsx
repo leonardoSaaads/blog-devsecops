@@ -1,8 +1,9 @@
 "use client";
 
 import { Shuffle } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { CoverArt, artCaption } from "@/components/art/cover-art";
+import { useInView } from "@/hooks/use-in-view";
 import { MOTIFS, type Motif } from "@/lib/art/types";
 import { InteractiveFigure, controlButton, controlToggle } from "./interactive-figure";
 
@@ -23,8 +24,11 @@ const SEEDS = ["fibra", "kernel", "pacote", "quantum", "observar", "latencia", "
 export function ArtExplorer() {
   const [motif, setMotif] = useState<Motif>("circuit");
   const [seed, setSeed] = useState("bastidores-do-blog");
-  const [animated, setAnimated] = useState(true);
+  const [animated, setAnimated] = useState(false);
   const inputId = useId();
+  const previewRef = useRef<HTMLDivElement>(null);
+  // Anima só enquanto a prévia está visível (economia de CPU fora da tela).
+  const inView = useInView(previewRef, "0px");
   const safeSeed = seed.trim().slice(0, 40) || "semente";
 
   return (
@@ -78,11 +82,15 @@ export function ArtExplorer() {
             Animação
           </label>
         </div>
-        <div className="overflow-hidden rounded-xl bg-plate" data-testid="art-preview">
+        <div
+          ref={previewRef}
+          className="overflow-hidden rounded-xl bg-plate"
+          data-testid="art-preview"
+        >
           <CoverArt
             motif={motif}
             seed={safeSeed}
-            animated={animated}
+            animated={animated && inView}
             className="aspect-[1200/630] h-auto"
           />
         </div>

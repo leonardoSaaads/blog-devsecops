@@ -189,10 +189,16 @@ test.describe("figuras interativas", () => {
   test("arte generativa: a semente determina a ilustração", async ({ page }) => {
     await page.goto("/blog/bastidores-do-blog");
     const figure = page.getByTestId("art-explorer");
-    const original = await figure.getByTestId("art-preview").innerHTML();
+    // Compara a geometria (atributos d), independente das classes de animação.
+    const geometry = () =>
+      figure
+        .getByTestId("art-preview")
+        .locator("path")
+        .evaluateAll((paths) => paths.map((path) => path.getAttribute("d")).join("|"));
+    const original = await geometry();
     await figure.getByTestId("art-seed").fill("outra-semente");
-    await expect.poll(() => figure.getByTestId("art-preview").innerHTML()).not.toBe(original);
+    await expect.poll(geometry).not.toBe(original);
     await figure.getByTestId("art-seed").fill("bastidores-do-blog");
-    await expect.poll(() => figure.getByTestId("art-preview").innerHTML()).toBe(original);
+    await expect.poll(geometry).toBe(original);
   });
 });

@@ -116,7 +116,7 @@ export default async function PostPage({ params }: PageProps<"/blog/[slug]">) {
           data-testid="post-hero"
         >
           <div className="absolute inset-0 -z-10" aria-hidden="true">
-            <CoverArt motif={post.art} seed={post.slug} animated decorative />
+            <CoverArt motif={post.art} seed={post.slug} decorative className="art-reveal" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#050812]/95 via-[#050812]/80 to-[#050812]/30" />
             <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#050812]/90 to-transparent" />
           </div>

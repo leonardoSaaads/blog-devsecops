@@ -388,8 +388,11 @@ export function Fiber3D() {
                   </p>
                 ) : (
                   <p className="inline-flex items-center gap-2">
-                    <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> carregando
-                    modelo 3D…
+                    <LoaderCircle
+                      className={inView ? "size-4 animate-spin" : "size-4"}
+                      aria-hidden="true"
+                    />{" "}
+                    carregando modelo 3D…
                   </p>
                 )}
               </div>

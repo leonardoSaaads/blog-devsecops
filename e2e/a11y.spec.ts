@@ -18,6 +18,8 @@ const PAGES = [
 for (const theme of ["light", "dark"] as const) {
   test.describe(`acessibilidade (tema ${theme})`, () => {
     test.use({ colorScheme: theme });
+    // O axe percorre milhares de nós em artigos longos; em runners de 2 núcleos isso passa de 30 s.
+    test.describe.configure({ timeout: 90_000 });
 
     for (const path of PAGES) {
       test(`${path} sem violações sérias de WCAG 2.2 AA`, async ({ page }) => {

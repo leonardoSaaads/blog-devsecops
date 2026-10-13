@@ -230,7 +230,7 @@ O modelo 3D usa three.js importado dinamicamente quando a figura entra na tela, 
 
 ## Arte generativa
 
-`src/lib/art/motifs.ts` define nove motivos ligados aos temas (espectro DWDM, malha de nós, matriz de bits, rede e túneis, séries temporais, radar, flame graph, circuito e diagrama de olho). A semente é o hash FNV-1a do slug e o PRNG é o mulberry32: a mesma entrada gera sempre o mesmo SVG. A arte é renderizada no servidor (`CoverArt`), reaproveitada nos cards e convertida em data URI para as imagens Open Graph; animações CSS discretas respeitam `prefers-reduced-motion`.
+`src/lib/art/motifs.ts` define nove motivos ligados aos temas (espectro DWDM, malha de nós, matriz de bits, rede e túneis, séries temporais, radar, flame graph, circuito e diagrama de olho). A semente é o hash FNV-1a do slug e o PRNG é o mulberry32: a mesma entrada gera sempre o mesmo SVG. A arte é renderizada no servidor (`CoverArt`), reaproveitada nos cards e convertida em data URI para as imagens Open Graph. As capas são **estáticas** (só uma revelação inicial): animar elementos internos de um SVG de tela cheia força a re-rasterização a cada quadro e, medido sem GPU, ocupava dois núcleos de CPU com a página parada; o E2E garante que a capa não tenha animações infinitas.
 
 ## Segurança
 

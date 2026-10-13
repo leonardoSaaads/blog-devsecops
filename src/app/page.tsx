@@ -50,7 +50,7 @@ export default function HomePage() {
         aria-labelledby="hero-title"
       >
         <div className="absolute inset-0 -z-10" aria-hidden="true">
-          <CoverArt motif="eye" seed="inicio" animated decorative className="opacity-80" />
+          <CoverArt motif="eye" seed="inicio" decorative className="art-reveal opacity-80" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#050812] via-[#050812]/85 to-[#050812]/20" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#050812]/80 to-transparent" />
         </div>

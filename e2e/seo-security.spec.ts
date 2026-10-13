@@ -25,6 +25,8 @@ test.describe("segurança e SEO", () => {
   });
 
   test("a página não gera violações de CSP nem erros de console", async ({ page }) => {
+    test.setTimeout(90_000); // quatro páginas completas
+
     const problems: string[] = [];
     page.on("console", (message) => {
       if (message.type() === "error") problems.push(message.text());
