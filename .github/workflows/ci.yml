@@ -14,6 +14,7 @@ concurrency:
 
 env:
   NEXT_TELEMETRY_DISABLED: 1
+  WRANGLER_SEND_METRICS: false
 
 jobs:
   quality:

@@ -4,6 +4,7 @@ import { site } from "@/lib/site";
 export const alt = `${site.author.name} — ${site.tagline}`;
 export const size = OG_SIZE;
 export const contentType = "image/png";
+export const dynamic = "force-static";
 
 export default function OpengraphImage() {
   return renderOgImage({

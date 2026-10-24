@@ -6,3 +6,5 @@ test-results
 public
 content
 package-lock.json
+out
+.wrangler

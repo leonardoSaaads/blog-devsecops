@@ -6,6 +6,7 @@ import { OG_SIZE, renderOgImage } from "@/lib/og";
 export const alt = "Capa do artigo";
 export const size = OG_SIZE;
 export const contentType = "image/png";
+export const dynamic = "force-static";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));

@@ -45,3 +45,7 @@ next-env.d.ts
 /test-results/
 /blob-report/
 /playwright/.cache/
+
+# cloudflare (wrangler)
+.wrangler/
+.dev.vars*

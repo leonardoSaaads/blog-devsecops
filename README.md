@@ -77,7 +77,8 @@ Variável opcional:
 | Comando                              | Descrição                                                 |
 | ------------------------------------ | --------------------------------------------------------- |
 | `npm run dev`                        | Servidor de desenvolvimento                               |
-| `npm run build` / `npm start`        | Build de produção (estático) e servidor                   |
+| `npm run build` / `npm start`        | Exportação estática em `out/` e servidor local (wrangler) |
+| `npm run deploy`                     | Publica `out/` na Cloudflare (`wrangler deploy`)          |
 | `npm run lint`                       | ESLint (regras do Next, React Hooks, a11y, TypeScript)    |
 | `npm run typecheck`                  | Gera os tipos de rota e executa `tsc --noEmit`            |
 | `npm test` / `npm run test:coverage` | Testes unitários e de componentes (Vitest)                |
@@ -112,6 +113,8 @@ blog-devsecops/
 │   │   ├── tags/                   # tópicos: áreas e palavras-chave
 │   │   ├── projects/, about/
 │   │   ├── feed.xml/route.ts       # RSS
+│   │   ├── %5Fheaders/route.ts     # gera out/_headers (cabeçalhos na Cloudflare)
+│   │   ├── %5Fredirects/route.ts   # gera out/_redirects (links legados, 308)
 │   │   ├── sitemap.ts, robots.ts, manifest.ts, opengraph-image.tsx
 │   │   ├── not-found.tsx, error.tsx
 │   │   └── globals.css             # tokens de design (claro/escuro) e estilos de artigo
@@ -127,9 +130,11 @@ blog-devsecops/
 │   │   ├── content/                # carregamento, esquema, áreas, MDX, ABNT, tempo de leitura, plugins
 │   │   ├── simulations/            # lógica pura das figuras (óptica, fibra, k8s, sinais, PromQL, SNMP…)
 │   │   ├── security/headers.ts     # CSP e cabeçalhos de segurança
+│   │   ├── hosting/                # _headers/_redirects da Cloudflare e redirecionamentos legados
 │   │   └── site.ts, search.ts, feed.ts, structured-data.ts, og.tsx, format.ts, theme.ts
 │   └── test/                       # setup do Vitest e substitutos de módulos do Next
-├── next.config.ts                  # cabeçalhos, redirecionamentos, rotas tipadas
+├── next.config.ts                  # exportação estática, rotas tipadas, cabeçalhos no dev
+├── wrangler.jsonc                  # Cloudflare Workers Static Assets (serve out/)
 ├── playwright.config.ts
 ├── vitest.config.mts
 ├── eslint.config.mjs
@@ -273,7 +278,20 @@ O workflow `.github/workflows/ci.yml` roda em cada push/PR com permissões míni
 
 ## Deploy
 
-Compatível com Vercel ou qualquer plataforma que execute `next start`. Na Vercel, importe o repositório; o build é detectado automaticamente. Defina `NEXT_PUBLIC_SITE_URL` se o domínio mudar. Os cabeçalhos de segurança são aplicados pelo próprio Next (`next.config.ts`).
+O site é 100% estático: `next build` gera `out/` (`output: "export"`) e a **Cloudflare** o serve como [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/), configurado em `wrangler.jsonc`. Nenhum código executa por requisição — não há servidor, otimizador de imagens nem leitura de disco em produção.
+
+Configuração do projeto em **Workers & Pages → Settings → Build**:
+
+| Campo             | Valor                                              |
+| ----------------- | -------------------------------------------------- |
+| Build command     | `npm run build`                                    |
+| Deploy command    | `npx wrangler deploy` (usa o wrangler do lockfile) |
+| Root directory    | `/`                                                |
+| Variável de build | `NEXT_PUBLIC_SITE_URL=https://seu-dominio`         |
+
+Cabeçalhos e redirecionamentos, que o Next aplicaria em um servidor, viram os arquivos `out/_headers` e `out/_redirects`, gerados no build a partir de `src/lib/security/headers.ts` e `src/lib/hosting/` (os mesmos usados pelo `next dev`). A Cloudflare os aplica e não os serve publicamente. `npm run build && npm start` reproduz a produção localmente via `wrangler dev`; os testes E2E rodam contra ele.
+
+> Não use o OpenNext (`@opennextjs/cloudflare`): ele executa o Next em um Worker, onde `content/posts` não existe em disco, e expõe rotas de servidor desnecessárias.
 
 Links antigos continuam válidos: `/blog/hello-world` → `/blog/bastidores-do-blog` e `/tags/MAIUSCULA` → `/tags/minuscula` (308). Os slugs dos artigos foram preservados para manter a associação com as discussões do Giscus.
 

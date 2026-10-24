@@ -2,7 +2,7 @@ import { allArtworks } from "@/lib/art/catalog";
 import { generateArt } from "@/lib/art/motifs";
 import { artworkToSvg } from "@/lib/art/render";
 import { MOTIFS, type Motif } from "@/lib/art/types";
-import { ART_SEED_PATTERN } from "@/lib/art/url";
+import { ART_CACHE_CONTROL, ART_SEED_PATTERN } from "@/lib/art/url";
 
 // SVG gerado no build e servido como arquivo estático (cacheável, fora do HTML).
 export const dynamic = "force-static";
@@ -24,7 +24,7 @@ export async function GET(_request: Request, { params }: RouteContext<"/art/[mot
   return new Response(artworkToSvg(generateArt(motif as Motif, seed)), {
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
-      "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+      "Cache-Control": ART_CACHE_CONTROL,
     },
   });
 }

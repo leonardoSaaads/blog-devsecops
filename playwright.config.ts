@@ -39,10 +39,11 @@ export default defineConfig({
       testMatch: /mobile\.spec\.ts/,
     },
   ],
+  // `out/` servido pelo wrangler (workerd): mesmos `_headers`, `_redirects` e 404 da produção.
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: `npm run start -- -p ${PORT}`,
+        command: `npm run start -- --port ${PORT}`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

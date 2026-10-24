@@ -25,6 +25,7 @@ const eslintConfig = [
       "node_modules/**",
       ".next/**",
       "out/**",
+      ".wrangler/**",
       "coverage/**",
       "playwright-report/**",
       "test-results/**",
