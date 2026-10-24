@@ -5,13 +5,14 @@ import { areaArtwork } from "@/lib/art/catalog";
 import { PageHeader } from "@/components/ui/page-header";
 import { CATEGORIES, categoriesInUse } from "@/lib/content/categories";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Topics",
   description:
     "Areas of study and article keywords: telecommunications, infrastructure, security and software.",
-  alternates: { canonical: "/tags" },
-};
+  path: "/tags",
+});
 
 export default function TopicsPage() {
   const tags = getAllTags();

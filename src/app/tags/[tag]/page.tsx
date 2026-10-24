@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { PostCard } from "@/components/blog/post-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getAllTags, getPostsByTag } from "@/lib/content/posts";
+import { isTagIndexable, pageMetadata } from "@/lib/seo/metadata";
 
 export function generateStaticParams() {
   return getAllTags().map(({ tag }) => ({ tag }));
@@ -13,11 +14,13 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/tags/[tag]">): Promise<Metadata> {
   const { tag } = await params;
   const normalized = decodeURIComponent(tag).toLowerCase();
-  return {
+  const count = getPostsByTag(normalized).length;
+  return pageMetadata({
     title: `#${normalized}`,
-    description: `Articles about ${normalized}.`,
-    alternates: { canonical: `/tags/${normalized}` },
-  };
+    description: `${count} ${count === 1 ? "article" : "articles"} about ${normalized}, with interactive figures and cited sources.`,
+    path: `/tags/${normalized}`,
+    noindex: !isTagIndexable(count),
+  });
 }
 
 export default async function TagPage({ params }: PageProps<"/tags/[tag]">) {

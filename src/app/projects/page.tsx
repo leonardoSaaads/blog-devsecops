@@ -6,12 +6,13 @@ import { GithubIcon } from "@/components/icons/brand-icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { projectArtwork } from "@/lib/art/catalog";
 import { PROJECTS } from "@/lib/content/projects";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Projects",
   description: "Open-source infrastructure, observability and automation projects.",
-  alternates: { canonical: "/projects" },
-};
+  path: "/projects",
+});
 
 export default function ProjectsPage() {
   return (

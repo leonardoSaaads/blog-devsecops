@@ -1,6 +1,6 @@
 import type { Route } from "next";
 
-const DEFAULT_SITE_URL = "https://blog.leonardosaads.com.br";
+const DEFAULT_SITE_URL = "https://saatustech.com.br";
 
 function resolveSiteUrl(): string {
   const raw = process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SITE_URL;

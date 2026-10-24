@@ -50,16 +50,23 @@ test.describe("security and SEO", () => {
     expect((await request.get("/art/spectrum/..%2F..%2Fetc.svg")).status()).toBe(404);
   });
 
-  test("sitemap, robots, RSS and manifest", async ({ request }) => {
+  test("sitemap, robots, RSS, manifest, llms.txt and security.txt", async ({ request }) => {
     const sitemap = await (await request.get("/sitemap.xml")).text();
     expect(sitemap).toContain("/blog/dwdm-introduction");
-    expect(sitemap).toContain("/tags/linux");
+    // Single-article keyword pages are noindex and stay out of the sitemap.
+    expect(sitemap).not.toContain("/tags/linux");
     expect(sitemap).not.toContain("/shop");
     expect(await (await request.get("/robots.txt")).text()).toContain("Sitemap:");
     const feed = await request.get("/feed.xml");
     expect(feed.headers()["content-type"]).toContain("application/rss+xml");
     expect(await feed.text()).toContain("<item>");
     expect((await request.get("/manifest.webmanifest")).ok()).toBe(true);
+    const llms = await request.get("/llms.txt");
+    expect(llms.headers()["content-type"]).toContain("text/plain");
+    expect(await llms.text()).toContain("/blog/linux-fundamentals");
+    const security = await (await request.get("/.well-known/security.txt")).text();
+    expect(security).toMatch(/^Contact: https:\/\//m);
+    expect(security).toMatch(/^Expires: \d{4}-\d{2}-\d{2}T/m);
   });
 
   test("metadata, JSON-LD with citations and the Open Graph image", async ({ page, request }) => {
@@ -69,11 +76,25 @@ test.describe("security and SEO", () => {
       /\/blog\/dwdm-introduction$/,
     );
     await expect(page.locator('meta[property="og:type"]')).toHaveAttribute("content", "article");
-    const jsonLd = JSON.parse(
-      (await page.locator('script[type="application/ld+json"]').textContent())!,
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+      "content",
+      /\/blog\/dwdm-introduction$/,
     );
-    expect(jsonLd["@type"]).toBe("BlogPosting");
-    expect(jsonLd.citation.length).toBeGreaterThan(5);
+    await expect(page.locator('link[rel="alternate"][type="application/rss+xml"]')).toHaveCount(1);
+    const nodes = (await page.locator('script[type="application/ld+json"]').allTextContents()).map(
+      (text) => JSON.parse(text),
+    );
+    const posting = nodes.find((node) => node["@type"] === "BlogPosting");
+    expect(posting.citation.length).toBeGreaterThan(5);
+    expect(posting.author.sameAs.length).toBeGreaterThan(0);
+    const breadcrumb = nodes.find((node) => node["@type"] === "BreadcrumbList");
+    expect(breadcrumb.itemListElement).toHaveLength(3);
+
+    // Pages other than the home page share their own URL and title, not the home page's.
+    await page.goto("/about");
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", /\/about$/);
+    await page.goto("/tags/linux");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 
     const og = await request.get("/blog/dwdm-introduction/opengraph-image");
     expect(og.ok()).toBe(true);

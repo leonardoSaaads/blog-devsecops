@@ -25,7 +25,8 @@ import {
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { absoluteUrl, site } from "@/config/site";
-import { blogPostingJsonLd } from "@/lib/seo/structured-data";
+import { pageMetadata } from "@/lib/seo/metadata";
+import { blogPostingJsonLd, breadcrumbJsonLd } from "@/lib/seo/structured-data";
 
 export const dynamicParams = false;
 
@@ -37,24 +38,24 @@ export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): P
   const { slug } = await params;
   const post = getPostBySlug(slug);
   if (!post) return {};
-  const url = `/blog/${post.slug}`;
-  return {
+  const base = pageMetadata({
     title: post.title,
     description: post.description,
+    path: `/blog/${post.slug}`,
+  });
+  return {
+    ...base,
     keywords: post.tags,
-    alternates: { canonical: url },
+    authors: [{ name: site.author.name, url: absoluteUrl("/about") }],
     openGraph: {
+      ...base.openGraph,
       type: "article",
-      url,
-      title: post.title,
-      description: post.description,
       publishedTime: post.date,
       modifiedTime: post.updated ?? post.date,
-      authors: [site.author.name],
+      authors: [absoluteUrl("/about")],
       section: CATEGORIES[post.category].label,
       tags: post.tags,
     },
-    twitter: { card: "summary_large_image", title: post.title, description: post.description },
   };
 }
 
@@ -106,6 +107,13 @@ export default async function PostPage({ params }: PageProps<"/blog/[slug]">) {
   return (
     <>
       <JsonLd data={blogPostingJsonLd(post)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Articles", path: "/blog" },
+          { name: post.title, path: `/blog/${post.slug}` },
+        ])}
+      />
       <div
         className="reading-progress fixed inset-x-0 top-0 z-50 h-0.5 bg-gradient-to-r from-accent to-signal"
         aria-hidden="true"
@@ -295,7 +303,14 @@ export default async function PostPage({ params }: PageProps<"/blog/[slug]">) {
 
             <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
               <p className="font-serif text-muted-foreground">
-                Found it useful? Share it with someone studying the topic.
+                Found it useful? Share it with someone studying the topic, or{" "}
+                <a
+                  href="/feed.xml"
+                  className="text-accent-strong underline decoration-accent/40 underline-offset-4 hover:decoration-accent"
+                >
+                  follow new articles via RSS
+                </a>
+                .
               </p>
               <ShareButtons title={post.title} url={url} />
             </div>

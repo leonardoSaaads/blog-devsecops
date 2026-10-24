@@ -3,7 +3,7 @@ import { getAllPosts, getPostBySlug } from "@/lib/content/posts";
 import { formatDate } from "@/lib/format";
 import { OG_SIZE, renderOgImage } from "@/lib/seo/og";
 
-export const alt = "Article cover";
+export const alt = "Article title card with the title, area, author and date";
 export const size = OG_SIZE;
 export const contentType = "image/png";
 export const dynamic = "force-static";

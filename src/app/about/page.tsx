@@ -3,13 +3,16 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { GithubIcon, LinkedinIcon } from "@/components/icons/brand-icons";
+import { JsonLd } from "@/components/seo/json-ld";
 import { site } from "@/config/site";
+import { pageMetadata } from "@/lib/seo/metadata";
+import { profilePageJsonLd } from "@/lib/seo/structured-data";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "About",
   description: `About ${site.author.name}: telecommunications engineering, DevOps and observability.`,
-  alternates: { canonical: "/about" },
-};
+  path: "/about",
+});
 
 const SKILLS = [
   "Docker",
@@ -33,6 +36,7 @@ export default function AboutPage() {
 
   return (
     <div className="container-page py-12">
+      <JsonLd data={profilePageJsonLd()} />
       <div className="grid gap-12 md:grid-cols-[18rem_1fr]">
         <aside className="md:sticky md:top-24 md:self-start">
           <div className="relative mx-auto size-48 overflow-hidden rounded-full border-4 border-accent/60 md:mx-0">

@@ -4,13 +4,14 @@ import { PostCard, type PostCardData } from "@/components/blog/post-card";
 import { PostExplorer } from "@/components/blog/post-explorer";
 import { PageHeader } from "@/components/ui/page-header";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Articles",
   description:
     "Technical essays on telecommunications, infrastructure, security and software — with interactive figures and cited sources.",
-  alternates: { canonical: "/blog" },
-};
+  path: "/blog",
+});
 
 export default function BlogPage() {
   const posts: PostCardData[] = getAllPosts().map(

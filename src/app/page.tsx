@@ -4,10 +4,12 @@ import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
 import { SITE_ARTWORKS, areaArtwork } from "@/lib/art/catalog";
 import { PostCard } from "@/components/blog/post-card";
+import { JsonLd } from "@/components/seo/json-ld";
 import { CATEGORIES, categoriesInUse } from "@/lib/content/categories";
 import { getAllPosts } from "@/lib/content/posts";
 import { cn } from "@/lib/utils";
 import { site } from "@/config/site";
+import { websiteJsonLd } from "@/lib/seo/structured-data";
 
 const READING_GUIDE = [
   {
@@ -48,6 +50,7 @@ export default function HomePage() {
 
   return (
     <>
+      <JsonLd data={websiteJsonLd()} />
       <section
         className="relative isolate overflow-hidden bg-plate text-slate-100"
         aria-labelledby="hero-title"
