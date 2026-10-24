@@ -4,8 +4,8 @@ import { BookOpen, CornerDownLeft, FileText, Hash, Search } from "lucide-react";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { cn } from "@/lib/format";
-import { searchEntries, type SearchEntry, type SearchKind } from "@/lib/search";
+import { cn } from "@/lib/utils";
+import { searchEntries, type SearchEntry, type SearchKind } from "@/lib/search/query";
 
 const KIND_META: Record<SearchKind, { label: string; icon: typeof BookOpen }> = {
   post: { label: "Artigo", icon: BookOpen },

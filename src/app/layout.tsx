@@ -4,7 +4,7 @@ import localFont from "next/font/local";
 import { EasterEgg } from "@/components/layout/easter-egg";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { site } from "@/lib/site";
+import { site } from "@/config/site";
 import { themeInitScript } from "@/lib/theme";
 // CSS do KaTeX global (≈6 KB comprimido): como CSS exclusivo da rota de artigos, o Next o
 // pré-carregava a cada prefetch e o navegador avisava que o recurso não foi usado.

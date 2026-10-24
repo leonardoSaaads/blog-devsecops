@@ -1,6 +1,6 @@
 import { MousePointerClick } from "lucide-react";
 import { useId, type ReactNode } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 /**
  * Figura interativa numerada, inserida no fluxo do artigo (sem sair da leitura).

@@ -3,7 +3,7 @@
 import { ListTree } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { TocItem } from "@/lib/content/plugins/rehype-collect-headings";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 function useActiveHeading(ids: string[]): string | undefined {
   const [active, setActive] = useState<string>();

@@ -1,6 +1,6 @@
 import { CircleAlert, Info, Lightbulb, OctagonAlert, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const VARIANTS = {
   info: {

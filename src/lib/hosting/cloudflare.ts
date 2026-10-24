@@ -6,7 +6,7 @@
  * `_redirects` da raiz dos assets (não são servidos publicamente).
  */
 import { ART_CACHE_CONTROL } from "@/lib/art/url";
-import { FEED_HEADERS } from "@/lib/feed";
+import { FEED_HEADERS } from "@/lib/seo/feed";
 import { VARIANTS_DIR } from "@/lib/images/variants.mts";
 import { buildSecurityHeaders, type HeaderRule } from "@/lib/security/headers";
 import { buildRedirects, type RedirectRule } from "./redirects";

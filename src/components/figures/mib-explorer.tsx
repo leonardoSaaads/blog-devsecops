@@ -2,7 +2,7 @@
 
 import { ChevronRight, Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { MIB_ROOT, flattenMib, formatVarBind, walk, type MibNode } from "@/lib/simulations/snmp";
 import { InteractiveFigure, primaryButton } from "./interactive-figure";
 

@@ -11,7 +11,7 @@ import {
   Terminal,
 } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   FS_ROOT,
   ancestors,

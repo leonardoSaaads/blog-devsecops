@@ -2,7 +2,7 @@
 
 import { ArrowDown, ArrowRight, Pause, Play } from "lucide-react";
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { InteractiveFigure, controlButton } from "./interactive-figure";
 
 export interface FlowStep {

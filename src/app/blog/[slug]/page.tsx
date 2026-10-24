@@ -11,7 +11,7 @@ import { PostCard } from "@/components/blog/post-card";
 import { ReferenceList } from "@/components/blog/reference-list";
 import { ShareButtons } from "@/components/blog/share-buttons";
 import { TableOfContents } from "@/components/blog/table-of-contents";
-import { JsonLd } from "@/components/json-ld";
+import { JsonLd } from "@/components/seo/json-ld";
 import { getMdxComponents } from "@/components/mdx/mdx-components";
 import { CATEGORIES } from "@/lib/content/categories";
 import { renderMdx } from "@/lib/content/mdx";
@@ -22,9 +22,10 @@ import {
   getRelatedPosts,
   type PostMeta,
 } from "@/lib/content/posts";
-import { cn, formatDate } from "@/lib/format";
-import { absoluteUrl, site } from "@/lib/site";
-import { blogPostingJsonLd } from "@/lib/structured-data";
+import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { absoluteUrl, site } from "@/config/site";
+import { blogPostingJsonLd } from "@/lib/seo/structured-data";
 
 export const dynamicParams = false;
 

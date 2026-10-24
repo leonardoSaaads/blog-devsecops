@@ -4,7 +4,7 @@ import { MessageSquare } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/hooks/use-theme";
-import { site } from "@/lib/site";
+import { site } from "@/config/site";
 
 // O código do Giscus só é baixado quando a seção de comentários se aproxima da tela.
 const Giscus = dynamic(() => import("@giscus/react"), { ssr: false });

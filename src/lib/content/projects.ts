@@ -1,5 +1,5 @@
 import type { Motif } from "@/lib/art/types";
-import { site } from "@/lib/site";
+import { site } from "@/config/site";
 
 export interface Project {
   name: string;

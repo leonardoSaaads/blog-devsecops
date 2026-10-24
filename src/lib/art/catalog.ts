@@ -1,7 +1,7 @@
 import "server-only";
 import { CATEGORIES, CATEGORY_IDS } from "@/lib/content/categories";
 import { getAllPosts } from "@/lib/content/posts";
-import { PROJECTS } from "@/lib/projects";
+import { PROJECTS } from "@/lib/content/projects";
 import type { Motif } from "./types";
 
 export interface ArtworkRef {

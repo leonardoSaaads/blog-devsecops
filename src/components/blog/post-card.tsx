@@ -3,7 +3,8 @@ import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
 import { CATEGORIES } from "@/lib/content/categories";
 import type { PostMeta } from "@/lib/content/posts";
-import { cn, formatShortDate } from "@/lib/format";
+import { formatShortDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export type PostCardData = Pick<
   PostMeta,

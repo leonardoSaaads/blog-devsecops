@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
 import { areaArtwork } from "@/lib/art/catalog";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { CATEGORIES, CATEGORY_IDS } from "@/lib/content/categories";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
 

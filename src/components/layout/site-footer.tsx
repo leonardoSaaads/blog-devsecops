@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
 import { SITE_ARTWORKS } from "@/lib/art/catalog";
 import { GithubIcon, LinkedinIcon } from "@/components/icons/brand-icons";
-import { mainNav, site } from "@/lib/site";
+import { mainNav, site } from "@/config/site";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();

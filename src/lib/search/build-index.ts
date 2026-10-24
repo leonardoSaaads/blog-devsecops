@@ -1,7 +1,7 @@
 import "server-only";
 import { CATEGORIES, CATEGORY_IDS } from "@/lib/content/categories";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
-import type { SearchEntry } from "@/lib/search";
+import type { SearchEntry } from "@/lib/search/query";
 
 const PAGES: SearchEntry[] = [
   {

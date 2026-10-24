@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/format";
-import type { NavItem } from "@/lib/site";
+import { cn } from "@/lib/utils";
+import type { NavItem } from "@/config/site";
 
 export function isActivePath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);

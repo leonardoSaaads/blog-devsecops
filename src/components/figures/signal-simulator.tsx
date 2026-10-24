@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   DOCKERFILE,
   SIGNALS,

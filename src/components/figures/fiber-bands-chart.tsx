@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { linearScale, polyline } from "./chart-utils";
 import { InteractiveFigure, controlToggle } from "./interactive-figure";
 

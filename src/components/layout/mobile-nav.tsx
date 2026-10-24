@@ -3,7 +3,7 @@
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
-import type { NavItem } from "@/lib/site";
+import type { NavItem } from "@/config/site";
 import { NavLinks } from "./nav-links";
 
 export function MobileNav({ items }: { items: NavItem[] }) {

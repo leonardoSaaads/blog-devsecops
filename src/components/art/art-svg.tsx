@@ -1,7 +1,7 @@
 import type { SVGProps } from "react";
 import { generateArt } from "@/lib/art/motifs";
 import type { Motif, Shape } from "@/lib/art/types";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 function ShapeNode({ shape, animated }: { shape: Shape; animated: boolean }) {
   const paint = {

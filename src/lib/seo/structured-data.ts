@@ -1,7 +1,7 @@
 import { CATEGORIES } from "@/lib/content/categories";
 import type { PostMeta } from "@/lib/content/posts";
 import { referenceToPlainText } from "@/lib/content/references";
-import { absoluteUrl, site } from "@/lib/site";
+import { absoluteUrl, site } from "@/config/site";
 
 /** Serializa JSON-LD com escape de `<` para impedir quebra do `<script>` (XSS). */
 export function serializeJsonLd(data: unknown): string {

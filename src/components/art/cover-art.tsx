@@ -1,6 +1,6 @@
 import type { ArtworkRef } from "@/lib/art/catalog";
 import { artUrl } from "@/lib/art/url";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 /**
  * Capa/ilustração do site como imagem SVG estática: fica fora do HTML e do payload

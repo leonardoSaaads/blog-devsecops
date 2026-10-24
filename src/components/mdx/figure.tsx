@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { imageSize } from "image-size";
 import Image from "next/image";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 

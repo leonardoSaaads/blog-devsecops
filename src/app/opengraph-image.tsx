@@ -1,5 +1,5 @@
-import { OG_SIZE, renderOgImage } from "@/lib/og";
-import { site } from "@/lib/site";
+import { OG_SIZE, renderOgImage } from "@/lib/seo/og";
+import { site } from "@/config/site";
 
 export const alt = `${site.author.name} — ${site.tagline}`;
 export const size = OG_SIZE;

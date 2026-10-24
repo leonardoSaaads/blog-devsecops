@@ -25,7 +25,3 @@ export function formatShortDate(isoDate: string): string {
 export function formatReadingTime(minutes: number): string {
   return `${minutes} min de leitura`;
 }
-
-export function cn(...classes: Array<string | false | null | undefined>): string {
-  return classes.filter(Boolean).join(" ");
-}

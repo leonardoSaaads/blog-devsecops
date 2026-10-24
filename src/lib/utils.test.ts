@@ -1,9 +1,10 @@
 import { parseFrontmatter } from "@/lib/content/frontmatter";
 import { estimateReadingMinutes } from "@/lib/content/reading-time";
-import { buildRssFeed, escapeXml } from "@/lib/feed";
-import { cn, formatDate, formatShortDate } from "@/lib/format";
-import { normalize, searchEntries, type SearchEntry } from "@/lib/search";
-import { serializeJsonLd } from "@/lib/structured-data";
+import { buildRssFeed, escapeXml } from "@/lib/seo/feed";
+import { formatDate, formatShortDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { normalize, searchEntries, type SearchEntry } from "@/lib/search/query";
+import { serializeJsonLd } from "@/lib/seo/structured-data";
 import { nextPreference, resolveTheme, themeInitScript } from "@/lib/theme";
 
 describe("frontmatter", () => {

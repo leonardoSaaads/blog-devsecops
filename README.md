@@ -101,7 +101,7 @@ blog-devsecops/
 ├── scripts/
 │   └── optimize-images.mts         # variantes WebP das imagens de public/ (rodado por dev e build)
 ├── public/
-│   ├── images/                     # imagens dos artigos
+│   ├── images/posts/<slug>/        # imagens de cada artigo, agrupadas pelo slug
 │   ├── videos/                     # vídeos dos artigos
 │   ├── workers/
 │   │   ├── js-runner.js            # executor JavaScript (worker clássico, sem rede)
@@ -121,21 +121,26 @@ blog-devsecops/
 │   │   ├── sitemap.ts, robots.ts, manifest.ts, opengraph-image.tsx
 │   │   ├── not-found.tsx, error.tsx
 │   │   └── globals.css             # tokens de design (claro/escuro) e estilos de artigo
+│   ├── config/site.ts              # identidade do site, navegação, Giscus
 │   ├── components/
 │   │   ├── art/                    # CoverArt (<img> do SVG estático) e ArtSvg (SVG interativo)
 │   │   ├── layout/                 # cabeçalho, navegação, busca (Ctrl+K), tema, rodapé
 │   │   ├── blog/                   # cards, filtros, sumário, referências, citação, comentários
 │   │   ├── mdx/                    # mapa MDX, Cite, callouts, figuras, cards, notas de margem, termos, definições
+│   │   ├── seo/                    # JSON-LD
+│   │   ├── ui/                     # componentes genéricos (cabeçalho de página)
 │   │   └── figures/                # figuras interativas numeradas e playground de código
 │   ├── hooks/                      # tema, media queries, visibilidade, valores só-cliente
 │   ├── lib/
 │   │   ├── art/                    # motivos generativos determinísticos e exportação SVG/OG
-│   │   ├── content/                # carregamento, esquema, áreas, MDX, ABNT, tempo de leitura, plugins
+│   │   ├── content/                # carregamento, esquema, áreas, MDX, ABNT, tempo de leitura, projetos, plugins
 │   │   ├── simulations/            # lógica pura das figuras (óptica, fibra, k8s, sinais, PromQL, SNMP…)
 │   │   ├── security/headers.ts     # CSP e cabeçalhos de segurança
 │   │   ├── hosting/                # _headers/_redirects da Cloudflare e redirecionamentos legados
 │   │   ├── images/                 # larguras das variantes e loader do next/image
-│   │   └── site.ts, search.ts, feed.ts, structured-data.ts, og.tsx, format.ts, theme.ts
+│   │   ├── search/                 # índice e consulta da busca (Ctrl+K)
+│   │   ├── seo/                    # RSS, Open Graph, dados estruturados
+│   │   └── utils.ts, format.ts, theme.ts
 │   └── test/                       # setup do Vitest e substitutos de módulos do Next
 ├── next.config.ts                  # exportação estática, rotas tipadas, cabeçalhos no dev
 ├── wrangler.jsonc                  # Cloudflare Workers Static Assets (serve out/)

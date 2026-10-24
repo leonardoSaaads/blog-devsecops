@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { generateArt } from "@/lib/art/motifs";
 import { artworkToDataUri } from "@/lib/art/render";
 import type { Motif } from "@/lib/art/types";
-import { site } from "@/lib/site";
+import { site } from "@/config/site";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 

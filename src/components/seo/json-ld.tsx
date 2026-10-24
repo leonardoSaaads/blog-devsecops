@@ -1,4 +1,4 @@
-import { serializeJsonLd } from "@/lib/structured-data";
+import { serializeJsonLd } from "@/lib/seo/structured-data";
 
 export function JsonLd({ data }: { data: unknown }) {
   return (

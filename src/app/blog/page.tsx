@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PostCard, type PostCardData } from "@/components/blog/post-card";
 import { PostExplorer } from "@/components/blog/post-explorer";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
 
 export const metadata: Metadata = {

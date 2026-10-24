@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
 import { GithubIcon } from "@/components/icons/brand-icons";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { projectArtwork } from "@/lib/art/catalog";
-import { PROJECTS } from "@/lib/projects";
+import { PROJECTS } from "@/lib/content/projects";
 
 export const metadata: Metadata = {
   title: "Projetos",

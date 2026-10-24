@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { GithubIcon, LinkedinIcon } from "@/components/icons/brand-icons";
-import { site } from "@/lib/site";
+import { site } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Sobre",

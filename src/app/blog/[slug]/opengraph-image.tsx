@@ -1,7 +1,7 @@
 import { CATEGORIES } from "@/lib/content/categories";
 import { getAllPosts, getPostBySlug } from "@/lib/content/posts";
 import { formatDate } from "@/lib/format";
-import { OG_SIZE, renderOgImage } from "@/lib/og";
+import { OG_SIZE, renderOgImage } from "@/lib/seo/og";
 
 export const alt = "Capa do artigo";
 export const size = OG_SIZE;

@@ -2,7 +2,7 @@
 
 import { ShieldAlert } from "lucide-react";
 import { useId, useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   PERMISSIONS,
   WHO,

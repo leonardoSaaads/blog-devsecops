@@ -4,8 +4,8 @@ import { Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { CATEGORIES, type CategoryId } from "@/lib/content/categories";
-import { cn } from "@/lib/format";
-import { normalize } from "@/lib/search";
+import { cn } from "@/lib/utils";
+import { normalize } from "@/lib/search/query";
 import { PostCard, type PostCardData } from "./post-card";
 
 export function filterPosts(

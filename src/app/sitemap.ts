@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl } from "@/config/site";
 
 export const dynamic = "force-static";
 

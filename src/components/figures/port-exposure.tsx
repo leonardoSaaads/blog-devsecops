@@ -2,7 +2,7 @@
 
 import { Cloud, Globe, Lock, Server, ShieldCheck, ShieldOff, Unlock } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { SECURE_PRESET, assessExposure, type ExposureConfig } from "@/lib/simulations/exposure";
 import { InteractiveFigure, controlButton, controlToggle } from "./interactive-figure";
 

@@ -2,7 +2,7 @@
 
 import { Eraser, LoaderCircle, Play, RotateCcw, Square, SquareTerminal } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   PYODIDE_LOAD_TIMEOUT_MS,
   RUNNER_URL,

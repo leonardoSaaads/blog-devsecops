@@ -2,7 +2,7 @@
 
 import { CircleCheck, CircleX, GraduationCap } from "lucide-react";
 import { useId, useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export interface QuizProps {
   question: string;

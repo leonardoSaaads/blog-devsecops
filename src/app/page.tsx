@@ -6,7 +6,7 @@ import { SITE_ARTWORKS, areaArtwork } from "@/lib/art/catalog";
 import { PostCard } from "@/components/blog/post-card";
 import { CATEGORIES, CATEGORY_IDS } from "@/lib/content/categories";
 import { getAllPosts } from "@/lib/content/posts";
-import { site } from "@/lib/site";
+import { site } from "@/config/site";
 
 const READING_GUIDE = [
   {

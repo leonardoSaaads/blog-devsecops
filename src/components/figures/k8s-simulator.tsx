@@ -3,7 +3,7 @@
 import { Minus, Pause, Play, Plus, RotateCcw, Rocket, Send, X } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useInView } from "@/hooks/use-in-view";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   MAX_REPLICAS,
   clusterReducer,
