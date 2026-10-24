@@ -42,7 +42,7 @@ export default function AboutPage() {
               fill
               sizes="12rem"
               className="object-cover"
-              priority
+              preload
             />
           </div>
           <h1 className="mt-6 font-serif text-3xl font-semibold tracking-tight">

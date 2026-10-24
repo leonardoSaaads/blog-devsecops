@@ -52,6 +52,7 @@ describe("_headers da Cloudflare", () => {
     expect(blocks.get("/opengraph-image")).toContain("Content-Type: image/png");
     expect(blocks.get("/blog/:slug/opengraph-image")).toContain("Content-Type: image/png");
     expect(blocks.get("/art/*")?.some((line) => line.includes("max-age=86400"))).toBe(true);
+    expect(blocks.get("/_img/*")?.some((line) => line.includes("max-age=86400"))).toBe(true);
   });
 
   it("respeita os limites da plataforma", () => {

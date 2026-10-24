@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# variantes de imagem geradas no build (scripts/optimize-images.mts)
+/public/_img/
+
 # production
 /build
 

@@ -17,7 +17,7 @@ const eslintConfig = [
   },
   {
     // Workers e scripts executam fora do bundle do Next (ambiente de worker/Node).
-    files: ["public/workers/**/*.{js,mjs}", "scripts/**/*.mjs"],
+    files: ["public/workers/**/*.{js,mjs}", "scripts/**/*.{mjs,mts}"],
     rules: { "no-console": "off" },
   },
   {

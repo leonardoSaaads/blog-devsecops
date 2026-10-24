@@ -7,6 +7,7 @@
  */
 import { ART_CACHE_CONTROL } from "@/lib/art/url";
 import { FEED_HEADERS } from "@/lib/feed";
+import { VARIANTS_DIR } from "@/lib/images/variants.mts";
 import { buildSecurityHeaders, type HeaderRule } from "@/lib/security/headers";
 import { buildRedirects, type RedirectRule } from "./redirects";
 
@@ -26,6 +27,11 @@ export function buildAssetHeaders(): HeaderRule[] {
     // Nomes com hash de conteúdo: podem ficar em cache indefinidamente.
     { source: "/_next/static/:path*", headers: [{ key: "Cache-Control", value: IMMUTABLE }] },
     { source: "/art/:path*", headers: [{ key: "Cache-Control", value: ART_CACHE_CONTROL }] },
+    // Variantes de imagem: sem hash no nome, mas mudam raramente (revalidam por ETag).
+    {
+      source: `/${VARIANTS_DIR}/:path*`,
+      headers: [{ key: "Cache-Control", value: ART_CACHE_CONTROL }],
+    },
     {
       source: "/feed.xml",
       headers: Object.entries(FEED_HEADERS).map(([key, value]) => ({ key, value })),

@@ -54,7 +54,7 @@ Blog técnico com projeto editorial de **publicação acadêmica** — resumo, f
 
 ## Requisitos
 
-- Node.js **22.12+** (CI usa a versão de `.nvmrc`, Node 24 LTS)
+- Node.js **22.18+** — executa TypeScript nativamente no script de imagens (CI e Cloudflare usam Node 24 LTS, de `.nvmrc`)
 - npm 10+
 
 ## Início rápido
@@ -77,6 +77,7 @@ Variável opcional:
 | Comando                              | Descrição                                                 |
 | ------------------------------------ | --------------------------------------------------------- |
 | `npm run dev`                        | Servidor de desenvolvimento                               |
+| `npm run images`                     | Gera as variantes WebP em `public/_img/` (incremental)    |
 | `npm run build` / `npm start`        | Exportação estática em `out/` e servidor local (wrangler) |
 | `npm run deploy`                     | Publica `out/` na Cloudflare (`wrangler deploy`)          |
 | `npm run lint`                       | ESLint (regras do Next, React Hooks, a11y, TypeScript)    |
@@ -97,6 +98,8 @@ blog-devsecops/
 ├── content/
 │   └── posts/*.mdx                 # artigos (frontmatter YAML + MDX)
 ├── e2e/                            # Playwright: jornada do leitor, figuras, SEO/segurança, a11y, mobile
+├── scripts/
+│   └── optimize-images.mts         # variantes WebP das imagens de public/ (rodado por dev e build)
 ├── public/
 │   ├── images/                     # imagens dos artigos
 │   ├── videos/                     # vídeos dos artigos
@@ -131,6 +134,7 @@ blog-devsecops/
 │   │   ├── simulations/            # lógica pura das figuras (óptica, fibra, k8s, sinais, PromQL, SNMP…)
 │   │   ├── security/headers.ts     # CSP e cabeçalhos de segurança
 │   │   ├── hosting/                # _headers/_redirects da Cloudflare e redirecionamentos legados
+│   │   ├── images/                 # larguras das variantes e loader do next/image
 │   │   └── site.ts, search.ts, feed.ts, structured-data.ts, og.tsx, format.ts, theme.ts
 │   └── test/                       # setup do Vitest e substitutos de módulos do Next
 ├── next.config.ts                  # exportação estática, rotas tipadas, cabeçalhos no dev
@@ -254,6 +258,8 @@ Medido simulando um visitante novo (cache vazio, CPU 4× mais lenta, rede 4G) qu
 | Nós de DOM na home                      | 2 767                                                  | 476          |
 | Fontes pré-carregadas em toda página    | 4 (≈ 393 KB)                                           | 3 (≈ 173 KB) |
 | Avisos/erros no console                 | API obsoleta (`THREE.Clock`), preload de CSS não usado | nenhum       |
+
+**Imagens:** a exportação estática não tem o otimizador do Next; `scripts/optimize-images.mts` (sharp) gera WebP em 9 larguras para cada PNG/JPEG de `public/`, e o loader de `src/lib/images/` aponta o `srcset` para elas. As 22 imagens dos artigos caem de 5,5 MB para variantes de dezenas de KB (ex.: 976 KB → 34 KB); a figura marcada como LCP usa `preload`.
 
 Outras medidas: código de cada figura interativa carregado só nos artigos que a usam (`next/dynamic`), Giscus baixado só ao chegar aos comentários, three.js só quando a fibra entra na tela, CSS do KaTeX global (evita preload desperdiçado no prefetch) e altura reservada no simulador de Kubernetes (CLS de 0,043 para 0,007).
 
