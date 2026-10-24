@@ -1,3 +1,9 @@
+/** Cabeçalhos do RSS (rota no `next dev`, `_headers` em produção). */
+export const FEED_HEADERS = {
+  "Content-Type": "application/rss+xml; charset=utf-8",
+  "Cache-Control": "public, max-age=3600",
+} as const;
+
 export interface FeedItem {
   title: string;
   description: string;

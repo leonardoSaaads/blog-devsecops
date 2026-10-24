@@ -37,20 +37,22 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur-md">
       <div className="container-page relative flex h-16 items-center gap-4">
-        <Link
-          href="/"
-          className="group flex items-center gap-3"
-          aria-label={`${site.name} — início`}
-        >
+        {/* Nome acessível vem do texto visível (WCAG 2.5.3): "Leonardo Saads — início". */}
+        <Link href="/" className="group flex items-center gap-3">
           <Monogram />
+          <span className="sr-only sm:hidden">{site.name}</span>
           <span className="hidden leading-tight sm:block">
             <span className="block font-serif text-lg font-semibold tracking-tight">
               {site.name}
             </span>
-            <span className="smallcaps block text-[0.7rem] text-muted-foreground">
+            <span
+              aria-hidden="true"
+              className="smallcaps block text-[0.7rem] text-muted-foreground"
+            >
               {site.tagline}
             </span>
           </span>
+          <span className="sr-only"> — início</span>
         </Link>
 
         <nav aria-label="Navegação principal" className="ml-6 hidden md:block">

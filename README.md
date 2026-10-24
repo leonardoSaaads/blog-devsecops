@@ -54,7 +54,7 @@ Blog técnico com projeto editorial de **publicação acadêmica** — resumo, f
 
 ## Requisitos
 
-- Node.js **22.12+** (CI usa a versão de `.nvmrc`, Node 24 LTS)
+- Node.js **22.18+** — executa TypeScript nativamente no script de imagens (CI e Cloudflare usam Node 24 LTS, de `.nvmrc`)
 - npm 10+
 
 ## Início rápido
@@ -77,7 +77,9 @@ Variável opcional:
 | Comando                              | Descrição                                                 |
 | ------------------------------------ | --------------------------------------------------------- |
 | `npm run dev`                        | Servidor de desenvolvimento                               |
-| `npm run build` / `npm start`        | Build de produção (estático) e servidor                   |
+| `npm run images`                     | Gera as variantes WebP em `public/_img/` (incremental)    |
+| `npm run build` / `npm start`        | Exportação estática em `out/` e servidor local (wrangler) |
+| `npm run deploy`                     | Publica `out/` na Cloudflare (`wrangler deploy`)          |
 | `npm run lint`                       | ESLint (regras do Next, React Hooks, a11y, TypeScript)    |
 | `npm run typecheck`                  | Gera os tipos de rota e executa `tsc --noEmit`            |
 | `npm test` / `npm run test:coverage` | Testes unitários e de componentes (Vitest)                |
@@ -96,6 +98,8 @@ blog-devsecops/
 ├── content/
 │   └── posts/*.mdx                 # artigos (frontmatter YAML + MDX)
 ├── e2e/                            # Playwright: jornada do leitor, figuras, SEO/segurança, a11y, mobile
+├── scripts/
+│   └── optimize-images.mts         # variantes WebP das imagens de public/ (rodado por dev e build)
 ├── public/
 │   ├── images/                     # imagens dos artigos
 │   ├── videos/                     # vídeos dos artigos
@@ -112,6 +116,8 @@ blog-devsecops/
 │   │   ├── tags/                   # tópicos: áreas e palavras-chave
 │   │   ├── projects/, about/
 │   │   ├── feed.xml/route.ts       # RSS
+│   │   ├── %5Fheaders/route.ts     # gera out/_headers (cabeçalhos na Cloudflare)
+│   │   ├── %5Fredirects/route.ts   # gera out/_redirects (links legados, 308)
 │   │   ├── sitemap.ts, robots.ts, manifest.ts, opengraph-image.tsx
 │   │   ├── not-found.tsx, error.tsx
 │   │   └── globals.css             # tokens de design (claro/escuro) e estilos de artigo
@@ -127,9 +133,12 @@ blog-devsecops/
 │   │   ├── content/                # carregamento, esquema, áreas, MDX, ABNT, tempo de leitura, plugins
 │   │   ├── simulations/            # lógica pura das figuras (óptica, fibra, k8s, sinais, PromQL, SNMP…)
 │   │   ├── security/headers.ts     # CSP e cabeçalhos de segurança
+│   │   ├── hosting/                # _headers/_redirects da Cloudflare e redirecionamentos legados
+│   │   ├── images/                 # larguras das variantes e loader do next/image
 │   │   └── site.ts, search.ts, feed.ts, structured-data.ts, og.tsx, format.ts, theme.ts
 │   └── test/                       # setup do Vitest e substitutos de módulos do Next
-├── next.config.ts                  # cabeçalhos, redirecionamentos, rotas tipadas
+├── next.config.ts                  # exportação estática, rotas tipadas, cabeçalhos no dev
+├── wrangler.jsonc                  # Cloudflare Workers Static Assets (serve out/)
 ├── playwright.config.ts
 ├── vitest.config.mts
 ├── eslint.config.mjs
@@ -250,6 +259,8 @@ Medido simulando um visitante novo (cache vazio, CPU 4× mais lenta, rede 4G) qu
 | Fontes pré-carregadas em toda página    | 4 (≈ 393 KB)                                           | 3 (≈ 173 KB) |
 | Avisos/erros no console                 | API obsoleta (`THREE.Clock`), preload de CSS não usado | nenhum       |
 
+**Imagens:** a exportação estática não tem o otimizador do Next; `scripts/optimize-images.mts` (sharp) gera WebP em 9 larguras para cada PNG/JPEG de `public/`, e o loader de `src/lib/images/` aponta o `srcset` para elas. As 22 imagens dos artigos caem de 5,5 MB para variantes de dezenas de KB (ex.: 976 KB → 34 KB); a figura marcada como LCP usa `preload`.
+
 Outras medidas: código de cada figura interativa carregado só nos artigos que a usam (`next/dynamic`), Giscus baixado só ao chegar aos comentários, three.js só quando a fibra entra na tela, CSS do KaTeX global (evita preload desperdiçado no prefetch) e altura reservada no simulador de Kubernetes (CLS de 0,043 para 0,007).
 
 ## Segurança
@@ -273,7 +284,20 @@ O workflow `.github/workflows/ci.yml` roda em cada push/PR com permissões míni
 
 ## Deploy
 
-Compatível com Vercel ou qualquer plataforma que execute `next start`. Na Vercel, importe o repositório; o build é detectado automaticamente. Defina `NEXT_PUBLIC_SITE_URL` se o domínio mudar. Os cabeçalhos de segurança são aplicados pelo próprio Next (`next.config.ts`).
+O site é 100% estático: `next build` gera `out/` (`output: "export"`) e a **Cloudflare** o serve como [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/), configurado em `wrangler.jsonc`. Nenhum código executa por requisição — não há servidor, otimizador de imagens nem leitura de disco em produção.
+
+Configuração do projeto em **Workers & Pages → Settings → Build**:
+
+| Campo             | Valor                                              |
+| ----------------- | -------------------------------------------------- |
+| Build command     | `npm run build`                                    |
+| Deploy command    | `npx wrangler deploy` (usa o wrangler do lockfile) |
+| Root directory    | `/`                                                |
+| Variável de build | `NEXT_PUBLIC_SITE_URL=https://seu-dominio`         |
+
+Cabeçalhos e redirecionamentos, que o Next aplicaria em um servidor, viram os arquivos `out/_headers` e `out/_redirects`, gerados no build a partir de `src/lib/security/headers.ts` e `src/lib/hosting/` (os mesmos usados pelo `next dev`). A Cloudflare os aplica e não os serve publicamente. `npm run build && npm start` reproduz a produção localmente via `wrangler dev`; os testes E2E rodam contra ele.
+
+> Não use o OpenNext (`@opennextjs/cloudflare`): ele executa o Next em um Worker, onde `content/posts` não existe em disco, e expõe rotas de servidor desnecessárias.
 
 Links antigos continuam válidos: `/blog/hello-world` → `/blog/bastidores-do-blog` e `/tags/MAIUSCULA` → `/tags/minuscula` (308). Os slugs dos artigos foram preservados para manter a associação com as discussões do Giscus.
 

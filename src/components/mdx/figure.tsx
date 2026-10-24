@@ -22,6 +22,7 @@ export interface FigureProps {
   /** Crédito/fonte da imagem (obrigatório para imagens de terceiros). */
   source?: string;
   sourceUrl?: string;
+  /** Imagem acima da dobra (LCP): pré-carregada no `<head>`. */
   priority?: boolean;
   /** Largura máxima de exibição em px (ex.: diagramas pequenos). */
   maxWidth?: number;
@@ -43,7 +44,7 @@ export function Figure({ src, alt, caption, source, sourceUrl, priority, maxWidt
             width={size.width}
             height={size.height}
             sizes="(min-width: 1024px) 768px, 100vw"
-            priority={priority}
+            preload={priority}
             className="h-auto w-full"
           />
         ) : (

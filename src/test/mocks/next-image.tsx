@@ -3,7 +3,7 @@ export default function Image({
   src,
   alt,
   fill: _fill,
-  priority: _priority,
+  preload: _preload,
   ...props
 }: Record<string, unknown>) {
   // eslint-disable-next-line @next/next/no-img-element

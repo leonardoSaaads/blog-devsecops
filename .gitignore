@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# variantes de imagem geradas no build (scripts/optimize-images.mts)
+/public/_img/
+
 # production
 /build
 
@@ -45,3 +48,7 @@ next-env.d.ts
 /test-results/
 /blob-report/
 /playwright/.cache/
+
+# cloudflare (wrangler)
+.wrangler/
+.dev.vars*

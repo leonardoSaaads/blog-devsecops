@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { PostCard } from "@/components/blog/post-card";
 import { PageHeader } from "@/components/page-header";
 import { getAllTags, getPostsByTag } from "@/lib/content/posts";
@@ -23,10 +23,8 @@ export async function generateMetadata({ params }: PageProps<"/tags/[tag]">): Pr
 export default async function TagPage({ params }: PageProps<"/tags/[tag]">) {
   const { tag: raw } = await params;
   const tag = decodeURIComponent(raw);
-  // Compatibilidade com links antigos em caixa alta (ex.: /tags/DEVOPS).
-  if (tag !== tag.toLowerCase())
-    permanentRedirect(`/tags/${encodeURIComponent(tag.toLowerCase())}`);
-
+  // Links antigos em caixa alta (ex.: /tags/DEVOPS) são redirecionados pelo
+  // `_redirects` da Cloudflare (ver src/lib/hosting/redirects.ts).
   const posts = getPostsByTag(tag);
   if (posts.length === 0) notFound();
 

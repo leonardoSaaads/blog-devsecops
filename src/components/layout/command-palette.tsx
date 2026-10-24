@@ -77,12 +77,19 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
         type="button"
         onClick={open}
         className="group inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-sm text-muted-foreground transition hover:border-accent hover:text-foreground sm:w-56"
-        aria-label="Buscar no site (atalho Ctrl+K)"
+        // Nome acessível começa pelo texto visível (WCAG 2.5.3); o atalho vai em aria-keyshortcuts.
+        aria-keyshortcuts="Control+K"
         data-testid="search-trigger"
       >
         <Search className="size-4" aria-hidden="true" />
-        <span className="hidden flex-1 text-left sm:inline">Buscar…</span>
-        <kbd className="hidden rounded border border-border px-1.5 font-mono text-[11px] sm:inline">
+        <span className="sr-only">Buscar no site</span>
+        <span aria-hidden="true" className="hidden flex-1 text-left sm:inline">
+          Buscar…
+        </span>
+        <kbd
+          aria-hidden="true"
+          className="hidden rounded border border-border px-1.5 font-mono text-[11px] sm:inline"
+        >
           Ctrl K
         </kbd>
       </button>
