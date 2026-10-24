@@ -17,8 +17,8 @@ export function normalize(text: string): string {
 }
 
 /**
- * Busca local: todos os termos precisam aparecer em algum campo.
- * Pontuação: título (3) > palavras-chave (2) > descrição (1); prefixo no título soma bônus.
+ * Local search: every term must appear in some field.
+ * Scoring: title (3) > keywords (2) > description (1); a title prefix adds a bonus.
  */
 const KIND_PRIORITY: Record<SearchKind, number> = { post: 0, page: 1, tag: 2 };
 
@@ -44,7 +44,7 @@ export function searchEntries(entries: readonly SearchEntry[], query: string, li
         return { entry, score };
       })
       .filter(({ score }) => score > 0)
-      // Empate: artigos antes de páginas e tags ("kubernetes" deve abrir o artigo, não a tag).
+      // Ties: articles before pages and tags ("linux" should open the article, not the tag).
       .sort(
         (a, b) =>
           b.score - a.score ||

@@ -12,7 +12,7 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
 export interface PostMeta extends Omit<PostFrontmatter, "draft"> {
   slug: string;
   readingMinutes: number;
-  /** Número de figuras interativas no artigo. */
+  /** Number of interactive figures in the article. */
   figures: number;
 }
 
@@ -28,15 +28,15 @@ export interface TagSummary {
 export function parsePostFile(fileName: string, source: string): Post & { draft: boolean } {
   const slug = fileName.replace(/\.mdx$/, "");
   if (!SLUG_PATTERN.test(slug)) {
-    throw new Error(`Slug inválido em content/posts/${fileName}`);
+    throw new Error(`Invalid slug in content/posts/${fileName}`);
   }
   const { data, body } = parseFrontmatter(source);
   const result = postFrontmatterSchema.safeParse(data);
   if (!result.success) {
     const issues = result.error.issues
-      .map((issue) => `  - ${issue.path.join(".") || "(raiz)"}: ${issue.message}`)
+      .map((issue) => `  - ${issue.path.join(".") || "(root)"}: ${issue.message}`)
       .join("\n");
-    throw new Error(`Frontmatter inválido em content/posts/${fileName}:\n${issues}`);
+    throw new Error(`Invalid frontmatter in content/posts/${fileName}:\n${issues}`);
   }
   return {
     ...result.data,
@@ -58,7 +58,7 @@ function loadPosts(): Post[] {
     .sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title));
 }
 
-// Em produção o conteúdo é imutável durante o build; em dev relemos a cada chamada.
+// Content is immutable during a production build; in dev it is re-read on every call.
 let cache: Post[] | undefined;
 function posts(): Post[] {
   if (process.env.NODE_ENV !== "production") return loadPosts();
@@ -74,7 +74,7 @@ export function getAllPosts(): PostMeta[] {
   return posts().map(toMeta);
 }
 
-/** Busca por slug a partir da lista carregada — nunca monta caminhos com entrada externa. */
+/** Looks up a slug in the loaded list — never builds file paths from external input. */
 export function getPostBySlug(slug: string): Post | undefined {
   return posts().find((post) => post.slug === slug);
 }
@@ -100,7 +100,7 @@ export function getAdjacentPosts(slug: string): { newer?: PostMeta; older?: Post
   return { newer: all[index - 1], older: all[index + 1] };
 }
 
-/** Artigos relacionados ordenados pelo número de tags em comum (desempate: mais recente). */
+/** Related articles ranked by shared tags (ties: most recent first). */
 export function getRelatedPosts(slug: string, limit = 3): PostMeta[] {
   const current = getPostBySlug(slug);
   if (!current) return [];

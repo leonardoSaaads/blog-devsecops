@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-/** Ícones de marca (Simple Icons, CC0) — removidos do Lucide a partir da v1. */
+/** Brand icons (Simple Icons, CC0) — removed from Lucide as of v1. */
 export function GithubIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>

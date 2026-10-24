@@ -1,6 +1,6 @@
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 
-/** Substituto de `next/link` para testes (renderiza um <a> simples). */
+/** Test stand-in for `next/link` (renders a plain <a>). */
 export default function Link({
   href,
   children,

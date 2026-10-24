@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("jornada do leitor", () => {
-  test("da home até um artigo: filtro, sumário, citações e navegação entre artigos", async ({
+test.describe("reader journey", () => {
+  test("from home to an article: filter, table of contents, citations and article navigation", async ({
     page,
   }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/Leonardo Saads/);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Ensaios técnicos");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Technical essays");
 
     await page.getByTestId("cta-blog").click();
     await expect(page).toHaveURL(/\/blog$/);
@@ -17,41 +17,41 @@ test.describe("jornada do leitor", () => {
     await expect(page).toHaveURL(/\?q=linux/);
 
     await page.getByTestId("post-card").getByRole("link", { name: /Linux/ }).click();
-    await expect(page).toHaveURL(/\/blog\/comandos-linux$/);
+    await expect(page).toHaveURL(/\/blog\/linux-fundamentals$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Entendendo um pouco de Linux",
+      "Linux Fundamentals: Permissions, Processes, Signals and the Filesystem",
     );
 
-    // Sumário lateral leva à seção
-    await page.getByTestId("toc").getByRole("link", { name: "Processos e sinais" }).click();
+    // The table of contents jumps to the section
+    await page.getByTestId("toc").getByRole("link", { name: "Processes and signals" }).click();
     await expect(
-      page.getByRole("heading", { level: 2, name: /Processos e sinais/ }),
+      page.getByRole("heading", { level: 2, name: /Processes and signals/ }),
     ).toBeInViewport();
 
-    // Citação numerada leva à lista de referências ABNT
+    // A numbered citation jumps to the IEEE reference list
     await page.locator('sup a[href^="#ref-"]').first().click();
     await expect(page.getByTestId("references")).toBeVisible();
-    await expect(page.getByTestId("references")).toContainText("Disponível em:");
+    await expect(page.getByTestId("references")).toContainText("Available:");
 
-    // Próximo/anterior
+    // Next/previous
     await page
-      .getByRole("navigation", { name: "Artigos adjacentes" })
+      .getByRole("navigation", { name: "Adjacent articles" })
       .getByRole("link")
       .first()
       .click();
-    await expect(page).not.toHaveURL(/comandos-linux/);
+    await expect(page).not.toHaveURL(/linux-fundamentals/);
     await expect(page.getByTestId("post-content")).toBeVisible();
   });
 
-  test("artigo acadêmico: capa, resumo, pontos-chave, figuras numeradas, notas e glossário", async ({
+  test("academic article: cover, abstract, key takeaways, numbered figures, notes and glossary", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/blog/dwdm_intoduction");
-    await expect(page.getByTestId("post-hero")).toContainText("Telecomunicações");
+    await page.goto("/blog/dwdm-introduction");
+    await expect(page.getByTestId("post-hero")).toContainText("Telecommunications");
 
-    // Desempenho: a capa não pode ter animações contínuas (repintar o SVG ocupa a CPU
-    // inteira em aparelhos sem GPU). Só a revelação inicial, finita, é permitida.
+    // Performance: the cover cannot run continuous animations (repainting the SVG pins
+    // the CPU on devices without a GPU). Only the finite initial reveal is allowed.
     const infiniteInHero = await page
       .getByTestId("post-hero")
       .evaluate(
@@ -62,24 +62,24 @@ test.describe("jornada do leitor", () => {
             .length,
       );
     expect(infiniteInHero).toBe(0);
-    await expect(page.getByTestId("abstract")).toContainText("Resumo");
-    await expect(page.getByTestId("abstract")).toContainText("Palavras-chave:");
+    await expect(page.getByTestId("abstract")).toContainText("Abstract");
+    await expect(page.getByTestId("abstract")).toContainText("Keywords:");
     await expect(page.getByTestId("key-points").getByRole("listitem")).toHaveCount(4);
 
-    // Numeração automática por contadores CSS: a primeira figura é a "Figura 1."
+    // Automatic numbering via CSS counters: the first figure is "Figure 1."
     const firstLabel = await page
       .locator(".figure-label")
       .first()
       .evaluate((element) => getComputedStyle(element, "::before").content);
-    expect(firstLabel).toContain("Figura");
+    expect(firstLabel).toContain("Figure");
 
-    // Nota de margem flutua na coluna lateral em telas largas
-    const note = page.getByRole("note").filter({ hasText: "campo modal" });
+    // The sidenote floats in the side column on wide screens
+    const note = page.getByRole("note").filter({ hasText: "mode field" });
     const content = await page.getByTestId("post-content").boundingBox();
     const noteBox = await note.boundingBox();
     expect(noteBox!.x).toBeGreaterThan(content!.x + content!.width - 5);
 
-    // Termo do glossário abre a definição no foco e fecha com Esc
+    // A glossary term opens its definition on focus and closes with Esc
     const term = page.getByTestId("term").filter({ hasText: "LCoS" });
     await term.focus();
     await expect(term).toHaveAttribute("aria-expanded", "true");
@@ -90,36 +90,36 @@ test.describe("jornada do leitor", () => {
     await expect(term).toHaveAttribute("aria-expanded", "false");
   });
 
-  test("filtro por área e página de tópicos", async ({ page }) => {
+  test("area filter and topics page", async ({ page }) => {
     await page.goto("/blog");
     await page
-      .getByRole("group", { name: "Filtrar por área" })
-      .getByRole("button", { name: "Segurança" })
+      .getByRole("group", { name: "Filter by area" })
+      .getByRole("button", { name: "Security" })
       .click();
-    await expect(page).toHaveURL(/area=seguranca/);
+    await expect(page).toHaveURL(/area=security/);
     await expect(page.getByTestId("post-card")).toHaveCount(1);
     await page.goto("/tags");
-    await page.getByRole("link", { name: "Ver artigos de Telecomunicações" }).click();
-    await expect(page).toHaveURL(/\/blog\?area=telecomunicacoes$/);
+    await page.getByRole("link", { name: "See Telecommunications articles" }).click();
+    await expect(page).toHaveURL(/\/blog\?area=telecommunications$/);
     await expect(page.getByTestId("post-card")).toHaveCount(1);
   });
 
-  test("tags: do artigo para a listagem por tema", async ({ page }) => {
-    await page.goto("/blog/comandos-linux");
+  test("tags: from the article to the topic listing", async ({ page }) => {
+    await page.goto("/blog/linux-fundamentals");
     await page.getByTestId("abstract").getByRole("link", { name: "linux", exact: true }).click();
     await expect(page).toHaveURL(/\/tags\/linux$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("#linux");
     await expect(page.getByTestId("post-card").first()).toBeVisible();
   });
 
-  test("menu principal leva a todas as seções", async ({ page }) => {
+  test("the main menu reaches every section", async ({ page }) => {
     await page.goto("/");
-    const nav = page.getByRole("navigation", { name: "Navegação principal" });
+    const nav = page.getByRole("navigation", { name: "Main navigation", exact: true });
     for (const [label, url, heading] of [
-      ["Artigos", /\/blog$/, "Artigos"],
-      ["Tópicos", /\/tags$/, "Tópicos"],
-      ["Projetos", /\/projects$/, "Projetos"],
-      ["Sobre", /\/about$/, "Leonardo Saads Pinto"],
+      ["Articles", /\/blog$/, "Articles"],
+      ["Topics", /\/tags$/, "Topics"],
+      ["Projects", /\/projects$/, "Projects"],
+      ["About", /\/about$/, "Leonardo Saads Pinto"],
     ] as const) {
       await nav.getByRole("link", { name: label }).click();
       await expect(page).toHaveURL(url);
@@ -128,22 +128,26 @@ test.describe("jornada do leitor", () => {
     }
   });
 
-  test("páginas inexistentes retornam 404 com caminho de volta", async ({ page }) => {
-    const response = await page.goto("/blog/nao-existe");
+  test("unknown pages return 404 with a way back", async ({ page }) => {
+    const response = await page.goto("/blog/does-not-exist");
     expect(response?.status()).toBe(404);
-    await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible();
-    await page.getByRole("link", { name: "Voltar ao início" }).click();
+    await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+    await page.getByRole("link", { name: "Back to home" }).click();
     await expect(page).toHaveURL(/\/$/);
   });
 
-  test("links antigos continuam funcionando (redirecionamentos 308)", async ({ page }) => {
+  test("old links keep working (308 redirects)", async ({ page }) => {
     await page.goto("/tags/DEVOPS");
     await expect(page).toHaveURL(/\/tags\/devops$/);
+    await page.goto("/blog/comandos-linux");
+    await expect(page).toHaveURL(/\/blog\/linux-fundamentals$/);
+    await page.goto("/tags/seguranca");
+    await expect(page).toHaveURL(/\/tags\/security$/);
   });
 });
 
-test.describe("tema e busca", () => {
-  test("preferência de tema persiste entre páginas e recarregamentos", async ({ page }) => {
+test.describe("theme and search", () => {
+  test("the theme preference persists across pages and reloads", async ({ page }) => {
     await page.goto("/");
     const toggle = page.getByTestId("theme-toggle");
     await toggle.click(); // system → light
@@ -155,7 +159,7 @@ test.describe("tema e busca", () => {
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   });
 
-  test("Ctrl+K abre a busca e Enter navega para o resultado", async ({ page }) => {
+  test("Ctrl+K opens search and Enter navigates to the result", async ({ page }) => {
     await page.goto("/");
     await page.keyboard.press("Control+k");
     const input = page.getByTestId("search-input");
@@ -163,15 +167,15 @@ test.describe("tema e busca", () => {
     await input.fill("osnr");
     await expect(page.getByRole("option").first()).toContainText("DWDM");
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/blog\/dwdm_intoduction$/);
+    await expect(page).toHaveURL(/\/blog\/dwdm-introduction$/);
   });
 
-  test("busca encontra áreas e palavras-chave", async ({ page }) => {
+  test("search finds areas and keywords", async ({ page }) => {
     await page.goto("/about");
     await page.getByTestId("search-trigger").click();
-    await page.getByTestId("search-input").fill("telecomunicacoes");
-    await page.getByRole("option", { name: /Área: Telecomunicações/ }).click();
-    await expect(page).toHaveURL(/\/blog\?area=telecomunicacoes$/);
+    await page.getByTestId("search-input").fill("telecommunications");
+    await page.getByRole("option", { name: /Area: Telecommunications/ }).click();
+    await expect(page).toHaveURL(/\/blog\?area=telecommunications$/);
     await expect(page.getByTestId("post-card")).toHaveCount(1);
   });
 });

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export interface QuizProps {
   question: string;
   options: string[];
-  /** Índice (base 0) da alternativa correta. */
+  /** Zero-based index of the correct option. */
   answer: number;
   explanation: string;
 }
@@ -24,7 +24,7 @@ export function Quiz({ question, options, answer, explanation }: QuizProps) {
       data-testid="quiz"
     >
       <p className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-accent">
-        <GraduationCap className="size-4" aria-hidden="true" /> Teste rápido
+        <GraduationCap className="size-4" aria-hidden="true" /> Quick check
       </p>
       <fieldset>
         <legend className="mb-3 font-semibold">{question}</legend>
@@ -65,17 +65,17 @@ export function Quiz({ question, options, answer, explanation }: QuizProps) {
           onClick={() => setChecked(true)}
           className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Verificar resposta
+          Check answer
         </button>
         <p role="status" aria-live="polite" className="text-sm">
           {checked &&
             (correct ? (
               <span className="inline-flex items-center gap-1.5 text-success">
-                <CircleCheck className="size-4" aria-hidden="true" /> Correto!
+                <CircleCheck className="size-4" aria-hidden="true" /> Correct!
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 text-danger">
-                <CircleX className="size-4" aria-hidden="true" /> Não exatamente.
+                <CircleX className="size-4" aria-hidden="true" /> Not quite.
               </span>
             ))}
         </p>

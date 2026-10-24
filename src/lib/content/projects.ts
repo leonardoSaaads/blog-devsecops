@@ -6,7 +6,7 @@ export interface Project {
   description: string;
   stack: string[];
   repository?: string;
-  /** Slug do artigo relacionado no blog. */
+  /** Slug of the related blog article. */
   article?: string;
   art: Motif;
 }
@@ -15,7 +15,7 @@ export const PROJECTS: Project[] = [
   {
     name: "blog-devsecops",
     description:
-      "Este blog: Next.js 16 com renderização estática, MDX validado por esquema, figuras interativas (simuladores, modelo 3D e execução de código em Web Workers), arte generativa, CSP restritiva e testes E2E.",
+      "This blog: a statically exported Next.js 16 site with schema-validated MDX, interactive figures (simulators and a 3D fiber model), generative art, a strict CSP and end-to-end tests.",
     stack: ["Next.js", "TypeScript", "MDX", "three.js", "Playwright"],
     repository: site.repository,
     art: "circuit",
@@ -23,7 +23,7 @@ export const PROJECTS: Project[] = [
   {
     name: "zabbix-docker",
     description:
-      "Deploy do Zabbix com Docker Compose em um único comando, com volumes persistentes e configuração por variáveis de ambiente.",
+      "One-command Zabbix deployment with Docker Compose, persistent volumes and configuration through environment variables.",
     stack: ["Zabbix", "Docker Compose", "Bash", "SNMP"],
     repository: "https://github.com/leonardoSaaads/zabbix-docker",
     art: "radar",

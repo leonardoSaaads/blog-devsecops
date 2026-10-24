@@ -6,14 +6,13 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { site } from "@/config/site";
 import { themeInitScript } from "@/lib/theme";
-// CSS do KaTeX global (≈6 KB comprimido): como CSS exclusivo da rota de artigos, o Next o
-// pré-carregava a cada prefetch e o navegador avisava que o recurso não foi usado.
+// Global KaTeX CSS (≈6 KB compressed): as CSS scoped to the article route, Next preloaded
+// it on every prefetch and the browser warned that the resource went unused.
 import "katex/dist/katex.min.css";
 import "./globals.css";
 
-// Fonte serifada de leitura, auto-hospedada. Só o eixo de peso (wght): a variante com
-// tamanho óptico (opsz) custava 2,4× mais (122 KB × 51 KB por estilo) e era pré-carregada
-// em todas as páginas.
+// Self-hosted serif reading font. Weight axis (wght) only: the optical-size (opsz) variant
+// cost 2.4× more (122 KB vs. 51 KB per style) and was preloaded on every page.
 const serif = localFont({
   src: [
     {
@@ -32,7 +31,7 @@ const serif = localFont({
   fallback: ["Iowan Old Style", "Georgia", "serif"],
 });
 
-// Monoespaçada só aparece em código e rótulos: carregada sob demanda, sem preload.
+// The monospace font only appears in code and labels: loaded on demand, no preload.
 const mono = localFont({
   src: "../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2",
   weight: "100 900",
@@ -50,14 +49,21 @@ export const metadata: Metadata = {
   applicationName: site.name,
   authors: [{ name: site.author.name, url: site.author.linkedin }],
   creator: site.author.name,
-  keywords: ["DevSecOps", "Observabilidade", "Kubernetes", "Linux", "DWDM", "Telecom", "Docker"],
+  keywords: [
+    "DWDM",
+    "Optical networks",
+    "Telecommunications",
+    "Linux",
+    "DevSecOps",
+    "Observability",
+  ],
   alternates: {
     canonical: "/",
     types: { "application/rss+xml": [{ url: "/feed.xml", title: `${site.name} — RSS` }] },
   },
   openGraph: {
     type: "website",
-    locale: "pt_BR",
+    locale: site.ogLocale,
     siteName: site.name,
     url: site.url,
     title: site.title,
@@ -85,7 +91,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="pt-BR"
+      lang={site.locale}
       data-theme="light"
       suppressHydrationWarning
       className={`${GeistSans.variable} ${mono.variable} ${serif.variable}`}
@@ -95,13 +101,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-dvh font-sans antialiased">
         <a
-          href="#conteudo"
+          href="#content"
           className="sr-only z-50 rounded-lg bg-accent px-4 py-2 text-accent-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
         >
-          Pular para o conteúdo
+          Skip to content
         </a>
         <SiteHeader />
-        <main id="conteudo" tabIndex={-1} className="outline-none">
+        <main id="content" tabIndex={-1} className="outline-none">
           {children}
         </main>
         <SiteFooter />

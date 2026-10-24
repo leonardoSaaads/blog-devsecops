@@ -16,13 +16,13 @@ export const referenceTypes = [
 
 export const referenceSchema = z
   .object({
-    id: z.string().regex(slugLike, "id da referência deve ser kebab-case"),
+    id: z.string().regex(slugLike, "reference id must be kebab-case"),
     type: z.enum(referenceTypes),
-    /** Pessoas: "Sobrenome, Prenome". Entidades: nome completo sem vírgula. */
+    /** People: "Family, Given". Organizations: full name without commas. */
     authors: z.array(z.string().min(2)).default([]),
     title: z.string().min(2),
     subtitle: z.string().optional(),
-    /** Periódico, evento, site ou obra que contém o item. */
+    /** Journal, conference, website or work that contains the item. */
     container: z.string().optional(),
     edition: z.string().optional(),
     place: z.string().optional(),
@@ -31,7 +31,7 @@ export const referenceSchema = z
     volume: z.string().optional(),
     issue: z.string().optional(),
     pages: z.string().optional(),
-    doi: z.string().regex(/^10\.\d{4,9}\/\S+$/, "DOI inválido").optional(),
+    doi: z.string().regex(/^10\.\d{4,9}\/\S+$/, "invalid DOI").optional(),
     url: z.url({ protocol: /^https$/ }).optional(),
     accessed: z.iso.date().optional(),
     note: z.string().optional(),
@@ -44,29 +44,29 @@ export const postFrontmatterSchema = z
     description: z.string().min(20).max(300),
     date: z.iso.date(),
     updated: z.iso.date().optional(),
-    tags: z.array(z.string().regex(slugLike, "tags devem ser kebab-case minúsculo")).min(1),
+    tags: z.array(z.string().regex(slugLike, "tags must be lowercase kebab-case")).min(1),
     category: z.enum(CATEGORY_IDS),
-    /** Motivo da arte generativa da capa (ligado ao tema do artigo). */
+    /** Generative cover art motif (tied to the article topic). */
     art: z.enum(MOTIFS),
-    /** Resumo acadêmico (exibido no topo do artigo). */
+    /** Academic abstract (shown at the top of the article). */
     abstract: z.string().min(120).max(900),
-    /** Pontos-chave exibidos em cards no início do artigo. */
+    /** Key takeaways shown as cards at the start of the article. */
     keyPoints: z.array(z.string().min(10).max(220)).min(3).max(4),
     featured: z.boolean().default(false),
     draft: z.boolean().default(false),
-    references: z.array(referenceSchema).min(1, "todo artigo precisa de referências"),
+    references: z.array(referenceSchema).min(1, "every article needs references"),
   })
   .strict()
   .superRefine((data, ctx) => {
     const ids = new Set<string>();
     for (const ref of data.references) {
       if (ids.has(ref.id)) {
-        ctx.addIssue({ code: "custom", message: `referência duplicada: ${ref.id}` });
+        ctx.addIssue({ code: "custom", message: `duplicate reference: ${ref.id}` });
       }
       ids.add(ref.id);
     }
     if (data.updated && data.updated < data.date) {
-      ctx.addIssue({ code: "custom", message: "`updated` não pode ser anterior a `date`" });
+      ctx.addIssue({ code: "custom", message: "`updated` cannot be earlier than `date`" });
     }
   });
 

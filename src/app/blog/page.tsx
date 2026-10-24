@@ -6,9 +6,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
 
 export const metadata: Metadata = {
-  title: "Artigos",
+  title: "Articles",
   description:
-    "Ensaios técnicos sobre telecomunicações, infraestrutura, segurança e software — com figuras interativas e referências.",
+    "Technical essays on telecommunications, infrastructure, security and software — with interactive figures and cited sources.",
   alternates: { canonical: "/blog" },
 };
 
@@ -43,11 +43,11 @@ export default function BlogPage() {
   return (
     <div className="container-page py-14">
       <PageHeader
-        eyebrow="Arquivo"
-        title="Artigos"
-        description={`${posts.length} ensaios revisados, com figuras interativas no texto e referências bibliográficas.`}
+        eyebrow="Archive"
+        title="Articles"
+        description={`${posts.length} reviewed essays, with interactive figures in the text and cited sources.`}
       />
-      {/* Fallback estático (sem JS ou antes da hidratação): lista completa. */}
+      {/* Static fallback (no JS, or before hydration): the full list. */}
       <Suspense
         fallback={
           <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

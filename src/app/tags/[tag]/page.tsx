@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PageProps<"/tags/[tag]">): Pr
   const normalized = decodeURIComponent(tag).toLowerCase();
   return {
     title: `#${normalized}`,
-    description: `Artigos sobre ${normalized}.`,
+    description: `Articles about ${normalized}.`,
     alternates: { canonical: `/tags/${normalized}` },
   };
 }
@@ -23,8 +23,8 @@ export async function generateMetadata({ params }: PageProps<"/tags/[tag]">): Pr
 export default async function TagPage({ params }: PageProps<"/tags/[tag]">) {
   const { tag: raw } = await params;
   const tag = decodeURIComponent(raw);
-  // Links antigos em caixa alta (ex.: /tags/DEVOPS) são redirecionados pelo
-  // `_redirects` da Cloudflare (ver src/lib/hosting/redirects.ts).
+  // Old uppercase links (e.g., /tags/DEVOPS) are redirected by Cloudflare's
+  // `_redirects` (see src/lib/hosting/redirects.ts).
   const posts = getPostsByTag(tag);
   if (posts.length === 0) notFound();
 
@@ -34,12 +34,12 @@ export default async function TagPage({ params }: PageProps<"/tags/[tag]">) {
         href="/tags"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Todos os tópicos
+        <ArrowLeft className="size-4" aria-hidden="true" /> All topics
       </Link>
       <PageHeader
-        eyebrow="Palavra-chave"
+        eyebrow="Keyword"
         title={`#${tag}`}
-        description={`${posts.length} ${posts.length === 1 ? "artigo" : "artigos"}.`}
+        description={`${posts.length} ${posts.length === 1 ? "article" : "articles"}.`}
       />
       <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => (

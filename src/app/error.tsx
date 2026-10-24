@@ -12,11 +12,11 @@ export default function ErrorPage({
   return (
     <div className="container-page grid min-h-[60vh] place-items-center py-20 text-center">
       <div>
-        <p className="font-mono text-sm text-danger">Erro inesperado</p>
+        <p className="font-mono text-sm text-danger">Unexpected error</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">
-          Algo deu errado ao carregar esta página.
+          Something went wrong while loading this page.
         </h1>
-        {/* Nunca exibimos detalhes internos do erro; apenas o identificador para suporte. */}
+        {/* Never show internal error details; only the identifier for support. */}
         {error.digest && (
           <p className="mt-3 font-mono text-xs text-muted-foreground">ref: {error.digest}</p>
         )}
@@ -25,7 +25,7 @@ export default function ErrorPage({
           onClick={reset}
           className="mt-8 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 font-semibold text-accent-foreground"
         >
-          <RotateCcw className="size-4" aria-hidden="true" /> Tentar novamente
+          <RotateCcw className="size-4" aria-hidden="true" /> Try again
         </button>
       </div>
     </div>

@@ -6,7 +6,7 @@ import { site } from "@/config/site";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
-/** Imagem Open Graph padronizada (gerada em build time) com a arte do tema ao fundo. */
+/** Standard Open Graph image (generated at build time) with the topic art as background. */
 export function renderOgImage({
   eyebrow,
   title,
@@ -30,7 +30,7 @@ export function renderOgImage({
         fontFamily: "serif",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- Satori só aceita <img> */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- Satori only accepts <img> */}
       <img
         src={background}
         alt=""

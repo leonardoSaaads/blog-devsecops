@@ -1,10 +1,10 @@
 /**
- * Cabeçalhos HTTP de segurança aplicados a todas as rotas.
+ * Security HTTP headers applied to every route.
  *
- * Observação sobre `script-src 'unsafe-inline'`: o site é 100% estático (SSG).
- * CSP baseada em nonce exigiria renderização dinâmica por requisição, anulando
- * cache em CDN. Mitigamos o risco com conteúdo confiável (MDX versionado),
- * ausência de HTML de terceiros e diretivas restritivas para todo o resto.
+ * About `script-src 'unsafe-inline'`: the site is 100% static (SSG). A nonce-based CSP
+ * would require per-request rendering, defeating CDN caching. The risk is mitigated by
+ * trusted content (versioned MDX), no third-party HTML and strict directives for
+ * everything else.
  */
 
 type Directives = Record<string, readonly string[]>;
@@ -32,7 +32,7 @@ export function buildContentSecurityPolicy({ isDev }: { isDev: boolean }): strin
     "media-src": ["'self'"],
     "connect-src": ["'self'", ...(isDev ? ["ws:"] : [])],
     "frame-src": [GISCUS_ORIGIN],
-    // Nenhuma página usa Web Workers: menor privilégio.
+    // No page uses Web Workers: least privilege.
     "worker-src": ["'none'"],
     "manifest-src": ["'self'"],
     "object-src": ["'none'"],

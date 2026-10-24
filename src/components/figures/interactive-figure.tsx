@@ -3,8 +3,8 @@ import { useId, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Figura interativa numerada, inserida no fluxo do artigo (sem sair da leitura).
- * O número ("Figura n.") vem de um contador CSS do artigo, como em um paper.
+ * Numbered interactive figure, embedded in the article flow (no need to leave the page).
+ * The number ("Figure n.") comes from the article's CSS counter, as in a paper.
  */
 export function InteractiveFigure({
   title,
@@ -31,7 +31,7 @@ export function InteractiveFigure({
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_18px_40px_-24px_rgb(15_23_42/0.35)]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-[linear-gradient(90deg,var(--accent-soft),transparent_70%)] px-5 py-2.5">
           <p className="smallcaps inline-flex items-center gap-1.5 text-xs font-semibold text-accent-strong">
-            <MousePointerClick className="size-3.5" aria-hidden="true" /> Figura interativa
+            <MousePointerClick className="size-3.5" aria-hidden="true" /> Interactive figure
           </p>
           {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
         </div>
@@ -54,7 +54,7 @@ const controlButtonBase =
 
 export const controlButton = `${controlButtonBase} border-border bg-card`;
 
-/** Botão alternável: as cores de estado são exclusivas (sem classes conflitantes). */
+/** Toggle button: state colors are mutually exclusive (no conflicting classes). */
 export function controlToggle(active: boolean, extra?: string): string {
   return cn(
     controlButtonBase,

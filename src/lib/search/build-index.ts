@@ -6,35 +6,35 @@ import type { SearchEntry } from "@/lib/search/query";
 const PAGES: SearchEntry[] = [
   {
     kind: "page",
-    title: "Artigos",
-    description: "Todos os artigos",
+    title: "Articles",
+    description: "All articles",
     href: "/blog",
-    keywords: ["artigos", "posts"],
+    keywords: ["articles", "posts", "blog"],
   },
   {
     kind: "page",
-    title: "Tópicos",
-    description: "Áreas de estudo e palavras-chave",
+    title: "Topics",
+    description: "Areas of study and keywords",
     href: "/tags",
-    keywords: ["tags", "temas", "areas"],
+    keywords: ["tags", "topics", "areas"],
   },
   {
     kind: "page",
-    title: "Projetos",
-    description: "Projetos open source",
+    title: "Projects",
+    description: "Open-source projects",
     href: "/projects",
     keywords: ["github", "portfolio"],
   },
   {
     kind: "page",
-    title: "Sobre o autor",
-    description: "Quem escreve este blog",
+    title: "About the author",
+    description: "Who writes this blog",
     href: "/about",
-    keywords: ["contato", "autor", "linkedin"],
+    keywords: ["contact", "author", "linkedin"],
   },
 ];
 
-/** Índice enxuto enviado ao cliente para a paleta de comandos (Ctrl+K). */
+/** Lean index sent to the client for the command palette (Ctrl+K). */
 export function buildSearchIndex(): SearchEntry[] {
   const posts: SearchEntry[] = getAllPosts().map((post) => ({
     kind: "post",
@@ -46,13 +46,13 @@ export function buildSearchIndex(): SearchEntry[] {
   const tags: SearchEntry[] = getAllTags().map(({ tag, count }) => ({
     kind: "tag",
     title: `#${tag}`,
-    description: `${count} ${count === 1 ? "artigo" : "artigos"}`,
+    description: `${count} ${count === 1 ? "article" : "articles"}`,
     href: `/tags/${tag}`,
     keywords: [tag],
   }));
   const areas: SearchEntry[] = categoriesInUse(getAllPosts()).map((id) => ({
     kind: "page",
-    title: `Área: ${CATEGORIES[id].label}`,
+    title: `Area: ${CATEGORIES[id].label}`,
     description: CATEGORIES[id].description,
     href: `/blog?area=${id}`,
     keywords: [id],

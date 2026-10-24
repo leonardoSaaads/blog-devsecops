@@ -27,7 +27,7 @@ export function DwdmGridCalculator() {
   const wavelength = frequencyToWavelengthNm(frequency);
   const inBand = wavelength >= C_BAND_NM.min && wavelength <= C_BAND_NM.max;
 
-  const parsedWavelength = Number(wavelengthInput.replace(",", "."));
+  const parsedWavelength = Number(wavelengthInput.trim());
   const lookup =
     Number.isFinite(parsedWavelength) && parsedWavelength > 1200 && parsedWavelength < 1700
       ? nearestChannel(wavelengthToFrequencyTHz(parsedWavelength), spacing)
@@ -42,19 +42,19 @@ export function DwdmGridCalculator() {
   }, [range, spacing]);
 
   const changeSpacing = (value: number) => {
-    // Mantém a mesma frequência central ao trocar o espaçamento (canal mais próximo).
+    // Keep the same center frequency when switching spacing (closest channel).
     setChannel(nearestChannel(frequency, value));
     setSpacing(value);
   };
 
   return (
     <InteractiveFigure
-      title="Calculadora do grid DWDM (ITU-T G.694.1)"
-      description="f = 193,1 THz + n·Δf e λ = c/f. Escolha o espaçamento e percorra os canais da banda C."
+      title="DWDM grid calculator (ITU-T G.694.1)"
+      description="f = 193.1 THz + n·Δf and λ = c/f. Pick a spacing and step through the C-band channels."
       testId="dwdm-grid"
     >
       <div className="space-y-5">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Espaçamento entre canais">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Channel spacing">
           {FIXED_GRID_SPACINGS_GHZ.map((value) => (
             <button
               key={value}
@@ -63,13 +63,13 @@ export function DwdmGridCalculator() {
               onClick={() => changeSpacing(value)}
               className={controlToggle(spacing === value)}
             >
-              {String(value).replace(".", ",")} GHz
+              {value} GHz
             </button>
           ))}
         </div>
 
         <RangeField
-          label={`Índice do canal n (banda C: ${range.first} a ${range.last} — ${range.count} canais)`}
+          label={`Channel index n (C-band: ${range.first} to ${range.last} — ${range.count} channels)`}
           value={channel}
           min={range.first}
           max={range.last}
@@ -78,11 +78,11 @@ export function DwdmGridCalculator() {
         />
 
         <dl className="grid gap-3 sm:grid-cols-3">
-          <Stat label="Frequência central" value={`${frequency.toFixed(4)} THz`} />
-          <Stat label="Comprimento de onda (vácuo)" value={`${wavelength.toFixed(3)} nm`} />
+          <Stat label="Center frequency" value={`${frequency.toFixed(4)} THz`} />
+          <Stat label="Wavelength (vacuum)" value={`${wavelength.toFixed(3)} nm`} />
           <Stat
-            label="Banda C (1530–1565 nm)"
-            value={inBand ? "dentro" : "fora"}
+            label="C-band (1530–1565 nm)"
+            value={inBand ? "inside" : "outside"}
             tone={inBand ? "success" : "warning"}
           />
         </dl>
@@ -91,7 +91,7 @@ export function DwdmGridCalculator() {
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           className="w-full"
           role="img"
-          aria-label={`Espectro da banda C com ${range.count} canais; canal selecionado em ${wavelength.toFixed(2)} nm`}
+          aria-label={`C-band spectrum with ${range.count} channels; selected channel at ${wavelength.toFixed(2)} nm`}
         >
           <rect
             x={x(C_BAND_NM.min)}
@@ -137,7 +137,7 @@ export function DwdmGridCalculator() {
 
         <div className="rounded-xl border border-border p-4 text-sm">
           <label htmlFor={wavelengthId} className="font-medium">
-            Qual canal está mais próximo de
+            Which channel is closest to
           </label>
           <input
             id={wavelengthId}
@@ -155,11 +155,11 @@ export function DwdmGridCalculator() {
                 className="ml-2 text-accent-strong underline-offset-4 hover:underline"
                 onClick={() => setChannel(lookup)}
               >
-                selecionar
+                select
               </button>
             </span>
           ) : (
-            <span className="text-danger">informe um valor entre 1200 e 1700 nm</span>
+            <span className="text-danger">enter a value between 1200 and 1700 nm</span>
           )}
         </div>
       </div>

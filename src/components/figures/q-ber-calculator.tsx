@@ -5,7 +5,7 @@ import { berToQ, dbToQ, qToBer, qToDb } from "@/lib/simulations/optics";
 import { linearScale, polyline } from "./chart-utils";
 import { InteractiveFigure, RangeField, Stat } from "./interactive-figure";
 
-/** Limiares típicos de BER pré-FEC citados na literatura (valores de referência). */
+/** Typical pre-FEC BER thresholds cited in the literature (reference values). */
 const FEC_THRESHOLDS = [
   { name: "HD-FEC (~7% OH)", ber: 3.8e-3 },
   { name: "SD-FEC (~20% OH)", ber: 2.4e-2 },
@@ -17,7 +17,7 @@ const H = 200;
 function formatBer(ber: number): string {
   if (ber < 1e-300) return "< 1e-300";
   const [mantissa, exponent] = ber.toExponential(2).split("e");
-  return `${mantissa?.replace(".", ",")} × 10^${Number(exponent)}`;
+  return `${mantissa} × 10^${Number(exponent)}`;
 }
 
 export function QBerCalculator() {
@@ -25,9 +25,9 @@ export function QBerCalculator() {
   const q = dbToQ(qDb);
   const ber = qToBer(q);
 
-  // Duas gaussianas (níveis "0" e "1") com limiar de decisão no meio.
+  // Two Gaussians (levels "0" and "1") with the decision threshold in the middle.
   const curves = (() => {
-    const sigma = 1 / (2 * q); // níveis em ±0,5 → Q = 1/(2σ)
+    const sigma = 1 / (2 * q); // levels at ±0.5 → Q = 1/(2σ)
     const x = linearScale([-1.6, 1.6], [16, W - 16]);
     const samples = 240;
     const pdf = (value: number, mean: number) =>
@@ -42,8 +42,8 @@ export function QBerCalculator() {
 
   return (
     <InteractiveFigure
-      title="Fator Q ↔ BER"
-      description="BER = ½·erfc(Q/√2). Quanto mais separados os níveis em relação ao ruído, menor a sobreposição — e menor a taxa de erro."
+      title="Q-factor ↔ BER"
+      description="BER = ½·erfc(Q/√2). The farther apart the levels are relative to the noise, the smaller the overlap — and the lower the error rate."
       testId="q-ber-calculator"
     >
       <div className="space-y-5">
@@ -62,7 +62,7 @@ export function QBerCalculator() {
           <Stat label="Q (linear)" value={q.toFixed(3)} />
           <Stat label="BER" value={<span data-testid="ber-value">{formatBer(ber)}</span>} />
           <Stat
-            label="Erros por terabit"
+            label="Errors per terabit"
             value={ber * 1e12 >= 1 ? (ber * 1e12).toExponential(1) : "< 1"}
             hint="1 Tb = 10¹² bits"
           />
@@ -72,7 +72,7 @@ export function QBerCalculator() {
           viewBox={`0 0 ${W} ${H}`}
           className="w-full"
           role="img"
-          aria-label="Distribuições de probabilidade dos níveis lógicos 0 e 1 e o limiar de decisão"
+          aria-label="Probability distributions of logic levels 0 and 1 and the decision threshold"
         >
           <path d={curves.zero} fill="none" className="stroke-accent" strokeWidth={2} />
           <path d={curves.one} fill="none" stroke="var(--warning)" strokeWidth={2} />
@@ -85,7 +85,7 @@ export function QBerCalculator() {
             strokeDasharray="4 4"
           />
           <text x={curves.threshold + 6} y={22} className="fill-danger text-[11px]">
-            limiar de decisão
+            decision threshold
           </text>
           <text
             x={W * 0.27}
@@ -93,7 +93,7 @@ export function QBerCalculator() {
             textAnchor="middle"
             className="fill-muted-foreground text-[11px]"
           >
-            nível “0”
+            level “0”
           </text>
           <text
             x={W * 0.73}
@@ -101,11 +101,11 @@ export function QBerCalculator() {
             textAnchor="middle"
             className="fill-muted-foreground text-[11px]"
           >
-            nível “1”
+            level “1”
           </text>
         </svg>
 
-        <ul className="space-y-1.5 text-sm" aria-label="Margem em relação a limiares de FEC">
+        <ul className="space-y-1.5 text-sm" aria-label="Margin against FEC thresholds">
           {FEC_THRESHOLDS.map((fec) => {
             const qLimit = qToDb(berToQ(fec.ber));
             const margin = qDb - qLimit;
@@ -115,10 +115,10 @@ export function QBerCalculator() {
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted px-3 py-1.5"
               >
                 <span>
-                  {fec.name}: BER pré-FEC ≤ {formatBer(fec.ber)} → Q² ≥ {qLimit.toFixed(2)} dB
+                  {fec.name}: pre-FEC BER ≤ {formatBer(fec.ber)} → Q² ≥ {qLimit.toFixed(2)} dB
                 </span>
                 <span className={margin >= 0 ? "font-mono text-success" : "font-mono text-danger"}>
-                  margem {margin >= 0 ? "+" : ""}
+                  margin {margin >= 0 ? "+" : ""}
                   {margin.toFixed(2)} dB
                 </span>
               </li>

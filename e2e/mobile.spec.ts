@@ -1,22 +1,24 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("experiência móvel", () => {
-  test("menu móvel navega e fecha ao trocar de página", async ({ page }) => {
+test.describe("mobile experience", () => {
+  test("the mobile menu navigates and closes on page change", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Abrir menu" }).click();
-    const menu = page.getByRole("navigation", { name: "Navegação principal (móvel)" });
+    await page.getByRole("button", { name: "Open menu" }).click();
+    const menu = page.getByRole("navigation", { name: "Main navigation (mobile)" });
     await expect(menu).toBeVisible();
-    await menu.getByRole("link", { name: "Sobre" }).click();
+    await menu.getByRole("link", { name: "About" }).click();
     await expect(page).toHaveURL(/\/about$/);
     await expect(menu).toBeHidden();
   });
 
-  test("artigo usa sumário recolhível e não tem rolagem horizontal", async ({ page }) => {
-    await page.goto("/blog/dwdm_intoduction");
-    const summary = page.locator("summary", { hasText: "Neste artigo" });
+  test("articles use a collapsible table of contents and have no horizontal scroll", async ({
+    page,
+  }) => {
+    await page.goto("/blog/dwdm-introduction");
+    const summary = page.locator("summary", { hasText: "In this article" });
     await summary.click();
     await page
-      .getByRole("navigation", { name: "Sumário do artigo" })
+      .getByRole("navigation", { name: "Table of contents" })
       .getByRole("link", { name: /7\.1 OSNR/ })
       .click();
     await expect(page.getByRole("heading", { name: "7.1 OSNR" })).toBeInViewport();
@@ -27,8 +29,8 @@ test.describe("experiência móvel", () => {
     expect(overflow).toBeLessThanOrEqual(1);
   });
 
-  test("nenhuma página tem rolagem horizontal", async ({ page }) => {
-    test.setTimeout(60_000); // 7 navegações completas
+  test("no page scrolls horizontally", async ({ page }) => {
+    test.setTimeout(60_000); // 7 full navigations
 
     const paths = [
       "/",
@@ -36,12 +38,12 @@ test.describe("experiência móvel", () => {
       "/tags",
       "/projects",
       "/about",
-      "/blog/comandos-linux",
-      "/blog/dwdm_intoduction",
+      "/blog/linux-fundamentals",
+      "/blog/dwdm-introduction",
     ];
     const overflowing: string[] = [];
     for (const path of paths) {
-      // "load" basta para o layout; "networkidle" depende de imagens e iframes de terceiros.
+      // "load" is enough for layout; "networkidle" depends on third-party images and iframes.
       await page.goto(path, { waitUntil: "load" });
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

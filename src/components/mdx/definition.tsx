@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 
-/** Definição formal numerada ("Definição n."), como em textos acadêmicos. */
+/** Numbered formal definition ("Definition n."), as in academic texts. */
 export function Definition({ term, children }: { term: string; children: ReactNode }) {
   return (
     <div
       className="definition not-prose my-8 rounded-r-xl border-l-4 border-accent bg-card px-5 py-4 shadow-sm"
       role="note"
-      aria-label={`Definição: ${term}`}
+      aria-label={`Definition: ${term}`}
     >
       <p className="font-serif text-[1.05rem] leading-relaxed">
         <span className="definition-label" />
@@ -20,7 +20,7 @@ export function Definition({ term, children }: { term: string; children: ReactNo
   );
 }
 
-/** Citação de destaque, para a ideia central de uma seção. */
+/** Pull quote for the central idea of a section. */
 export function PullQuote({ children, cite }: { children: ReactNode; cite?: string }) {
   return (
     <figure className="not-prose my-12 border-y border-border py-8 text-center">

@@ -1,16 +1,29 @@
-/** Redirecionamentos permanentes (308) de URLs antigas para as atuais. */
+/** Permanent (308) redirects from old URLs to current ones. */
 export interface RedirectRule {
   source: string;
   destination: string;
   permanent: true;
 }
 
-/** Links que mudaram na reconstrução do blog. */
-export const LEGACY_REDIRECTS: readonly RedirectRule[] = [];
+const rule = (source: string, destination: string): RedirectRule => ({
+  source,
+  destination,
+  permanent: true,
+});
+
+/** Links that changed when the blog was rebuilt or translated. */
+export const LEGACY_REDIRECTS: readonly RedirectRule[] = [
+  // Portuguese slugs and tags from before the English translation (October 2026).
+  rule("/blog/comandos-linux", "/blog/linux-fundamentals"),
+  rule("/blog/dwdm_intoduction", "/blog/dwdm-introduction"),
+  rule("/tags/seguranca", "/tags/security"),
+  rule("/tags/optica", "/tags/optics"),
+  rule("/tags/telecomunicacoes", "/tags/telecommunications"),
+];
 
 /**
- * O blog antigo publicava tags em caixa alta (ex.: /tags/DEVOPS). Sem servidor,
- * a normalização vira uma regra explícita por tag atual.
+ * The old blog published uppercase tags (e.g., /tags/DEVOPS). Without a server, the
+ * normalization becomes one explicit rule per current tag.
  */
 export function legacyTagRedirects(tags: readonly string[]): RedirectRule[] {
   return tags

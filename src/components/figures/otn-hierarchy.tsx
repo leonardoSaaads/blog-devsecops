@@ -9,35 +9,35 @@ const LAYERS = [
     id: "OTU",
     name: "OTU — Optical channel Transport Unit",
     fields: [
-      "FAS/MFAS: alinhamento de quadro e multiquadro",
+      "FAS/MFAS: frame and multiframe alignment",
       "SM: Section Monitoring (BIP-8, BEI, BDI, TTI)",
-      "GCC0: canal de comunicação de seção",
-      "FEC: paridade (ex.: RS(255,239) na G.709 original)",
+      "GCC0: section communication channel",
+      "FEC: parity (e.g., RS(255,239) in the original G.709)",
     ],
   },
   {
     id: "ODU",
     name: "ODU — Optical channel Data Unit",
     fields: [
-      "PM: Path Monitoring fim a fim",
-      "TCM1–TCM6: monitoramento de conexões em cascata/aninhadas",
-      "GCC1/GCC2: canais de comunicação",
-      "APS/PCC: proteção automática",
+      "PM: end-to-end Path Monitoring",
+      "TCM1–TCM6: tandem connection monitoring (cascaded/nested)",
+      "GCC1/GCC2: communication channels",
+      "APS/PCC: automatic protection switching",
     ],
   },
   {
     id: "OPU",
     name: "OPU — Optical channel Payload Unit",
     fields: [
-      "PSI/PT: identificação do tipo de payload",
-      "Justificação (JC/NJO/PJO) para adaptação de taxa",
-      "Mapeamentos: BMP, AMP, GMP",
+      "PSI/PT: payload type identification",
+      "Justification (JC/NJO/PJO) for rate adaptation",
+      "Mappings: BMP, AMP, GMP",
     ],
   },
   {
-    id: "Cliente",
-    name: "Sinal cliente",
-    fields: ["Ethernet (1GE–400GE), SDH/SONET, Fibre Channel, ODUs de ordem inferior"],
+    id: "Client",
+    name: "Client signal",
+    fields: ["Ethernet (1GE–400GE), SDH/SONET, Fibre Channel, lower-order ODUs"],
   },
 ] as const;
 
@@ -71,8 +71,8 @@ export function OtnHierarchy() {
 
   return (
     <InteractiveFigure
-      title="Encapsulamento OTN (ITU-T G.709)"
-      description="Cada camada adiciona overhead ao conteúdo da camada interna. Clique em uma camada para ver seus campos."
+      title="OTN encapsulation (ITU-T G.709)"
+      description="Each layer adds overhead to the content of the layer inside it. Click a layer to see its fields."
       testId="otn-hierarchy"
     >
       <div className="grid gap-5 md:grid-cols-2">

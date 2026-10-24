@@ -2,8 +2,8 @@ const WORDS_PER_MINUTE = 220;
 const CODE_LINES_PER_MINUTE = 40;
 
 /**
- * Estima o tempo de leitura em minutos. Blocos de código são contabilizados
- * por linha (leitura mais lenta que prosa); componentes JSX são ignorados.
+ * Estimates reading time in minutes. Code blocks are counted per line (slower
+ * to read than prose); JSX components are ignored.
  */
 export function estimateReadingMinutes(markdown: string): number {
   let codeLines = 0;

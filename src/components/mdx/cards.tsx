@@ -21,7 +21,7 @@ import {
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Ícones permitidos nos artigos (lista fechada: nada é resolvido dinamicamente). */
+/** Icons allowed in articles (closed list: nothing is resolved dynamically). */
 const ICONS = {
   activity: Activity,
   book: BookOpen,

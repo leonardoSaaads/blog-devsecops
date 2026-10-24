@@ -5,16 +5,16 @@ import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 const MARGIN = 8;
 
 /**
- * Termo técnico com definição em balão (glossário em linha).
- * Abre ao passar o mouse, focar ou tocar; fecha com Esc (WCAG 1.4.13).
- * Fechado, o balão sai do layout (display: none) e continua acessível via aria-describedby.
+ * Technical term with a pop-up definition (inline glossary).
+ * Opens on hover, focus or tap; closes with Esc (WCAG 1.4.13).
+ * When closed, the pop-up leaves the layout (display: none) and stays available via aria-describedby.
  */
 export function Term({ children, def }: { children: ReactNode; def: string }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const tooltipRef = useRef<HTMLSpanElement>(null);
 
-  // Mantém o balão dentro da janela (sem rolagem horizontal em telas estreitas).
+  // Keeps the pop-up inside the viewport (no horizontal scroll on narrow screens).
   useLayoutEffect(() => {
     const tooltip = tooltipRef.current;
     if (!open || !tooltip) return;

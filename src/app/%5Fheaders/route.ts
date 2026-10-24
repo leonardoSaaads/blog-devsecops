@@ -1,6 +1,6 @@
 import { cloudflareHeadersFile } from "@/lib/hosting/cloudflare";
 
-// Exportado como `out/_headers` (a pasta `%5F` produz o segmento `_headers`).
+// Exported as `out/_headers` (the `%5F` folder produces the `_headers` segment).
 export const dynamic = "force-static";
 
 export function GET() {

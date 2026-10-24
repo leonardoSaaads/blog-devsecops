@@ -8,7 +8,7 @@ export interface TocItem {
   depth: 2 | 3;
 }
 
-/** Coleta h2/h3 (já com `id` atribuído pelo rehype-slug) para o sumário. */
+/** Collects h2/h3 headings (already given an `id` by rehype-slug) for the table of contents. */
 export function rehypeCollectHeadings({ toc }: { toc: TocItem[] }) {
   return (tree: Root) => {
     visit(tree, "element", (node: Element) => {

@@ -1,4 +1,4 @@
-/** Cabeçalhos do RSS (rota no `next dev`, `_headers` em produção). */
+/** RSS headers (route in `next dev`, `_headers` in production). */
 export const FEED_HEADERS = {
   "Content-Type": "application/rss+xml; charset=utf-8",
   "Cache-Control": "public, max-age=3600",
@@ -28,12 +28,15 @@ export function buildRssFeed({
   description,
   siteUrl,
   feedUrl,
+  language,
   items,
 }: {
   title: string;
   description: string;
   siteUrl: string;
   feedUrl: string;
+  /** BCP 47 tag, e.g. "en-US". */
+  language: string;
   items: FeedItem[];
 }): string {
   const entries = items
@@ -55,7 +58,7 @@ ${item.tags.map((tag) => `      <category>${escapeXml(tag)}</category>`).join("\
     <title>${escapeXml(title)}</title>
     <link>${escapeXml(siteUrl)}</link>
     <description>${escapeXml(description)}</description>
-    <language>pt-BR</language>
+    <language>${language}</language>
     <atom:link href="${escapeXml(feedUrl)}" rel="self" type="application/rss+xml" />
 ${entries}
   </channel>

@@ -5,7 +5,7 @@ import { cascadedOsnrDb } from "@/lib/simulations/optics";
 import { linearScale, niceTicks, polyline } from "./chart-utils";
 import { InteractiveFigure, RangeField, Stat } from "./interactive-figure";
 
-/** OSNR requerido aproximado (back-to-back + margem), apenas para fins didáticos. */
+/** Approximate required OSNR (back-to-back + margin), for teaching purposes only. */
 const FORMATS = [
   { name: "DP-QPSK · 100G", required: 13, color: "var(--success)" },
   { name: "DP-16QAM · 200G", required: 20, color: "var(--warning)" },
@@ -24,7 +24,7 @@ export function OsnrCalculator() {
   const [nf, setNf] = useState(5);
   const [spans, setSpans] = useState(10);
 
-  const spanLoss = lengthKm * attenuation + 1; // + 1 dB de conectores/emendas
+  const spanLoss = lengthKm * attenuation + 1; // + 1 dB for connectors/splices
   const osnr = cascadedOsnrDb({
     launchPowerDbm: launch,
     spanLossDb: spanLoss,
@@ -53,14 +53,14 @@ export function OsnrCalculator() {
 
   return (
     <InteractiveFigure
-      title="Orçamento de OSNR em cascata de EDFAs"
-      description="OSNR ≈ 58 + P_lanç − perda_span − NF − 10·log₁₀(N) (dB, em 0,1 nm @ 1550 nm). Ajuste o enlace e compare com o OSNR exigido por formato."
+      title="OSNR budget for a chain of EDFAs"
+      description="OSNR ≈ 58 + P_launch − span_loss − NF − 10·log₁₀(N) (dB, in 0.1 nm @ 1550 nm). Tune the link and compare with the OSNR each format requires."
       testId="osnr-calculator"
     >
       <div className="grid gap-6 lg:grid-cols-[1fr_1.3fr]">
         <div className="space-y-4">
           <RangeField
-            label="Potência de lançamento por canal"
+            label="Launch power per channel"
             value={launch}
             min={-5}
             max={5}
@@ -69,7 +69,7 @@ export function OsnrCalculator() {
             onChange={setLaunch}
           />
           <RangeField
-            label="Comprimento do span"
+            label="Span length"
             value={lengthKm}
             min={20}
             max={150}
@@ -78,7 +78,7 @@ export function OsnrCalculator() {
             onChange={setLengthKm}
           />
           <RangeField
-            label="Atenuação da fibra"
+            label="Fiber attenuation"
             value={attenuation}
             min={0.15}
             max={0.3}
@@ -87,7 +87,7 @@ export function OsnrCalculator() {
             onChange={setAttenuation}
           />
           <RangeField
-            label="Figura de ruído do EDFA"
+            label="EDFA noise figure"
             value={nf}
             min={3}
             max={8}
@@ -96,7 +96,7 @@ export function OsnrCalculator() {
             onChange={setNf}
           />
           <RangeField
-            label="Número de spans (N)"
+            label="Number of spans (N)"
             value={spans}
             min={1}
             max={MAX_SPANS}
@@ -109,12 +109,12 @@ export function OsnrCalculator() {
         <div className="space-y-4">
           <dl className="grid grid-cols-2 gap-3">
             <Stat
-              label="Perda por span"
+              label="Loss per span"
               value={`${spanLoss.toFixed(1)} dB`}
-              hint="inclui 1 dB de conectores"
+              hint="includes 1 dB of connectors"
             />
             <Stat
-              label="OSNR no receptor"
+              label="OSNR at the receiver"
               value={<span data-testid="osnr-value">{osnr.toFixed(1)} dB</span>}
               tone={osnr >= FORMATS[0].required ? "success" : "danger"}
             />
@@ -124,7 +124,7 @@ export function OsnrCalculator() {
             viewBox={`0 0 ${W} ${H}`}
             className="w-full"
             role="img"
-            aria-label={`OSNR em função do número de spans; com ${spans} spans o OSNR é ${osnr.toFixed(1)} dB`}
+            aria-label={`OSNR versus number of spans; with ${spans} spans the OSNR is ${osnr.toFixed(1)} dB`}
           >
             {niceTicks(yMin, yMax, 5).map((tick) => (
               <g key={tick}>
@@ -162,7 +162,7 @@ export function OsnrCalculator() {
               textAnchor="middle"
               className="fill-muted-foreground text-[11px]"
             >
-              número de spans (N)
+              number of spans (N)
             </text>
             {FORMATS.map((format) => (
               <g key={format.name}>
@@ -200,7 +200,7 @@ export function OsnrCalculator() {
             />
           </svg>
 
-          <ul className="space-y-1.5 text-sm" aria-label="Margem por formato de modulação">
+          <ul className="space-y-1.5 text-sm" aria-label="Margin per modulation format">
             {FORMATS.map((format) => {
               const margin = osnr - format.required;
               return (
@@ -212,7 +212,7 @@ export function OsnrCalculator() {
                   <span
                     className={margin >= 0 ? "font-mono text-success" : "font-mono text-danger"}
                   >
-                    {margin >= 0 ? "✔" : "✘"} margem {margin >= 0 ? "+" : ""}
+                    {margin >= 0 ? "✔" : "✘"} margin {margin >= 0 ? "+" : ""}
                     {margin.toFixed(1)} dB
                   </span>
                 </li>
@@ -220,8 +220,8 @@ export function OsnrCalculator() {
             })}
           </ul>
           <p className="text-xs text-muted-foreground">
-            Modelo linear (somente ruído ASE). Efeitos não lineares, penalidades de transceptor e
-            envelhecimento reduzem o valor real — veja a seção de GSNR.
+            Linear model (ASE noise only). Nonlinear effects, transceiver penalties and aging lower
+            the real-world value — see the GSNR section.
           </p>
         </div>
       </div>

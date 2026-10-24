@@ -3,6 +3,7 @@
 import { LoaderCircle, Pause, Rotate3d } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { BufferGeometry, Material, Object3D } from "three";
+import { site } from "@/config/site";
 import { useInView } from "@/hooks/use-in-view";
 import {
   FIBERS,
@@ -25,9 +26,9 @@ interface SceneHandle {
 }
 
 const number = (value: number, digits = 2) =>
-  value.toLocaleString("pt-BR", { maximumFractionDigits: digits });
+  value.toLocaleString(site.locale, { maximumFractionDigits: digits });
 
-/** Escala da cena: raio do revestimento (250 µm) = 1 unidade. */
+/** Scene scale: coating radius (250 µm) = 1 unit. */
 const UNIT = 125;
 const START = -4;
 const END = 3.6;
@@ -57,12 +58,12 @@ async function createScene(
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.enableZoom = false; // não sequestra a rolagem da página
+  controls.enableZoom = false; // do not hijack page scrolling
   controls.enablePan = false;
   controls.autoRotate = !reducedMotion;
   controls.autoRotateSpeed = 0.8;
   controls.target.set(0, 0, 0);
-  // Permite rolar a página com gesto vertical no celular; arraste horizontal gira o modelo.
+  // Vertical swipes scroll the page on phones; horizontal drags rotate the model.
   renderer.domElement.style.touchAction = "pan-y";
 
   const disposables: Array<BufferGeometry | Material> = [];
@@ -78,7 +79,7 @@ async function createScene(
     offset: number;
   }> = [];
 
-  /** Cilindro ao longo do eixo X entre x0 e x1. */
+  /** Cylinder along the X axis between x0 and x1. */
   const tube = (
     radius: number,
     x0: number,
@@ -134,13 +135,13 @@ async function createScene(
       }),
     );
 
-    // Revestimento recortado (¾ de volta) para revelar a casca de vidro.
+    // Coating cut away (¾ turn) to reveal the glass cladding.
     group.add(tube(coatR, START, -0.6, coating, Math.PI * 0.5, Math.PI * 1.5));
     group.add(tube(cladR, START, END, glass));
     group.add(tube(Math.max(coreR, 0.012), START, END + 0.02, core));
 
-    // Raios de luz: zigue-zague/senoides em planos girados em torno do eixo.
-    // Raios e pulsos desenhados por cima do vidro (sem teste de profundidade) para ficarem legíveis.
+    // Light rays: zigzags/sinusoids on planes rotated around the axis.
+    // Rays and pulses are drawn over the glass (no depth test) so they stay legible.
     const rayMaterial = track(
       new THREE.LineBasicMaterial({
         color: 0xff7a45,
@@ -193,8 +194,8 @@ async function createScene(
 
   const placePulses = (time: number) => {
     for (const pulse of pulses) {
-      // Fase sempre em [0, 1): o primeiro quadro pode chegar com tempo levemente negativo
-      // (timestamp do requestAnimationFrame anterior à criação do Timer).
+      // Phase always in [0, 1): the first frame may arrive with a slightly negative time
+      // (requestAnimationFrame timestamp earlier than the Timer's creation).
       const t = (((time * 0.12 + pulse.offset) % 1) + 1) % 1;
       const position = t * (pulse.points.length - 1);
       const i = Math.min(Math.max(Math.floor(position), 0), pulse.points.length - 1);
@@ -224,7 +225,7 @@ async function createScene(
 
   build(initial);
   placePulses(0);
-  // THREE.Clock foi descontinuado; Timer recebe o timestamp do próprio laço de animação.
+  // THREE.Clock is deprecated; Timer takes the animation loop's own timestamp.
   const timer = new THREE.Timer();
   const loop = (timestamp: number) => {
     timer.update(timestamp);
@@ -252,7 +253,7 @@ async function createScene(
   };
 }
 
-/** Corte transversal em escala real (SVG): sempre disponível, inclusive sem WebGL. */
+/** True-scale cross-section (SVG): always available, even without WebGL. */
 function CrossSection({ fiber }: { fiber: FiberType }) {
   const scale = 90 / (fiber.coating / 2);
   return (
@@ -260,7 +261,7 @@ function CrossSection({ fiber }: { fiber: FiberType }) {
       viewBox="-100 -100 200 200"
       className="mx-auto w-40"
       role="img"
-      aria-label={`Corte transversal: núcleo de ${fiber.core} µm, casca de ${fiber.cladding} µm e revestimento de ${fiber.coating} µm`}
+      aria-label={`Cross-section: ${fiber.core} µm core, ${fiber.cladding} µm cladding and ${fiber.coating} µm coating`}
     >
       <circle r={(fiber.coating / 2) * scale} fill="#2f5fd0" />
       <circle r={(fiber.cladding / 2) * scale} fill="#cfe9fb" />
@@ -294,7 +295,7 @@ export function Fiber3D() {
   const inView = useInView(containerRef);
   const fiber = FIBERS[fiberId];
 
-  // Carrega three.js apenas quando a figura entra na tela.
+  // Load three.js only when the figure enters the viewport.
   useEffect(() => {
     const host = hostRef.current;
     if (!inView || !host || handleRef.current) return;
@@ -343,8 +344,8 @@ export function Fiber3D() {
 
   return (
     <InteractiveFigure
-      title="Anatomia de uma fibra óptica em 3D"
-      description="Arraste para girar. O revestimento foi recortado para revelar a casca de vidro (125 µm) e o núcleo, onde a luz fica confinada por reflexão interna total. Proporções radiais reais; ângulos dos raios exagerados para visualização."
+      title="Anatomy of an optical fiber in 3D"
+      description="Drag to rotate. The coating is cut away to reveal the glass cladding (125 µm) and the core, where light is confined by total internal reflection. Radial proportions are real; ray angles are exaggerated for visibility."
       testId="fiber-3d"
       actions={
         <button
@@ -358,12 +359,12 @@ export function Fiber3D() {
           ) : (
             <Rotate3d className="size-4" aria-hidden="true" />
           )}
-          {autoRotate ? "Parar rotação" : "Girar"}
+          {autoRotate ? "Stop rotation" : "Rotate"}
         </button>
       }
     >
       <div className="space-y-5">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Tipo de fibra">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Fiber type">
           {(Object.values(FIBERS) as FiberType[]).map((item) => (
             <button
               key={item.id}
@@ -388,8 +389,8 @@ export function Fiber3D() {
               <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-slate-300">
                 {status === "error" ? (
                   <p>
-                    WebGL indisponível neste navegador. O corte transversal ao lado mostra as mesmas
-                    camadas.
+                    WebGL is unavailable in this browser. The cross-section next to it shows the
+                    same layers.
                   </p>
                 ) : (
                   <p className="inline-flex items-center gap-2">
@@ -397,7 +398,7 @@ export function Fiber3D() {
                       className={inView ? "size-4 animate-spin" : "size-4"}
                       aria-hidden="true"
                     />{" "}
-                    carregando modelo 3D…
+                    loading 3D model…
                   </p>
                 )}
               </div>
@@ -407,16 +408,16 @@ export function Fiber3D() {
               aria-hidden="true"
             >
               <li className="flex items-center gap-1.5">
-                <span className="size-2.5 rounded-full bg-[#2f5fd0]" /> revestimento (acrilato)
+                <span className="size-2.5 rounded-full bg-[#2f5fd0]" /> coating (acrylate)
               </li>
               <li className="flex items-center gap-1.5">
-                <span className="size-2.5 rounded-full bg-[#cfe9fb]" /> casca (sílica)
+                <span className="size-2.5 rounded-full bg-[#cfe9fb]" /> cladding (silica)
               </li>
               <li className="flex items-center gap-1.5">
-                <span className="size-2.5 rounded-full bg-[#0ea5e9]" /> núcleo (sílica dopada)
+                <span className="size-2.5 rounded-full bg-[#0ea5e9]" /> core (doped silica)
               </li>
               <li className="flex items-center gap-1.5">
-                <span className="size-2.5 rounded-full bg-[#ff7a45]" /> luz guiada
+                <span className="size-2.5 rounded-full bg-[#ff7a45]" /> guided light
               </li>
             </ul>
           </div>
@@ -425,27 +426,27 @@ export function Fiber3D() {
             <CrossSection fiber={fiber} />
             <dl className="grid grid-cols-2 gap-2 lg:grid-cols-1" data-testid="fiber-stats">
               <Stat
-                label="Núcleo / casca"
+                label="Core / cladding"
                 value={`${number(fiber.core, 1)} / ${fiber.cladding} µm`}
               />
               <Stat
-                label="Abertura numérica"
+                label="Numerical aperture"
                 value={number(fiber.numericalAperture)}
                 hint={`n₁ ≈ ${number(coreIndex(fiber), 4)} · n₂ ≈ ${number(fiber.claddingIndex, 3)}`}
               />
               <Stat
-                label="Ângulo crítico"
+                label="Critical angle"
                 value={`${number(criticalAngle(fiber), 1)}°`}
-                hint={`aceitação: ±${number(acceptanceAngle(fiber), 1)}° no ar`}
+                hint={`acceptance: ±${number(acceptanceAngle(fiber), 1)}° in air`}
               />
               <Stat
-                label={`V em ${number(fiber.wavelength * 1000, 0)} nm`}
+                label={`V at ${number(fiber.wavelength * 1000, 0)} nm`}
                 value={
                   <span data-testid="fiber-modes">
-                    {modeCount(fiber) === 1 ? "1 modo" : `≈ ${modeCount(fiber)} modos`}
+                    {modeCount(fiber) === 1 ? "1 mode" : `≈ ${modeCount(fiber)} modes`}
                   </span>
                 }
-                hint={`V = ${number(vNumber(fiber))}${fiber.id === "single" ? ` · corte em ${number(cutoffWavelength(fiber) * 1000, 0)} nm` : ""}`}
+                hint={`V = ${number(vNumber(fiber))}${fiber.id === "single" ? ` · cutoff at ${number(cutoffWavelength(fiber) * 1000, 0)} nm` : ""}`}
                 tone={fiber.id === "single" ? "success" : undefined}
               />
             </dl>
@@ -453,8 +454,8 @@ export function Fiber3D() {
         </div>
         <p className="text-sm text-muted-foreground">
           {fiber.id === "single"
-            ? "Com V < 2,405 só o modo fundamental se propaga: não há dispersão intermodal, e o alcance chega a milhares de quilômetros com amplificação."
-            : "Centenas de modos percorrem caminhos diferentes. O perfil gradual reduz a diferença de atraso entre eles, mas o alcance fica limitado a algumas centenas de metros a 10 Gb/s ou mais."}
+            ? "With V < 2.405 only the fundamental mode propagates: there is no intermodal dispersion, and reach extends to thousands of kilometers with amplification."
+            : "Hundreds of modes travel different paths. The graded profile reduces the delay difference between them, but reach is limited to a few hundred meters at 10 Gb/s or more."}
         </p>
       </div>
     </InteractiveFigure>

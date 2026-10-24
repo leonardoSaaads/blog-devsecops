@@ -10,9 +10,9 @@ const pick = <T>(random: Random, items: readonly T[]): T =>
   items[Math.floor(random() * items.length)]!;
 
 /**
- * Polilinha compacta: primeiro ponto absoluto e os demais relativos ("l dx dy"),
- * calculados sobre coordenadas já arredondadas (sem acúmulo de erro). Corta o tamanho
- * do SVG pela metade em relação a "L x y" absolutos.
+ * Compact polyline: the first point is absolute and the rest relative ("l dx dy"),
+ * computed from already-rounded coordinates (no accumulated error). It halves the SVG
+ * size compared to absolute "L x y" commands.
  */
 function polyline(points: Array<[number, number]>): string {
   let previous: [number, number] = [0, 0];
@@ -28,13 +28,13 @@ function polyline(points: Array<[number, number]>): string {
     : `M${fmt(points[0]![0])} ${fmt(points[0]![1])}`;
 }
 
-/** Mapeia t ∈ [0, 1] para uma cor espectral (violeta → vermelho). */
+/** Maps t ∈ [0, 1] to a spectral color (violet → red). */
 export function spectralColor(t: number, lightness = 62): string {
   const hue = 265 - Math.min(1, Math.max(0, t)) * 265;
   return `hsl(${fmt(hue)}, 90%, ${lightness}%)`;
 }
 
-// ------------------------------------------------------------- DWDM: espectro
+// ------------------------------------------------------------- DWDM: spectrum
 export function spectrum(random: Random): Artwork {
   const shapes: Shape[] = [];
   const channels = 64;
@@ -53,7 +53,7 @@ export function spectrum(random: Random): Artwork {
       opacity: 0.12,
     });
   }
-  // Piso de ruído ASE
+  // ASE noise floor
   const noise: Array<[number, number]> = [];
   for (let x = left; x <= right; x += 6)
     noise.push([x, base - 14 - Math.abs(gaussian(random)) * 5 - 10 * Math.sin((x / W) * Math.PI)]);
@@ -106,11 +106,11 @@ export function spectrum(random: Random): Artwork {
     background: PLATE,
     glow: { color: "#3b2a7a", cx: 0.5, cy: 0.6 },
     shapes,
-    caption: "Arte generativa: 64 canais ópticos de um grid DWDM sobre o piso de ruído ASE.",
+    caption: "Generative art: 64 optical channels of a DWDM grid above the ASE noise floor.",
   };
 }
 
-// ------------------------------------------------------------- K8s: malha hexagonal
+// ------------------------------------------------------------- K8s: hexagonal mesh
 export function lattice(random: Random): Artwork {
   const shapes: Shape[] = [];
   const size = 34;
@@ -185,11 +185,11 @@ export function lattice(random: Random): Artwork {
     glow: { color: "#0f4fa8", cx: 0.62, cy: 0.45 },
     shapes,
     caption:
-      "Arte generativa: malha hexagonal de nós e pods; em âmbar, pods em encerramento sendo reconciliados.",
+      "Generative art: a hexagonal mesh of nodes and pods; in amber, terminating pods being reconciled.",
   };
 }
 
-// ------------------------------------------------------------- Linux: bits de permissão
+// ------------------------------------------------------------- Linux: permission bits
 export function bits(random: Random): Artwork {
   const shapes: Shape[] = [];
   const cells: Shape[] = [];
@@ -214,15 +214,15 @@ export function bits(random: Random): Artwork {
           w: cell,
           h: cell,
           fill: set ? (danger ? "#ff6b6b" : bit % 3 === 2 ? "#f2c94c" : "#3ddc97") : "#1d2b3f",
-          // Opacidade em passos de 0,05: imperceptível e permite agrupar células iguais.
+          // Opacity in 0.05 steps: imperceptible, and it lets identical cells be grouped.
           opacity: Math.round((set ? between(random, 0.55, 0.95) : 0.55) * fade * 20) / 20,
           className: set && random() < 0.015 ? "art-blink" : undefined,
         });
       }
     }
   }
-  // Células não se sobrepõem: ordenar por pintura não muda a imagem e deixa o SVG
-  // agrupar centenas de quadrados em poucos <path>.
+  // Cells never overlap: sorting by paint does not change the image and lets the SVG
+  // merge hundreds of squares into a few <path> elements.
   const paint = (shape: Shape) => `${shape.fill}|${shape.opacity}`;
   shapes.push(...cells.sort((a, b) => paint(a).localeCompare(paint(b))));
   shapes.push({
@@ -243,11 +243,11 @@ export function bits(random: Random): Artwork {
     glow: { color: "#0f5132", cx: 0.4, cy: 0.5 },
     shapes,
     caption:
-      "Arte generativa: modos de permissão Unix como matrizes de bits rwx; em vermelho, o perigoso 777.",
+      "Generative art: Unix permission modes as rwx bit matrices; in red, the dangerous 777.",
   };
 }
 
-// ------------------------------------------------------------- Cloudflare: rede de borda
+// ------------------------------------------------------------- Cloudflare: edge network
 export function network(random: Random): Artwork {
   const shapes: Shape[] = [];
   const cx = W * 0.5;
@@ -317,7 +317,7 @@ export function network(random: Random): Artwork {
     });
     shapes.push({ kind: "circle", cx: fmt(ex), cy: fmt(ey), r: 3.4, fill: "#ffd2a8" });
   }
-  // Varreduras bloqueadas: tentativas de entrada que não encontram porta aberta
+  // Blocked scans: inbound attempts that find no open port
   for (let i = 0; i < 14; i++) {
     const x = between(random, 60, W - 60);
     shapes.push({
@@ -338,7 +338,7 @@ export function network(random: Random): Artwork {
     glow: { color: "#7a3a0b", cx: 0.5, cy: 0.35 },
     shapes,
     caption:
-      "Arte generativa: conexões de saída partindo das origens até os pontos de presença da borda; nenhuma porta de entrada aberta.",
+      "Generative art: outbound connections from origins to edge points of presence; no inbound port open.",
   };
 }
 
@@ -388,8 +388,7 @@ export function ridgeline(random: Random): Artwork {
     height: H,
     background: ["#070b16", "#070b16"],
     shapes,
-    caption:
-      "Arte generativa: séries temporais de uso de CPU empilhadas — picos de carga ao longo do tempo.",
+    caption: "Generative art: stacked CPU usage time series — load spikes over time.",
   };
 }
 
@@ -473,11 +472,11 @@ export function radar(random: Random): Artwork {
     background: ["#04140c", "#020a06"],
     glow: { color: "#0b4d2b", cx: 0.5, cy: 0.55 },
     shapes,
-    caption: "Arte generativa: varredura de polling SNMP; em âmbar, dispositivos com alertas.",
+    caption: "Generative art: an SNMP polling sweep; in amber, devices with alerts.",
   };
 }
 
-// ------------------------------------------------------------- Desempenho: flame graph
+// ------------------------------------------------------------- Performance: flame graph
 export function flamegraph(random: Random): Artwork {
   const shapes: Shape[] = [];
   const rowH = 32;
@@ -497,7 +496,7 @@ export function flamegraph(random: Random): Artwork {
       fill: palette(depth),
       opacity: 0.92,
     });
-    // Divide o tempo da função entre 1 a 3 chamadas filhas (o resto é tempo próprio).
+    // Splits the function's time across 1 to 3 child calls (the rest is self time).
     const children = 1 + Math.floor(random() * 3);
     const weights = Array.from({ length: children }, () => between(random, 0.3, 1));
     const total = weights.reduce((sum, weight) => sum + weight, 0);
@@ -518,11 +517,11 @@ export function flamegraph(random: Random): Artwork {
     glow: { color: "#5a1d07", cx: 0.5, cy: 0.9 },
     shapes,
     caption:
-      "Arte generativa: flame graph — a largura de cada bloco é o tempo de CPU gasto em cada função.",
+      "Generative art: a flame graph — each block's width is the CPU time spent in that function.",
   };
 }
 
-// ------------------------------------------------------------- Engenharia: circuito
+// ------------------------------------------------------------- Engineering: circuit
 export function circuit(random: Random): Artwork {
   const shapes: Shape[] = [];
   const grid = 30;
@@ -612,11 +611,11 @@ export function circuit(random: Random): Artwork {
     background: ["#071423", "#040b14"],
     glow: { color: "#0d3b5c", cx: 0.55, cy: 0.5 },
     shapes,
-    caption: "Arte generativa: trilhas de circuito impresso conectando os componentes do sistema.",
+    caption: "Generative art: printed circuit traces connecting the system's components.",
   };
 }
 
-// ------------------------------------------------------------- Telecom: diagrama de olho
+// ------------------------------------------------------------- Telecom: eye diagram
 export function eye(random: Random): Artwork {
   const shapes: Shape[] = [];
   const unit = W / 2.6;
@@ -627,8 +626,8 @@ export function eye(random: Random): Artwork {
     const bitsSeq = Array.from({ length: 5 }, () => (random() < 0.5 ? 1 : 0));
     const jitter = gaussian(random) * 12;
     const noise = gaussian(random) * 11;
-    // Cada transição de bit é uma curva de Bézier cúbica em "S" (aproxima o cosseno
-    // elevado): 4 comandos por traço em vez de 100 pontos.
+    // Each bit transition is an S-shaped cubic Bézier curve (approximating a raised
+    // cosine): 4 commands per trace instead of 100 points.
     const x0 = -unit * 0.6 + jitter;
     let d = `M${fmt(x0)} ${fmt(level(bitsSeq[0]!) + noise)}`;
     for (let k = 0; k < 4; k++) {
@@ -662,8 +661,7 @@ export function eye(random: Random): Artwork {
     background: ["#0a0f24", "#05070f"],
     glow: { color: "#2a2f8a", cx: 0.5, cy: 0.5 },
     shapes,
-    caption:
-      "Arte generativa: diagrama de olho — sobreposição de transições de bits com ruído e jitter.",
+    caption: "Generative art: an eye diagram — overlapping bit transitions with noise and jitter.",
   };
 }
 
@@ -679,7 +677,7 @@ export const GENERATORS = {
   eye,
 } as const;
 
-/** Semente estável a partir de um texto (FNV-1a de 32 bits). */
+/** Stable seed derived from a string (32-bit FNV-1a). */
 export function seedFrom(text: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
@@ -690,12 +688,12 @@ export function seedFrom(text: string): number {
 }
 
 /**
- * Máximo de elementos animados por arte. Cada elemento animado força o navegador a
- * repintar o SVG inteiro a cada quadro; sem GPU (celulares modestos, CI) isso satura a CPU.
+ * Maximum animated elements per artwork. Each animated element forces the browser to
+ * repaint the whole SVG every frame; without a GPU (modest phones, CI) that saturates the CPU.
  */
 export const MAX_ANIMATED_SHAPES = 12;
 
-/** Mantém a animação apenas nos primeiros `limit` elementos (ordem do documento). */
+/** Keeps animation on the first `limit` elements only (document order). */
 function capAnimations(shapes: Shape[], limit: number): Shape[] {
   let remaining = limit;
   const visit = (shape: Shape): Shape => {
@@ -715,7 +713,7 @@ export function generateArt(motif: keyof typeof GENERATORS, seed: string | numbe
   return { ...art, shapes: capAnimations(art.shapes, MAX_ANIMATED_SHAPES) };
 }
 
-/** Legenda descritiva da arte (texto alternativo e crédito da capa). */
+/** Descriptive art caption (alt text and cover credit). */
 export function artCaption(motif: keyof typeof GENERATORS, seed: string): string {
   return generateArt(motif, seed).caption;
 }

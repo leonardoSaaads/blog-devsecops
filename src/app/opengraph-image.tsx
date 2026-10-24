@@ -9,7 +9,7 @@ export const dynamic = "force-static";
 export default function OpengraphImage() {
   return renderOgImage({
     eyebrow: site.tagline,
-    title: "Ensaios técnicos para ler, experimentar e citar.",
+    title: "Technical essays to read, explore and cite.",
     art: { motif: "eye", seed: "inicio" },
   });
 }

@@ -20,14 +20,14 @@ import {
 import { InteractiveFigure, controlToggle } from "./interactive-figure";
 
 const WHO_LABEL: Record<Who, string> = {
-  owner: "Dono (u)",
-  group: "Grupo (g)",
-  others: "Outros (o)",
+  owner: "Owner (u)",
+  group: "Group (g)",
+  others: "Others (o)",
 };
 const PERM_LABEL: Record<Permission, string> = {
-  read: "Leitura (r=4)",
-  write: "Escrita (w=2)",
-  execute: "Execução (x=1)",
+  read: "Read (r=4)",
+  write: "Write (w=2)",
+  execute: "Execute (x=1)",
 };
 const PRESETS = ["644", "755", "640", "750", "600", "700", "777", "4755"];
 
@@ -57,18 +57,18 @@ export function PermissionLab({ fileName = "deploy.sh" }: { fileName?: string })
 
   return (
     <InteractiveFigure
-      title="Calculadora de permissões (chmod) e umask"
-      description="Marque as permissões e veja o modo octal, a saída do ls -l e os riscos de segurança em tempo real."
+      title="Permission (chmod) and umask calculator"
+      description="Tick the permissions and watch the octal mode, the ls -l output and the security risks update in real time."
       testId="permission-lab"
     >
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
           <table className="w-full border-separate border-spacing-1 text-sm">
-            <caption className="sr-only">Matriz de permissões</caption>
+            <caption className="sr-only">Permission matrix</caption>
             <thead>
               <tr>
                 <th scope="col" className="text-left font-medium text-muted-foreground">
-                  Classe
+                  Class
                 </th>
                 {PERMISSIONS.map((perm) => (
                   <th
@@ -105,9 +105,7 @@ export function PermissionLab({ fileName = "deploy.sh" }: { fileName?: string })
           </table>
 
           <fieldset className="flex flex-wrap gap-4 text-sm">
-            <legend className="mb-1 text-xs font-medium text-muted-foreground">
-              Bits especiais
-            </legend>
+            <legend className="mb-1 text-xs font-medium text-muted-foreground">Special bits</legend>
             {(["setuid", "setgid", "sticky"] as const).map((key) => (
               <label key={key} className="inline-flex items-center gap-2">
                 <input
@@ -127,7 +125,7 @@ export function PermissionLab({ fileName = "deploy.sh" }: { fileName?: string })
                 htmlFor={octalId}
                 className="mb-1 block text-xs font-medium text-muted-foreground"
               >
-                Modo octal
+                Octal mode
               </label>
               <input
                 id={octalId}
@@ -148,7 +146,7 @@ export function PermissionLab({ fileName = "deploy.sh" }: { fileName?: string })
                 data-testid="octal-input"
               />
             </div>
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Modos comuns">
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Common modes">
               {PRESETS.map((preset) => (
                 <button
                   key={preset}
@@ -163,13 +161,13 @@ export function PermissionLab({ fileName = "deploy.sh" }: { fileName?: string })
           </div>
           {octalInvalid && (
             <p id={`${octalId}-error`} className="text-sm text-danger">
-              Use 3 ou 4 dígitos entre 0 e 7.
+              Use 3 or 4 digits between 0 and 7.
             </p>
           )}
         </div>
 
         <div className="space-y-4">
-          <div className="flex gap-2 text-sm" role="group" aria-label="Tipo de alvo">
+          <div className="flex gap-2 text-sm" role="group" aria-label="Target type">
             {(["file", "directory"] as const).map((value) => (
               <button
                 key={value}
@@ -178,7 +176,7 @@ export function PermissionLab({ fileName = "deploy.sh" }: { fileName?: string })
                 onClick={() => setType(value)}
                 className={controlToggle(type === value)}
               >
-                {value === "file" ? "Arquivo" : "Diretório"}
+                {value === "file" ? "File" : "Directory"}
               </button>
             ))}
           </div>
@@ -189,7 +187,7 @@ export function PermissionLab({ fileName = "deploy.sh" }: { fileName?: string })
             </p>
             <p data-testid="ls-output">
               <span className="text-accent-strong">{modeToSymbolic(mode, type)}</span> 1 leo devops
-              4096 out 13 10:00 {fileName}
+              4096 Oct 13 10:00 {fileName}
             </p>
             <p className="mt-2 text-muted-foreground">
               $ chmod {octal} {fileName}
@@ -199,10 +197,10 @@ export function PermissionLab({ fileName = "deploy.sh" }: { fileName?: string })
             </p>
           </div>
 
-          <ul className="space-y-2" aria-label="Análise de segurança">
+          <ul className="space-y-2" aria-label="Security analysis">
             {warnings.length === 0 ? (
               <li className="rounded-lg border border-success/40 bg-success/10 px-3 py-2 text-sm">
-                Nenhum risco evidente: o princípio do menor privilégio está sendo respeitado.
+                No obvious risk: the principle of least privilege is being respected.
               </li>
             ) : (
               warnings.map((warning) => (
@@ -240,18 +238,18 @@ export function PermissionLab({ fileName = "deploy.sh" }: { fileName?: string })
                 data-testid="umask-output"
               >
                 <div>
-                  <dt className="text-xs text-muted-foreground">novo arquivo (666 &amp; ~umask)</dt>
+                  <dt className="text-xs text-muted-foreground">new file (666 &amp; ~umask)</dt>
                   <dd>{toOctalString(applyUmask(umask, "file"))}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">
-                    novo diretório (777 &amp; ~umask)
+                    new directory (777 &amp; ~umask)
                   </dt>
                   <dd>{toOctalString(applyUmask(umask, "directory"))}</dd>
                 </div>
               </dl>
             ) : (
-              <p className="mt-2 text-sm text-danger">Informe 3 dígitos octais (ex.: 022).</p>
+              <p className="mt-2 text-sm text-danger">Enter 3 octal digits (e.g., 022).</p>
             )}
           </div>
         </div>

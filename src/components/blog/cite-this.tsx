@@ -3,7 +3,7 @@
 import { Check, Copy, Quote } from "lucide-react";
 import { useState } from "react";
 import { useClientValue } from "@/hooks/use-client-value";
-import { formatAbntDate, formatAuthorName } from "@/lib/content/references";
+import { formatAuthorName, formatIeeeDate } from "@/lib/content/references";
 
 function todayIso(): string {
   const now = new Date();
@@ -11,25 +11,28 @@ function todayIso(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-/** "Como citar este artigo" (ABNT), com data de acesso do próprio leitor. */
+/** "How to cite this article" (IEEE), with the reader's own access date. */
 export function CiteThis({
   author,
   title,
-  year,
+  site,
+  published,
   url,
 }: {
   author: string;
   title: string;
-  year: number;
+  site: string;
+  /** ISO publication date (YYYY-MM-DD). */
+  published: string;
   url: string;
 }) {
-  // Data de acesso do próprio leitor (calculada só no cliente).
-  const accessed = useClientValue<string | undefined>(() => formatAbntDate(todayIso()), undefined);
+  // The reader's access date (computed on the client only).
+  const accessed = useClientValue<string | undefined>(() => formatIeeeDate(todayIso()), undefined);
   const [copied, setCopied] = useState(false);
 
-  const citation = `${formatAuthorName(author)}. ${title}. [S. l.], ${year}. Disponível em: ${url}.${
-    accessed ? ` Acesso em: ${accessed}.` : ""
-  }`;
+  const citation = `${formatAuthorName(author)}, “${title},” ${site}, ${formatIeeeDate(published)}.${
+    accessed ? ` Accessed: ${accessed}.` : ""
+  } [Online]. Available: ${url}`;
 
   const copy = async () => {
     try {
@@ -43,12 +46,12 @@ export function CiteThis({
 
   return (
     <section
-      aria-labelledby="como-citar"
+      aria-labelledby="cite-this"
       className="mt-8 rounded-2xl border border-border bg-muted/50 p-5"
     >
       <div className="flex items-center justify-between gap-3">
-        <h2 id="como-citar" className="flex items-center gap-2 text-base font-semibold">
-          <Quote className="size-4 text-accent" aria-hidden="true" /> Como citar este artigo
+        <h2 id="cite-this" className="flex items-center gap-2 text-base font-semibold">
+          <Quote className="size-4 text-accent" aria-hidden="true" /> How to cite this article
         </h2>
         <button
           type="button"
@@ -60,7 +63,7 @@ export function CiteThis({
           ) : (
             <Copy className="size-3.5" aria-hidden="true" />
           )}
-          {copied ? "Copiado" : "Copiar"}
+          {copied ? "Copied" : "Copy"}
         </button>
       </div>
       <p className="mt-3 break-words font-mono text-xs leading-relaxed text-muted-foreground">

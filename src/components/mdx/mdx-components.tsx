@@ -49,7 +49,7 @@ function SmartLink({ href = "", children, ...props }: ComponentProps<"a">) {
       {children}
       <ExternalLink
         className="ml-0.5 inline size-3 align-baseline opacity-60"
-        aria-label="(abre em nova aba)"
+        aria-label="(opens in a new tab)"
         role="img"
       />
     </a>
@@ -64,7 +64,7 @@ const baseComponents = {
   a: SmartLink,
   pre: CodeBlock,
   img: MdxImage,
-  // Estrutura acadêmica
+  // Academic structure
   Callout,
   Card,
   CardGrid,
@@ -77,7 +77,7 @@ const baseComponents = {
   Tabs,
   Term,
   Video,
-  // Figuras interativas
+  // Interactive figures
   ConstellationViewer,
   DwdmGridCalculator,
   Fiber3D,
@@ -93,7 +93,7 @@ const baseComponents = {
 
 export const MDX_COMPONENT_NAMES = Object.keys(baseComponents);
 
-/** Componentes disponíveis nos artigos; `Cite` é vinculado às referências do próprio artigo. */
+/** Components available in articles; `Cite` is bound to the article's own references. */
 export function getMdxComponents(references: Reference[]): MDXComponents {
   return { ...baseComponents, Cite: createCite(references) } as MDXComponents;
 }

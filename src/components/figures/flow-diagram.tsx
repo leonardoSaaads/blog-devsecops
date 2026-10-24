@@ -8,15 +8,15 @@ import { InteractiveFigure, controlButton } from "./interactive-figure";
 export interface FlowStep {
   title: string;
   detail?: string;
-  /** Destaque visual (ex.: ponto exposto, componente crítico). */
+  /** Visual highlight (e.g., an exposed point, a critical component). */
   tone?: "default" | "danger" | "success";
 }
 
 const STEP_MS = 1100;
 
 /**
- * Diagrama de fluxo com animação passo a passo ("pacote" percorrendo a cadeia).
- * Clique em uma etapa para ver detalhes.
+ * Flow diagram with step-by-step animation (a "packet" traveling down the chain).
+ * Click a step to see its details.
  */
 export function FlowDiagram({
   title,
@@ -54,9 +54,7 @@ export function FlowDiagram({
   return (
     <InteractiveFigure
       title={title}
-      description={
-        caption ?? "Reproduza o fluxo ou clique em uma etapa para ver o que acontece nela."
-      }
+      description={caption ?? "Play the flow or click a step to see what happens there."}
       testId="flow-diagram"
       actions={
         <button type="button" onClick={play} className={controlButton} aria-pressed={running}>
@@ -65,7 +63,7 @@ export function FlowDiagram({
           ) : (
             <Play className="size-4" aria-hidden="true" />
           )}
-          {running ? "Pausar" : "Reproduzir fluxo"}
+          {running ? "Pause" : "Play flow"}
         </button>
       }
     >

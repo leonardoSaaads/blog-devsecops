@@ -7,31 +7,32 @@ import { CATEGORIES, categoriesInUse } from "@/lib/content/categories";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
 
 export const metadata: Metadata = {
-  title: "Tópicos",
+  title: "Topics",
   description:
-    "Áreas de estudo e palavras-chave dos artigos: telecomunicações, infraestrutura, segurança e software.",
+    "Areas of study and article keywords: telecommunications, infrastructure, security and software.",
   alternates: { canonical: "/tags" },
 };
 
 export default function TopicsPage() {
   const tags = getAllTags();
   const posts = getAllPosts();
+  const areas = categoriesInUse(posts);
   const max = Math.max(...tags.map(({ count }) => count));
 
   return (
     <div className="container-page py-14">
       <PageHeader
-        eyebrow="Índice"
-        title="Tópicos"
-        description={`Quatro áreas de estudo e ${tags.length} palavras-chave que atravessam os artigos.`}
+        eyebrow="Index"
+        title="Topics"
+        description={`${areas.length} ${areas.length === 1 ? "area" : "areas"} of study and ${tags.length} keywords that run through the articles.`}
       />
 
       <section aria-labelledby="areas">
         <h2 id="areas" className="smallcaps text-sm font-semibold text-accent-strong">
-          Áreas
+          Areas
         </h2>
         <ul className="mt-4 grid gap-5 sm:grid-cols-2">
-          {categoriesInUse(posts).map((id) => {
+          {areas.map((id) => {
             const category = CATEGORIES[id];
             const items = posts.filter((post) => post.category === id);
             return (
@@ -42,7 +43,7 @@ export default function TopicsPage() {
                 <Link
                   href={`/blog?area=${id}`}
                   className="group relative block h-32 overflow-hidden bg-plate"
-                  aria-label={`Ver artigos de ${category.label}`}
+                  aria-label={`See ${category.label} articles`}
                 >
                   <CoverArt
                     {...areaArtwork(id)}
@@ -77,9 +78,9 @@ export default function TopicsPage() {
         </ul>
       </section>
 
-      <section aria-labelledby="palavras-chave" className="mt-16">
-        <h2 id="palavras-chave" className="smallcaps text-sm font-semibold text-accent-strong">
-          Palavras-chave
+      <section aria-labelledby="keywords" className="mt-16">
+        <h2 id="keywords" className="smallcaps text-sm font-semibold text-accent-strong">
+          Keywords
         </h2>
         <ul className="mt-4 flex flex-wrap gap-3">
           {tags.map(({ tag, count }) => (

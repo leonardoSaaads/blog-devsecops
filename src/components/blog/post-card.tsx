@@ -56,11 +56,11 @@ export function PostCard({
         <p className="text-xs text-muted-foreground">
           <time dateTime={post.date}>{formatShortDate(post.date)}</time>
           <span aria-hidden="true"> · </span>
-          {post.readingMinutes} min de leitura
+          {post.readingMinutes} min read
           {post.figures > 0 && (
             <>
               <span aria-hidden="true"> · </span>
-              {post.figures} {post.figures === 1 ? "figura interativa" : "figuras interativas"}
+              {post.figures} {post.figures === 1 ? "interactive figure" : "interactive figures"}
             </>
           )}
         </p>

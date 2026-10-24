@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 
-/** Substituto de `next/navigation` para testes. */
+/** Test stand-in for `next/navigation`. */
 export const routerMock = {
   push: vi.fn(),
   replace: vi.fn(),

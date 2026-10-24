@@ -6,9 +6,9 @@ import {
   serializeRedirectsFile,
   toCloudflarePath,
 } from "./cloudflare";
-import { legacyTagRedirects } from "./redirects";
+import { LEGACY_REDIRECTS, legacyTagRedirects } from "./redirects";
 
-/** Agrupa o `_headers` em blocos { caminho: linhas }. */
+/** Groups `_headers` into { path: lines } blocks. */
 function parseBlocks(file: string): Map<string, string[]> {
   return new Map(
     file
@@ -21,10 +21,10 @@ function parseBlocks(file: string): Map<string, string[]> {
   );
 }
 
-describe("_headers da Cloudflare", () => {
+describe("Cloudflare _headers", () => {
   const blocks = parseBlocks(cloudflareHeadersFile());
 
-  it("aplica a CSP de produção e os cabeçalhos de segurança a todas as rotas", () => {
+  it("applies the production CSP and security headers to every route", () => {
     const global = blocks.get("/*")!;
     const csp = global.find((line) => line.startsWith("Content-Security-Policy:"))!;
     expect(csp).toContain("default-src 'self'");
@@ -33,7 +33,7 @@ describe("_headers da Cloudflare", () => {
     expect(global.some((line) => line.startsWith("Strict-Transport-Security:"))).toBe(true);
   });
 
-  it("regra posterior substitui (não concatena) o cabeçalho herdado", () => {
+  it("a later rule replaces (does not join) the inherited header", () => {
     const file = serializeHeadersFile([
       {
         source: "/:path*",
@@ -50,7 +50,7 @@ describe("_headers da Cloudflare", () => {
     ]);
   });
 
-  it("define tipo e cache que a exportação estática não preserva", () => {
+  it("sets the type and cache headers a static export does not keep", () => {
     expect(blocks.get("/_next/static/*")).toContain(
       "Cache-Control: public, max-age=31536000, immutable",
     );
@@ -61,20 +61,20 @@ describe("_headers da Cloudflare", () => {
     expect(blocks.get("/_img/*")?.some((line) => line.includes("max-age=86400"))).toBe(true);
   });
 
-  it("respeita os limites da plataforma", () => {
+  it("stays within the platform limits", () => {
     expect(blocks.size).toBeLessThanOrEqual(CLOUDFLARE_LIMITS.headerRules);
     for (const line of cloudflareHeadersFile().split("\n")) {
       expect(line.length).toBeLessThanOrEqual(CLOUDFLARE_LIMITS.lineLength);
     }
   });
 
-  it("rejeita quebras de linha (injeção de regras)", () => {
+  it("rejects line breaks (rule injection)", () => {
     expect(() =>
       serializeHeadersFile([{ source: "/*", headers: [{ key: "X-A", value: "1\n/x\n  X-B: 2" }] }]),
-    ).toThrow(/Quebra de linha/);
+    ).toThrow(/Line break/);
   });
 
-  it("converte padrões do Next e recusa os que não têm equivalente", () => {
+  it("converts Next patterns and refuses those with no equivalent", () => {
     expect(toCloudflarePath("/:path*")).toBe("/*");
     expect(toCloudflarePath("/art/:path*")).toBe("/art/*");
     expect(toCloudflarePath("/blog/:slug/opengraph-image")).toBe("/blog/:slug/opengraph-image");
@@ -84,28 +84,35 @@ describe("_headers da Cloudflare", () => {
   });
 });
 
-describe("_redirects da Cloudflare", () => {
-  it("tags antigas em caixa alta redirecionam com 308", () => {
+describe("Cloudflare _redirects", () => {
+  it("redirects old uppercase tags with a 308", () => {
     const file = cloudflareRedirectsFile(["devops", "zero-trust"]);
-    expect(file.split("\n")).toEqual([
+    expect(file.split("\n").slice(LEGACY_REDIRECTS.length)).toEqual([
       "/tags/DEVOPS /tags/devops 308",
       "/tags/ZERO-TRUST /tags/zero-trust 308",
       "",
     ]);
   });
 
-  it("não gera regra para tags sem letras (evita laço de redirecionamento)", () => {
+  it("redirects the Portuguese slugs and tags from before the translation", () => {
+    const file = cloudflareRedirectsFile([]);
+    expect(file).toContain("/blog/comandos-linux /blog/linux-fundamentals 308");
+    expect(file).toContain("/blog/dwdm_intoduction /blog/dwdm-introduction 308");
+    expect(file).toContain("/tags/seguranca /tags/security 308");
+  });
+
+  it("skips tags without letters (avoids a redirect loop)", () => {
     expect(legacyTagRedirects(["5g", "123"])).toEqual([
       { source: "/tags/5G", destination: "/tags/5g", permanent: true },
     ]);
   });
 
-  it("rejeita origens inválidas", () => {
+  it("rejects invalid sources", () => {
     expect(() =>
       serializeRedirectsFile([{ source: "/a b", destination: "/c", permanent: true }]),
-    ).toThrow(/inválido/);
+    ).toThrow(/Invalid redirect/);
     expect(() =>
       serializeRedirectsFile([{ source: "a", destination: "/c", permanent: true }]),
-    ).toThrow(/inválido/);
+    ).toThrow(/Invalid redirect/);
   });
 });

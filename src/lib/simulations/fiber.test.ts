@@ -10,12 +10,12 @@ import {
   vNumber,
 } from "./fiber";
 
-describe("óptica de fibras", () => {
-  it("índice do núcleo e ângulos coerentes com a abertura numérica", () => {
+describe("fiber optics", () => {
+  it("core index and angles agree with the numerical aperture", () => {
     const fiber = FIBERS.multi;
     const n1 = coreIndex(fiber);
     expect(n1).toBeGreaterThan(fiber.claddingIndex);
-    // sen(90° − θc)·n₁ = NA
+    // sin(90° − θc)·n₁ = NA
     expect(Math.sin(((90 - criticalAngle(fiber)) * Math.PI) / 180) * n1).toBeCloseTo(
       fiber.numericalAperture,
       9,
@@ -23,7 +23,7 @@ describe("óptica de fibras", () => {
     expect(acceptanceAngle(fiber)).toBeCloseTo(11.54, 1);
   });
 
-  it("G.652.D é monomodo em 1310 e 1550 nm, com corte abaixo de 1310 nm", () => {
+  it("G.652.D is single-mode at 1310 and 1550 nm, with cutoff below 1310 nm", () => {
     const fiber = FIBERS.single;
     expect(vNumber(fiber, 1.55)).toBeLessThan(2.405);
     expect(vNumber(fiber, 1.31)).toBeLessThan(2.405);
@@ -31,12 +31,12 @@ describe("óptica de fibras", () => {
     expect(modeCount(fiber)).toBe(1);
   });
 
-  it("OM4 em 850 nm guia centenas de modos", () => {
+  it("OM4 at 850 nm guides hundreds of modes", () => {
     expect(vNumber(FIBERS.multi)).toBeCloseTo(36.96, 1);
     expect(modeCount(FIBERS.multi)).toBeGreaterThan(300);
   });
 
-  it("raios ficam confinados no núcleo", () => {
+  it("rays stay confined to the core", () => {
     for (const profile of ["step", "graded"] as const) {
       const path = rayPath(profile, { radius: 2, length: 100, angle: 12 });
       expect(path.every(([, y]) => Math.abs(y) <= 2 + 1e-9)).toBe(true);

@@ -3,8 +3,8 @@ import { referenceToPlainText } from "@/lib/content/references";
 import type { Reference } from "@/lib/content/schema";
 
 /**
- * Cria o componente `<Cite id="..." />` ligado às referências do artigo.
- * IDs inexistentes interrompem o build — nenhuma citação fica órfã.
+ * Creates the `<Cite id="..." />` component bound to the article's references.
+ * Unknown IDs fail the build — no citation is left dangling.
  */
 export function createCite(references: Reference[]) {
   const index = new Map(references.map((ref, position) => [ref.id, { ref, number: position + 1 }]));
@@ -14,7 +14,7 @@ export function createCite(references: Reference[]) {
     const entries = ids.map((refId) => {
       const entry = index.get(refId);
       if (!entry)
-        throw new Error(`<Cite id="${refId}"> não corresponde a nenhuma referência do artigo.`);
+        throw new Error(`<Cite id="${refId}"> does not match any reference in this article.`);
       return entry;
     });
 
@@ -27,7 +27,7 @@ export function createCite(references: Reference[]) {
             <a
               href={`#${referenceAnchor(ref.id)}`}
               title={referenceToPlainText(ref)}
-              aria-label={`Referência ${number}`}
+              aria-label={`Reference ${number}`}
               className="text-accent-strong no-underline hover:underline"
             >
               {number}

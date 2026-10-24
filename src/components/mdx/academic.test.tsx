@@ -8,53 +8,53 @@ import { Definition, PullQuote } from "./definition";
 import { Sidenote } from "./sidenote";
 import { Term } from "./term";
 
-describe("componentes acadêmicos", () => {
-  it("toda figura interativa contada está registrada no MDX", () => {
+describe("academic components", () => {
+  it("every counted interactive figure is registered in MDX", () => {
     for (const name of INTERACTIVE_COMPONENTS) expect(MDX_COMPONENT_NAMES).toContain(name);
   });
 
-  it("conta figuras ignorando blocos de código", () => {
+  it("counts figures while ignoring code blocks", () => {
     const body =
-      "Texto\n\n<Fiber3D />\n\n```mdx\n<Fiber3D />\n```\n\n  <OsnrCalculator />\n<Callout>x</Callout>";
+      "Text\n\n<Fiber3D />\n\n```mdx\n<Fiber3D />\n```\n\n  <OsnrCalculator />\n<Callout>x</Callout>";
     expect(countInteractiveFigures(body)).toBe(2);
   });
 
-  it("nota de margem é uma nota acessível dentro do parágrafo", () => {
+  it("a sidenote is an accessible note inside the paragraph", () => {
     render(
       <p>
-        Frase<Sidenote>Comentário lateral.</Sidenote>
+        Sentence<Sidenote>Side comment.</Sidenote>
       </p>,
     );
-    expect(screen.getByRole("note")).toHaveTextContent("Comentário lateral.");
+    expect(screen.getByRole("note")).toHaveTextContent("Side comment.");
   });
 
-  it("termo mostra a definição no foco e fecha com Esc", async () => {
+  it("a term shows its definition on focus and closes with Esc", async () => {
     const user = userEvent.setup();
-    render(<Term def="Relação sinal-ruído óptica.">OSNR</Term>);
+    render(<Term def="Optical signal-to-noise ratio.">OSNR</Term>);
     const button = screen.getByRole("button", { name: "OSNR" });
-    expect(button).toHaveAccessibleDescription("Relação sinal-ruído óptica.");
+    expect(button).toHaveAccessibleDescription("Optical signal-to-noise ratio.");
     await user.tab();
     expect(button).toHaveAttribute("aria-expanded", "true");
     await user.keyboard("{Escape}");
     expect(button).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("cards, definição e citação de destaque", () => {
+  it("cards, definition and pull quote", () => {
     render(
       <>
         <CardGrid cols={3}>
-          <Card title="Núcleo" icon="cable" tone="signal">
-            Vidro dopado.
+          <Card title="Core" icon="cable" tone="signal">
+            Doped glass.
           </Card>
         </CardGrid>
-        <Definition term="Fator Q">Separação entre níveis.</Definition>
-        <PullQuote cite="Autor">Meça antes de otimizar.</PullQuote>
+        <Definition term="Q-factor">Separation between levels.</Definition>
+        <PullQuote cite="Author">Measure before you optimize.</PullQuote>
       </>,
     );
-    expect(screen.getByRole("heading", { name: "Núcleo" })).toBeInTheDocument();
-    expect(screen.getByRole("note", { name: "Definição: Fator Q" })).toHaveTextContent(
-      "Separação entre níveis.",
+    expect(screen.getByRole("heading", { name: "Core" })).toBeInTheDocument();
+    expect(screen.getByRole("note", { name: "Definition: Q-factor" })).toHaveTextContent(
+      "Separation between levels.",
     );
-    expect(screen.getByText("Meça antes de otimizar.")).toBeInTheDocument();
+    expect(screen.getByText("Measure before you optimize.")).toBeInTheDocument();
   });
 });

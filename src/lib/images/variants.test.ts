@@ -7,21 +7,23 @@ import {
   variantPath,
 } from "./variants.mts";
 
-describe("variantes de imagem", () => {
-  it("aponta para a variante WebP da largura pedida", () => {
-    expect(variantPath("/images/k8s/pod.png", 640)).toBe("/_img/images/k8s/pod/640.webp");
+describe("image variants", () => {
+  it("points to the WebP variant for the requested width", () => {
+    expect(variantPath("/images/posts/demo/diagram.png", 640)).toBe(
+      "/_img/images/posts/demo/diagram/640.webp",
+    );
     expect(variantPath("/profile-image.jpg", 96)).toBe("/_img/profile-image/96.webp");
-    expect(variantPath("/images/zabbix/dvr_intelbras_dashboard.jpeg", 1920)).toBe(
-      "/_img/images/zabbix/dvr_intelbras_dashboard/1920.webp",
+    expect(variantPath("/images/posts/linux-fundamentals/root.jpeg", 1920)).toBe(
+      "/_img/images/posts/linux-fundamentals/root/1920.webp",
     );
   });
 
-  it("arredonda para cima e limita à maior largura gerada", () => {
+  it("rounds up and caps at the largest generated width", () => {
     expect(variantPath("/a.png", 700)).toBe("/_img/a/960.webp");
     expect(variantPath("/a.png", 5000)).toBe("/_img/a/1920.webp");
   });
 
-  it("ignora SVG, URLs externas, travessia de diretório e as próprias variantes", () => {
+  it("ignores SVG, external URLs, directory traversal and the variants themselves", () => {
     for (const src of [
       "/icon.svg",
       "https://example.com/a.png",
@@ -35,16 +37,16 @@ describe("variantes de imagem", () => {
     }
   });
 
-  it("loader devolve a URL original quando não há variante", () => {
+  it("the loader returns the original URL when there is no variant", () => {
     expect(imageLoader({ src: "https://example.com/a.png", width: 640 })).toBe(
       "https://example.com/a.png",
     );
-    expect(imageLoader({ src: "/images/k8s/pod.png", width: 640 })).toBe(
-      "/_img/images/k8s/pod/640.webp",
+    expect(imageLoader({ src: "/images/posts/demo/diagram.png", width: 640 })).toBe(
+      "/_img/images/posts/demo/diagram/640.webp",
     );
   });
 
-  it("larguras ordenadas; imageSizes menores que o menor deviceSize (exigência do Next)", () => {
+  it("widths are sorted; imageSizes are below the smallest deviceSize (a Next requirement)", () => {
     expect([...VARIANT_WIDTHS].sort((a, b) => a - b)).toEqual(VARIANT_WIDTHS);
     expect(Math.max(...IMAGE_SIZES)).toBeLessThan(Math.min(...DEVICE_SIZES));
   });

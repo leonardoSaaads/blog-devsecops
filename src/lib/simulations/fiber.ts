@@ -1,19 +1,19 @@
 /**
- * Óptica geométrica e modal de fibras (modelo de índice degrau equivalente).
- * Valores típicos: G.652.D (monomodo) e OM4 50/125 µm (multimodo de índice gradual).
+ * Geometric and modal fiber optics (equivalent step-index model).
+ * Typical values: G.652.D (single-mode) and OM4 50/125 µm (graded-index multimode).
  */
 
 export interface FiberType {
   id: "single" | "multi";
   label: string;
-  /** Diâmetros em µm. */
+  /** Diameters in µm. */
   core: number;
   cladding: number;
   coating: number;
   numericalAperture: number;
-  /** Índice da casca no comprimento de onda de operação. */
+  /** Cladding index at the operating wavelength. */
   claddingIndex: number;
-  /** Comprimento de onda de operação em µm. */
+  /** Operating wavelength in µm. */
   wavelength: number;
   profile: "step" | "graded";
 }
@@ -21,7 +21,7 @@ export interface FiberType {
 export const FIBERS: Record<FiberType["id"], FiberType> = {
   single: {
     id: "single",
-    label: "Monomodo (ITU-T G.652.D)",
+    label: "Single-mode (ITU-T G.652.D)",
     core: 8.2,
     cladding: 125,
     coating: 250,
@@ -32,7 +32,7 @@ export const FIBERS: Record<FiberType["id"], FiberType> = {
   },
   multi: {
     id: "multi",
-    label: "Multimodo (OM4 50/125)",
+    label: "Multimode (OM4 50/125)",
     core: 50,
     cladding: 125,
     coating: 250,
@@ -50,27 +50,27 @@ export function coreIndex(fiber: FiberType): number {
   return Math.sqrt(fiber.numericalAperture ** 2 + fiber.claddingIndex ** 2);
 }
 
-/** Ângulo crítico na interface núcleo/casca (graus, em relação à normal). */
+/** Critical angle at the core/cladding interface (degrees, from the normal). */
 export function criticalAngle(fiber: FiberType): number {
   return Math.asin(fiber.claddingIndex / coreIndex(fiber)) * DEG;
 }
 
-/** Meio-ângulo do cone de aceitação no ar (graus). */
+/** Half-angle of the acceptance cone in air (degrees). */
 export function acceptanceAngle(fiber: FiberType): number {
   return Math.asin(fiber.numericalAperture) * DEG;
 }
 
-/** Frequência normalizada V = π·d·NA/λ. */
+/** Normalized frequency V = π·d·NA/λ. */
 export function vNumber(fiber: FiberType, wavelength = fiber.wavelength): number {
   return (Math.PI * fiber.core * fiber.numericalAperture) / wavelength;
 }
 
-/** Comprimento de onda de corte (µm): abaixo dele a fibra deixa de ser monomodo. */
+/** Cutoff wavelength (µm): below it the fiber is no longer single-mode. */
 export function cutoffWavelength(fiber: FiberType): number {
   return (Math.PI * fiber.core * fiber.numericalAperture) / 2.405;
 }
 
-/** Número aproximado de modos guiados (V²/2 degrau; V²/4 gradual). */
+/** Approximate number of guided modes (V²/2 step-index; V²/4 graded-index). */
 export function modeCount(fiber: FiberType, wavelength = fiber.wavelength): number {
   const v = vNumber(fiber, wavelength);
   if (v < 2.405) return 1;
@@ -78,8 +78,8 @@ export function modeCount(fiber: FiberType, wavelength = fiber.wavelength): numb
 }
 
 /**
- * Trajetória 2D de um raio: zigue-zague (índice degrau) ou senoide (índice gradual),
- * confinado em |y| ≤ raio. `angle` é o ângulo de propagação em relação ao eixo (graus).
+ * 2D ray trajectory: zigzag (step-index) or sinusoid (graded-index), confined to
+ * |y| ≤ radius. `angle` is the propagation angle relative to the axis (degrees).
  */
 export function rayPath(
   profile: FiberType["profile"],
@@ -96,7 +96,7 @@ export function rayPath(
       [0, 0],
       [length, 0],
     ];
-  const period = (4 * radius) / slope; // ida e volta entre as paredes
+  const period = (4 * radius) / slope; // there and back between the walls
   const points: Array<[number, number]> = [];
   for (let index = 0; index <= segments; index += 1) {
     const x = (index / segments) * length;

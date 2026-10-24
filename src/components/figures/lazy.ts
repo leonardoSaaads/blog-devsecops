@@ -1,9 +1,9 @@
 import dynamic from "next/dynamic";
 
 /*
- * Figuras interativas com divisão de código: cada artigo baixa apenas o JavaScript das
- * figuras que usa. A renderização no servidor continua (o HTML chega completo); só a
- * hidratação espera o pedaço de código correspondente.
+ * Code-split interactive figures: each article downloads only the JavaScript for the
+ * figures it uses. Server rendering still happens (the HTML arrives complete); only
+ * hydration waits for the matching chunk.
  */
 export const ConstellationViewer = dynamic(() =>
   import("./constellation-viewer").then((m) => m.ConstellationViewer),

@@ -4,7 +4,7 @@ import { artworkToSvg } from "@/lib/art/render";
 import { MOTIFS, type Motif } from "@/lib/art/types";
 import { ART_CACHE_CONTROL, ART_SEED_PATTERN } from "@/lib/art/url";
 
-// SVG gerado no build e servido como arquivo estático (cacheável, fora do HTML).
+// SVG generated at build time and served as a static file (cacheable, outside the HTML).
 export const dynamic = "force-static";
 
 export function generateStaticParams() {

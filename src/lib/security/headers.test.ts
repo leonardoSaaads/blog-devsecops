@@ -9,8 +9,8 @@ function directives(csp: string): Map<string, string[]> {
   );
 }
 
-describe("cabeçalhos de segurança", () => {
-  it("CSP de produção é restritiva", () => {
+describe("security headers", () => {
+  it("the production CSP is restrictive", () => {
     const csp = directives(buildContentSecurityPolicy({ isDev: false }));
     expect(csp.get("default-src")).toEqual(["'self'"]);
     expect(csp.get("object-src")).toEqual(["'none'"]);
@@ -20,19 +20,19 @@ describe("cabeçalhos de segurança", () => {
     expect(csp.get("frame-src")).toEqual(["https://giscus.app"]);
   });
 
-  it("'unsafe-eval' só em desenvolvimento (React Refresh)", () => {
+  it("'unsafe-eval' only in development (React Refresh)", () => {
     expect(directives(buildContentSecurityPolicy({ isDev: true })).get("script-src")).toContain(
       "'unsafe-eval'",
     );
   });
 
-  it("nenhuma página usa Web Workers: worker-src 'none'", () => {
+  it("no page uses Web Workers: worker-src 'none'", () => {
     expect(directives(buildContentSecurityPolicy({ isDev: false })).get("worker-src")).toEqual([
       "'none'",
     ]);
   });
 
-  it("uma única regra global com todos os cabeçalhos de segurança", () => {
+  it("a single global rule carries every security header", () => {
     const rules = buildSecurityHeaders({ isDev: false });
     expect(rules[0]?.source).toBe("/:path*");
     const keys = rules[0]!.headers.map((header) => header.key);

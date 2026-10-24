@@ -21,7 +21,7 @@ function useActiveHeading(ids: string[]): string | undefined {
           if (entry.isIntersecting) visible.add(entry.target.id);
           else visible.delete(entry.target.id);
         }
-        // O primeiro título visível (na ordem do documento) é o ativo.
+        // The first visible heading (in document order) is the active one.
         const first = ids.find((id) => visible.has(id));
         if (first) setActive(first);
       },
@@ -71,28 +71,28 @@ export function TableOfContents({
   if (items.length < 2) return null;
 
   if (variant === "inline") {
-    // Telas menores: sumário recolhível no topo do artigo.
+    // Small screens: collapsible table of contents at the top of the article.
     return (
       <details className="mb-8 rounded-xl border border-border bg-card p-4 xl:hidden">
         <summary className="flex cursor-pointer items-center gap-2 font-medium">
-          <ListTree className="size-4 text-accent" aria-hidden="true" /> Neste artigo
+          <ListTree className="size-4 text-accent" aria-hidden="true" /> In this article
         </summary>
-        <nav aria-label="Sumário do artigo" className="mt-3">
+        <nav aria-label="Table of contents" className="mt-3">
           <TocList items={items} />
         </nav>
       </details>
     );
   }
 
-  // Telas largas: sumário fixo lateral com indicação da seção atual.
+  // Wide screens: sticky side table of contents highlighting the current section.
   return (
     <nav
-      aria-label="Sumário do artigo"
+      aria-label="Table of contents"
       className="sticky top-24 max-h-[calc(100dvh-8rem)] overflow-y-auto"
       data-testid="toc"
     >
       <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        <ListTree className="size-4" aria-hidden="true" /> Neste artigo
+        <ListTree className="size-4" aria-hidden="true" /> In this article
       </p>
       <TocList items={items} active={active} />
     </nav>

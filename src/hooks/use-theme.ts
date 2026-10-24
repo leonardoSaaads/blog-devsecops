@@ -31,7 +31,7 @@ function applyPreference(preference: ThemePreference): void {
   try {
     localStorage.setItem(THEME_STORAGE_KEY, preference);
   } catch {
-    // Armazenamento indisponível (modo privado/bloqueado): o tema vale só para a sessão.
+    // Storage unavailable (private/blocked mode): the theme applies to this session only.
   }
 }
 
@@ -44,7 +44,7 @@ export function useTheme(): {
   const [theme, rawPreference] = snapshot.split("|");
   const preference: ThemePreference = isThemePreference(rawPreference) ? rawPreference : "system";
 
-  // Acompanha mudanças do sistema operacional enquanto a preferência for "system".
+  // Follow operating-system changes while the preference is "system".
   useEffect(() => {
     if (preference !== "system") return;
     const media = window.matchMedia("(prefers-color-scheme: dark)");

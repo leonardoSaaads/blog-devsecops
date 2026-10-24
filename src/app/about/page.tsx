@@ -6,8 +6,8 @@ import { GithubIcon, LinkedinIcon } from "@/components/icons/brand-icons";
 import { site } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Sobre",
-  description: `Sobre ${site.author.name}: engenharia de telecomunicações, DevOps e observabilidade.`,
+  title: "About",
+  description: `About ${site.author.name}: telecommunications engineering, DevOps and observability.`,
   alternates: { canonical: "/about" },
 };
 
@@ -20,7 +20,7 @@ const SKILLS = [
   "Linux",
   "Python",
   "DWDM/OTN",
-  "Processamento de sinais",
+  "Signal processing",
   "Machine learning",
 ];
 
@@ -38,7 +38,7 @@ export default function AboutPage() {
           <div className="relative mx-auto size-48 overflow-hidden rounded-full border-4 border-accent/60 md:mx-0">
             <Image
               src="/profile-image.jpg"
-              alt={`Foto de ${site.author.name}`}
+              alt={`Photo of ${site.author.name}`}
               fill
               sizes="12rem"
               className="object-cover"
@@ -50,7 +50,7 @@ export default function AboutPage() {
           </h1>
           <p className="mt-1 text-muted-foreground">{site.author.role}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Universidade Federal do Rio Grande do Norte (UFRN)
+            Federal University of Rio Grande do Norte (UFRN), Brazil
           </p>
           <ul className="mt-5 flex gap-2">
             {links.map(({ label, href, icon: Icon }) => (
@@ -71,30 +71,30 @@ export default function AboutPage() {
         </aside>
 
         <div className="prose prose-lg max-w-none font-serif dark:prose-invert prose-headings:font-serif prose-headings:font-semibold">
-          <h2>Quem escreve</h2>
+          <h2>Who writes here</h2>
           <p>
-            Leonardo Saads Pinto é engenheiro de telecomunicações e desenvolvedor de pesquisa, com
-            foco em sistemas de observabilidade, engenharia de RF e automação de processos.
+            Leonardo Saads Pinto is a telecommunications engineer and research developer focused on
+            observability systems, RF engineering and process automation.
           </p>
           <p>
-            Contribui com iniciativas de monitoramento do espectro em âmbito nacional na ANATEL,
-            lidera operações de DevOps e NOC na MW Solutions e conduz pesquisa aplicada em machine
-            learning para sistemas ópticos coerentes.
+            Current work includes nationwide spectrum-monitoring initiatives at ANATEL (Brazil’s
+            telecommunications regulator), leading DevOps and NOC operations at MW Solutions, and
+            applied machine-learning research for coherent optical systems.
           </p>
           <p>
-            Seu repertório técnico inclui infraestrutura baseada em Docker, processamento de sinais
-            e observabilidade de ponta a ponta com Grafana, Zabbix e Prometheus. Nas horas vagas,
-            depura scripts em Python e ajuda colegas com equações diferenciais.
+            The technical toolkit spans Docker-based infrastructure, signal processing and
+            end-to-end observability with Grafana, Zabbix and Prometheus. In spare time: debugging
+            Python scripts and helping colleagues with differential equations.
           </p>
-          <h2>Sobre este blog</h2>
+          <h2>About this blog</h2>
           <p>
-            Os textos seguem as convenções de uma publicação técnica — resumo, figuras e equações
-            numeradas, notas de margem e referências no padrão ABNT — com uma diferença: as figuras
-            são interativas. Você pode simular, executar e quebrar o que está lendo sem sair do
-            artigo. Comece pelos <Link href="/blog">artigos</Link> ou pelos{" "}
-            <Link href="/tags">tópicos</Link>.
+            The articles follow the conventions of a technical publication — abstract, numbered
+            figures and equations, margin notes and IEEE-style references — with one difference: the
+            figures are interactive. You can simulate and tweak what you are reading without leaving
+            the article. Start with the <Link href="/blog">articles</Link> or the{" "}
+            <Link href="/tags">topics</Link>.
           </p>
-          <h2>Competências</h2>
+          <h2>Skills</h2>
           <ul className="not-prose flex flex-wrap gap-2">
             {SKILLS.map((skill) => (
               <li

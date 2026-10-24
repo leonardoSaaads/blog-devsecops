@@ -10,6 +10,7 @@ export function GET() {
     description: site.description,
     siteUrl: site.url,
     feedUrl: absoluteUrl("/feed.xml"),
+    language: site.locale,
     items: getAllPosts().map((post) => ({
       title: post.title,
       description: post.description,

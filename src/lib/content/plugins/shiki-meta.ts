@@ -1,12 +1,12 @@
 import type { ShikiTransformer } from "shiki";
 
-/** Extrai `title="arquivo.yml"` da meta string do bloco de código. */
+/** Extracts `title="file.yml"` from the code block meta string. */
 export function parseCodeMeta(meta: string): { title?: string } {
   const title = /title="([^"]+)"/.exec(meta)?.[1];
   return title ? { title } : {};
 }
 
-/** Expõe linguagem e título como atributos `data-*` no `<pre>`. */
+/** Exposes language and title as `data-*` attributes on the `<pre>`. */
 export const codeMetaTransformer: ShikiTransformer = {
   name: "blog:code-meta",
   pre(node) {

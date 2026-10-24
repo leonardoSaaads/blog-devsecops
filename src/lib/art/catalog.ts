@@ -9,7 +9,8 @@ export interface ArtworkRef {
   seed: string;
 }
 
-/** Artes fixas do layout (fora de artigos, áreas e projetos). */
+/** Fixed layout artworks (outside articles, areas and projects).
+ *  Seeds are stable identifiers: changing one changes the generated art. */
 export const SITE_ARTWORKS = {
   home: { motif: "eye", seed: "inicio" },
   footer: { motif: "ridgeline", seed: "rodape" },
@@ -25,7 +26,7 @@ export const projectArtwork = (name: string, motif: Motif): ArtworkRef => ({
   seed: `projeto-${name}`,
 });
 
-/** Todas as artes usadas no site — pré-geradas como SVG estático no build. */
+/** Every artwork used on the site — pre-generated as static SVG at build time. */
 export function allArtworks(): ArtworkRef[] {
   return [
     ...Object.values(SITE_ARTWORKS),

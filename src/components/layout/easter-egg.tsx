@@ -16,14 +16,14 @@ export const KONAMI_SEQUENCE = [
   "a",
 ] as const;
 
-/** Avança o estado do reconhecedor do código Konami; retorna o novo índice. */
+/** Advances the Konami code recognizer; returns the new index. */
 export function advanceSequence(progress: number, key: string): number {
   const expected = KONAMI_SEQUENCE[progress];
   if (key.toLowerCase() === expected?.toLowerCase()) return progress + 1;
   return key === KONAMI_SEQUENCE[0] ? 1 : 0;
 }
 
-/** ↑ ↑ ↓ ↓ ← → ← → B A — um outro Leonardo aparece. */
+/** ↑ ↑ ↓ ↓ ← → ← → B A — another Leonardo shows up. */
 export function EasterEgg() {
   const [visible, setVisible] = useState(false);
 
@@ -53,9 +53,9 @@ export function EasterEgg() {
       role="status"
       className="fixed bottom-6 right-6 z-50 flex max-w-xs items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-2xl"
     >
-      <Image src="/easter-egg.png" alt="Retrato de Leonardo da Vinci" width={72} height={64} />
+      <Image src="/easter-egg.png" alt="Portrait of Leonardo da Vinci" width={72} height={64} />
       <p className="text-sm">
-        <strong>Outro Leonardo</strong> aprova seu código Konami. Engenharia também é arte.
+        <strong>Another Leonardo</strong> approves your Konami code. Engineering is art, too.
       </p>
     </div>
   );

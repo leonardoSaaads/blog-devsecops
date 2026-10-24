@@ -1,0 +1,528 @@
+---
+title: "Linux Fundamentals: Permissions, Processes, Signals and the Filesystem"
+description: "What I wish someone had taught me about Linux: distributions, permissions, processes, signals and the filesystem — with interactive chmod, signal and directory-tree figures."
+date: "2025-10-03"
+updated: "2026-10-13"
+tags: ["linux", "devops", "security"]
+category: security
+art: bits
+abstract: "A conceptual Linux guide for people who run servers and containers. It explains the role of distributions and how to choose base images, the Unix permission model (octal notation, umask and least privilege), essential troubleshooting tools, the life cycle of processes and signals — including the PID 1 trap in containers — and the directory hierarchy with the /proc, /sys and /dev virtual filesystems. Interactive figures let you compute permissions, send signals to a simulated container and browse the system tree."
+keyPoints:
+  - "Permissions are the first line of defense: 777 lets any compromised account modify the file."
+  - "The umask is applied as a bitwise AND with its complement (base ∧ ¬umask), not by subtraction."
+  - "As PID 1, a process without a handler ignores SIGTERM and only dies on SIGKILL, after the docker stop grace period."
+  - "/proc, /sys and /dev are virtual filesystems: windows into the kernel that take up no disk space."
+references:
+  - id: kerrisk-tlpi
+    type: book
+    authors: ["Kerrisk, Michael"]
+    title: "The Linux Programming Interface"
+    subtitle: "a Linux and UNIX system programming handbook"
+    place: "San Francisco"
+    publisher: "No Starch Press"
+    year: 2010
+  - id: fhs
+    type: standard
+    authors: ["Linux Foundation"]
+    title: "Filesystem Hierarchy Standard"
+    edition: "3.0"
+    place: "San Francisco"
+    publisher: "The Linux Foundation"
+    year: 2015
+    url: "https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html"
+    accessed: "2026-10-13"
+  - id: man-chmod
+    type: web
+    authors: ["Linux man-pages project"]
+    title: "chmod(1): change file mode bits"
+    container: "man7.org"
+    year: 2025
+    url: "https://man7.org/linux/man-pages/man1/chmod.1.html"
+    accessed: "2026-10-13"
+  - id: man-umask
+    type: web
+    authors: ["Linux man-pages project"]
+    title: "umask(2): set file mode creation mask"
+    container: "man7.org"
+    year: 2025
+    url: "https://man7.org/linux/man-pages/man2/umask.2.html"
+    accessed: "2026-10-13"
+  - id: man-signal
+    type: web
+    authors: ["Linux man-pages project"]
+    title: "signal(7): overview of signals"
+    container: "man7.org"
+    year: 2025
+    url: "https://man7.org/linux/man-pages/man7/signal.7.html"
+    accessed: "2026-10-13"
+  - id: man-proc
+    type: web
+    authors: ["Linux man-pages project"]
+    title: "proc(5): process information, system information, and sysctl pseudo-filesystem"
+    container: "man7.org"
+    year: 2025
+    url: "https://man7.org/linux/man-pages/man5/proc.5.html"
+    accessed: "2026-10-13"
+  - id: man-random
+    type: web
+    authors: ["Linux man-pages project"]
+    title: "random(4): kernel random number source devices"
+    container: "man7.org"
+    year: 2025
+    url: "https://man7.org/linux/man-pages/man4/random.4.html"
+    accessed: "2026-10-13"
+  - id: salus-unix
+    type: book
+    authors: ["Salus, Peter H."]
+    title: "A Quarter Century of UNIX"
+    place: "Reading"
+    publisher: "Addison-Wesley"
+    year: 1994
+  - id: w3techs-linux
+    type: web
+    authors: ["W3Techs"]
+    title: "Usage statistics and market share of Linux for websites"
+    container: "W3Techs Web Technology Surveys"
+    year: 2026
+    url: "https://w3techs.com/technologies/details/os-linux"
+    accessed: "2026-10-13"
+  - id: docker-best-practices
+    type: web
+    authors: ["Docker Inc."]
+    title: "Building best practices"
+    container: "Docker Docs"
+    year: 2026
+    url: "https://docs.docker.com/build/building/best-practices/"
+    accessed: "2026-10-13"
+  - id: docker-stop
+    type: web
+    authors: ["Docker Inc."]
+    title: "docker container stop"
+    container: "Docker Docs"
+    year: 2026
+    url: "https://docs.docker.com/reference/cli/docker/container/stop/"
+    accessed: "2026-10-13"
+  - id: k8s-pod-termination
+    type: web
+    authors: ["The Kubernetes Authors"]
+    title: "Pod Lifecycle: termination of Pods"
+    container: "Kubernetes Documentation"
+    year: 2026
+    url: "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/"
+    accessed: "2026-10-13"
+  - id: werkzeug-debugger
+    type: web
+    authors: ["Pallets"]
+    title: "Debugging Applications"
+    container: "Werkzeug Documentation"
+    year: 2026
+    url: "https://werkzeug.palletsprojects.com/en/stable/debug/"
+    accessed: "2026-10-13"
+  - id: owasp-docker
+    type: web
+    authors: ["OWASP Foundation"]
+    title: "Docker Security Cheat Sheet"
+    container: "OWASP Cheat Sheet Series"
+    year: 2026
+    url: "https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html"
+    accessed: "2026-10-13"
+---
+
+<Figure src="/images/posts/linux-fundamentals/root.jpg" alt="Linux terminal showing the root user prompt" priority />
+
+## The journey of not knowing where to start
+
+When I started digging into Linux, I felt completely lost. The terminal was that intimidating black screen, full of commands that looked like a foreign language. I didn't understand what distributions were, why there were so many of them, or why everyone in tech talked about it with so much enthusiasm — or dread.
+
+Over time, patterns started to make sense. At work you end up needing a `| grep error` or a `tail -f` on a production log; you keep solving problems and, suddenly, you are dealing with servers, containers and CI/CD pipelines.
+
+But here is the truth nobody tells you: **running commands is not understanding Linux**. The gap between memorizing `ls -la` and understanding the Unix file and process model becomes brutal when you are debugging a broken container at 1:39 a.m.<Cite id="kerrisk-tlpi" />
+
+This guide is what I wish I had been handed when I started: fewer command lists, more **why** things work the way they do.
+
+## Distributions are not just different flavors
+
+### What is a distribution, anyway?
+
+**Linux is just the kernel**: the core that talks to the hardware.<Sidenote>That is why part of the community prefers the name GNU/Linux: a usable system combines the kernel with the GNU project's tools.</Sidenote> On its own, it does not deliver a usable system — it lacks a shell, libraries, a package manager and services. A **distribution** bundles the kernel with that software, default configuration and a maintenance philosophy.
+
+| Distribution | Based on | Audience | Philosophy |
+| --- | --- | --- | --- |
+| Debian | Independent | Servers, stability | Free software, long testing cycles |
+| Ubuntu | Debian | Desktop and servers | Ease of use + commercial support (LTS) |
+| Fedora / RHEL | Independent | Enterprise, innovation | RHEL for stability; Fedora as the showcase |
+| Arch | Independent | Advanced users | Rolling release, full control |
+| Mint | Ubuntu | Beginners | Friendly desktop |
+| Pop!_OS | Ubuntu | Developers | Optimized drivers and workflow |
+| Alpine | Independent | Containers | Minimal: musl + BusyBox |
+
+### Why does it matter in the real world?
+
+When you choose the base of a container image, the decision affects four dimensions:
+
+<CardGrid>
+<Card title="Size" icon="box">The `alpine` image is a few MB compressed; `ubuntu` is a few dozen MB.</Card>
+<Card title="Attack surface" icon="shield" tone="danger">Fewer packages, fewer CVEs to patch<Cite id="docker-best-practices" />.</Card>
+<Card title="Compatibility" icon="layers" tone="signal">Alpine uses the **musl** C library instead of **glibc**: prebuilt binaries (and some Python *wheels*) may not work.</Card>
+<Card title="Updates" icon="activity" tone="success">`apt`, `dnf` or `apk`: each ecosystem has its own patch cadence.</Card>
+</CardGrid>
+
+Debian and its derivatives (such as Ubuntu) are among the most used distributions on web servers according to public surveys<Cite id="w3techs-linux" />. Understanding the `apt`/`dpkg` ecosystem is not optional.
+
+### Questions you need to be able to answer
+
+1. **Which base should you use for minimal images?** Alpine or <Term def="Images that contain only the application and its runtime dependencies, with no shell or package manager.">distroless</Term>/*slim* images — the criteria are compatibility + attack surface, not just size.
+2. **How do you update packages?**
+
+<Tabs labels={["Debian/Ubuntu", "Alpine", "Fedora/RHEL"]}>
+<Tab>
+
+```bash
+sudo apt update && sudo apt upgrade
+```
+
+</Tab>
+<Tab>
+
+```bash
+apk update && apk upgrade
+```
+
+</Tab>
+<Tab>
+
+```bash
+sudo dnf upgrade --refresh
+```
+
+</Tab>
+</Tabs>
+
+3. **What is `/etc/apt/sources.list.d/`?** It is where repository definitions live. `apt update` queries those sources to discover available packages and versions — understanding this is essential for resolving dependency conflicts.
+4. **Do you need a graphical interface on the server?** No. It consumes resources and widens the attack surface.
+
+### Hands-on example: a lean, secure Dockerfile
+
+```docker title="Dockerfile"
+FROM python:3.14-alpine
+
+WORKDIR /app
+
+# Build dependencies (apk is Alpine's package manager)
+RUN apk add --no-cache gcc musl-dev linux-headers
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Never run the application as root inside the container
+RUN adduser -D -u 10001 app
+USER app
+
+EXPOSE 8000
+# Production WSGI server (Flask's development server is not meant for this)
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
+```
+
+<Callout type="security" title="Never use flask run --debug in production">
+Debug mode enables Werkzeug's interactive debugger, which allows **arbitrary code execution** on the server from the browser<Cite id="werkzeug-debugger" />. The previous version of this article used `flask run --debug` in the `CMD` — use a WSGI server (such as Gunicorn) and an unprivileged user<Cite id="owasp-docker" />.
+</Callout>
+
+## Permissions are not just chmod 777
+
+### The mistake every beginner makes
+
+One of the classic mistakes — one I made and still see **all the time** — is treating permissions as a detail: "just `chmod 777` it and it works". In DevSecOps, the Unix permission model is the **first line of defense**.
+
+### Reading the output of ls -l
+
+```text
+-rw-r----- 1 root root 696969 Oct 24 2024 file.pdf
+│└┬┘└┬┘└┬┘   │    │     │      │            └ name
+│ │  │  │    │    │     │      └ modification date
+│ │  │  │    │    │     └ size in bytes
+│ │  │  │    │    └ owning group
+│ │  │  │    └ owning user
+│ │  │  └ others: no permissions
+│ │  └ group: read
+│ └ owner (user): read and write
+└ type: - file, d directory, l symbolic link, b/c devices
+```
+
+Each triad is made of **r** (read = 4), **w** (write = 2) and **x** (execute = 1). Adding up each triad gives the octal form: `rwx` = 7, `r-x` = 5, `r--` = 4. So `chmod 750 file` means owner `rwx`, group `r-x` and no access for others<Cite id="man-chmod" />.
+
+Try it in the next figure: tick the boxes, type an octal mode or use the shortcuts. Watch the security warnings.
+
+<PermissionLab fileName="deploy.sh" />
+
+### Core security principles
+
+**1. Least privilege.** Every user or process gets exactly what it needs — no more, no less.
+
+```bash
+# Wrong: any local account can modify the site
+chmod -R 777 /var/www/html
+
+# Right: the owner manages it; the web server (group) only reads
+chown -R deploy:www-data /var/www/html
+find /var/www/html -type d -exec chmod 750 {} +
+find /var/www/html -type f -exec chmod 640 {} +
+```
+
+**2. Separation of duties.** Whoever runs it does not need to modify it:
+
+```bash
+chown deploy:developers deploy.sh
+chmod 750 deploy.sh   # the group can run it, but not change it
+```
+
+**3. Avoid 777 like the plague.** It lets *any* compromised account modify the file. A real-world scenario:
+
+1. An attacker gains SSH access with a regular user.
+2. They find `deploy.sh` with mode 777 and inject a cryptocurrency miner.
+3. On the next automated deploy — run with elevated privileges — the malicious code executes.
+
+### Essential commands
+
+```bash
+ls -l file.txt                     # view permissions
+chmod 640 file.txt                 # numeric form
+chmod u=rw,g=r,o= file.txt         # symbolic form
+chown user:group file.txt          # owner and group
+chgrp developers file.txt          # group only
+umask                              # current mask
+
+# Audit: files writable by "others" (world-writable)
+find / -xdev -type f -perm -o+w 2>/dev/null
+```
+
+### umask: the setting nobody explains properly
+
+The `umask` defines which bits will **not** be granted to newly created files and directories. Files start from `666` and directories from `777`; the result is computed with a bitwise operation — **a logical AND with the mask's complement** — not by subtraction<Cite id="man-umask" />:<Sidenote>In C, the same operation is written `mode = base & ~umask`.</Sidenote>
+
+$$
+\text{permission} = \text{base} \;\land\; \lnot\,\text{umask}
+$$
+
+With `umask 022`, both methods agree (`666 → 644`, `777 → 755`), which hides the detail. With `umask 033`, subtraction would give `633`, but the real result is `644`: the execute bit the mask would remove never existed in the base. Try different values in the interactive figure above.
+
+```bash
+umask 077   # files 600, directories 700: everything private by default
+```
+
+## Commands I wish someone had taught me
+
+### find — auditing and troubleshooting
+
+```bash
+find /var/log/nginx -name "*.log"                 # by name
+find /var/www -type f -perm -o+w                  # world-writable (audit)
+find /etc -type f -mtime -1                       # changed in the last 24 h
+find /var -xdev -type f -size +100M               # large files
+find /home -user alice -type f                    # by owner
+find /tmp -type f -name "*.tmp" -mtime +7 -delete # cleanup
+find /var/www -type f -name "*.php" -exec chmod 640 {} +
+```
+
+**Real-world scenario**, disk full at 2 a.m.:
+
+```bash
+du -xh / 2>/dev/null | sort -rh | head -20   # where did the space go?
+docker system df                              # how much does Docker use?
+```
+
+### grep — log analysis
+
+```bash
+grep -i "error" /var/log/syslog           # case-insensitive
+grep -C 5 "Exception" /var/log/app.log    # 5 lines of context
+grep -c " 404 " /var/log/nginx/access.log # count matches
+grep -v "DEBUG" /var/log/app.log          # invert the filter
+grep -E "error|fail|critical" /var/log/syslog
+```
+
+An analysis pipeline — note that **comments cannot follow the backslash** used for line continuation (a mistake in the previous version of this article):
+
+```bash
+# Filter errors, drop known noise, extract date and message, and rank them
+grep -i "error" /var/log/app.log \
+  | grep -v "DeprecationWarning" \
+  | awk '{print $1, $2, $NF}' \
+  | sort | uniq -c | sort -rn | head -20
+```
+
+### tail and journalctl — real-time monitoring
+
+```bash
+tail -n 50 file.log
+tail -f /var/log/syslog          # follow
+tail -F /var/log/app.log         # follow even if the file is recreated
+journalctl -u nginx -f           # services managed by systemd
+journalctl -p err --since "1 hour ago"
+```
+
+### ps, top and htop — processes
+
+```bash
+ps aux --sort=-%cpu | head -20   # top CPU consumers
+ps aux --sort=-%mem | head -20   # top memory consumers
+ps -ef --forest                  # parent → child tree
+```
+
+Important columns: `PID`, `%CPU`, `%MEM`, `RSS` (actual physical memory) and `STAT` (S = sleeping, R = running, Z = zombie, D = uninterruptible wait, usually I/O).
+
+### ss — network connections
+
+```bash
+ss -tuln          # listening TCP/UDP ports
+sudo ss -tulnp    # ...with the owning process (requires root)
+ss -tn state established '( dport = :5432 )'
+```
+
+**Real-world scenario**: the application cannot reach the database.
+
+```bash
+sudo ss -tulnp | grep 5432          # is PostgreSQL listening?
+nc -zv localhost 5432               # does the port answer? (replaces telnet)
+sudo nft list ruleset               # firewall rules (nftables)
+```
+
+## Processes and signals
+
+<Definition term="Signal">
+An asynchronous notification that the kernel or another process sends to a process. Each signal has a default action (terminate, ignore, stop), which the process can replace with a handler — except SIGKILL and SIGSTOP<Cite id="man-signal" />.
+</Definition>
+
+- **SIGTERM (15)** — a polite termination request. The process can save state and close connections. **Always try it first.**
+- **SIGKILL (9)** — immediate termination by the kernel; it cannot be caught or ignored. In-memory data is lost.
+- **SIGHUP (1)** — originally "terminal hung up"; today many daemons (nginx, for example) use it to **reload configuration**.
+- **SIGSTOP / SIGCONT (19 / 18 on x86)** — pause and resume; SIGSTOP cannot be caught either.
+
+```bash
+kill -l              # list signals
+kill 1234            # SIGTERM (default)
+kill -HUP 1234       # reload configuration
+kill -9 1234         # last resort
+```
+
+### Containers and signals
+
+`docker stop` sends SIGTERM to the main process (PID 1), waits for the grace period (10 s by default) and then sends SIGKILL<Cite id="docker-stop" />. Kubernetes behaves the same way, controlled by `terminationGracePeriodSeconds`<Cite id="k8s-pod-termination" />.
+
+<Callout type="warning" title="The PID 1 trap">
+Inside a container, the PID 1 process **does not get the kernel's default signal actions**: if the application does not handle SIGTERM explicitly, it simply ignores the signal and only dies on SIGKILL. Use the *exec* form of `CMD` (a JSON array, no intermediate shell) and, if needed, a minimal init such as `docker run --init`.
+</Callout>
+
+The next figure reproduces the most common combinations. Start with the *shell* form with a signal handler: even with correct code, `sh -c` does not forward SIGTERM, and the container takes the full 10 seconds to die.
+
+<SignalSimulator />
+
+An application that handles the signal correctly:
+
+```python title="app.py"
+import signal
+import sys
+import time
+
+def shutdown(sig, frame):
+    print("Shutting down gracefully…")
+    # save state, close connections, etc.
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, shutdown)
+signal.signal(signal.SIGINT, shutdown)
+
+while True:
+    print("Working…")
+    time.sleep(1)
+```
+
+On Kubernetes, combine signal handling with a `preStop` hook to drain connections:
+
+```yaml
+spec:
+  terminationGracePeriodSeconds: 30
+  containers:
+    - name: app
+      lifecycle:
+        preStop:
+          exec:
+            command: ["/bin/sh", "-c", "sleep 10"]
+```
+
+## Filesystem: everything is a file
+
+In Unix, devices, processes and even kernel information are exposed as files. That abstraction is what lets you debug without magic tools: want to know what a process is doing? Read `/proc/PID/`<Cite id="man-proc" />.
+
+### There is no C: or D:
+
+There is **a single tree**, starting at `/`, organized by the *Filesystem Hierarchy Standard*<Cite id="fhs" />.<Sidenote>On current distributions, /bin, /sbin and /lib are links to their /usr counterparts — the so-called *usr-merge*.</Sidenote> Browse it and notice each directory's purpose and the security concerns that come with it:
+
+<FilesystemExplorer />
+
+### /proc: a window into the kernel
+
+```bash
+cat /proc/cpuinfo /proc/meminfo /proc/uptime
+PID=$$                                   # the shell itself
+ls -l /proc/$PID/cwd /proc/$PID/exe      # working directory and executable
+ls -l /proc/$PID/fd/                     # open descriptors
+tr '\0' '\n' < /proc/$PID/environ        # environment variables
+grep -E 'VmRSS|Threads' /proc/$PID/status
+```
+
+### /dev: devices as files
+
+```bash
+command 2>/dev/null                          # discard errors
+dd if=/dev/zero of=test.bin bs=1M count=100  # 100 MB file
+head -c 32 /dev/urandom | base64             # random secret
+clear                                        # clear the terminal
+```
+
+<Callout type="info" title="/dev/random vs. /dev/urandom">
+The idea that `/dev/urandom` is "less random" is an old myth. On modern kernels (5.6+), both are served by the same <Term def="Cryptographically Secure Pseudo-Random Number Generator: a generator whose output is unpredictable even to someone who knows its previous outputs.">CSPRNG</Term>; `/dev/random` only blocks before the generator is initialized at boot<Cite id="man-random" />. For keys and tokens, `/dev/urandom` (or `getrandom(2)`) is the right choice.
+</Callout>
+
+## Pipes and redirection: the Unix superpower
+
+The Unix philosophy, as summarized by Doug McIlroy<Cite id="salus-unix" />:
+
+<PullQuote cite="Doug McIlroy">Write programs that do one thing and do it well. Write programs to work together. Write programs to handle text streams, because that is a universal interface.</PullQuote>
+
+```bash
+echo "test" > file.txt            # overwrite
+echo "more" >> file.txt           # append
+sort < list.txt                   # input from a file
+command 2> errors.log             # stderr only
+command > all.log 2>&1            # stdout + stderr
+command &> all.log                # equivalent (bash)
+```
+
+Top 10 IPs sending the most POST requests to nginx:
+
+```bash
+grep '"POST' /var/log/nginx/access.log \
+  | awk '{print $1}' \
+  | sort | uniq -c | sort -rn | head -10
+```
+
+## What really matters
+
+1. **Everything has a security context**: who owns it, who can access it and what can be done with it.
+2. **Logs are structured events**: timestamp, severity and context — knowing how to extract them is critical.
+3. **The system is composable**: pipes and redirection solve most day-to-day problems.
+4. **Immutability is security**: *read-only* containers, versioned configuration (GitOps), SELinux/AppArmor.
+5. **Think in layers**: application → runtime → userspace → kernel → hardware. Knowing where to look saves hours.
+
+<Quiz
+  question="With umask 033, what mode will a newly created file get?"
+  options={["633", "644", "744", "600"]}
+  answer={1}
+  explanation="The umask is applied as a logical AND with its complement: 666 AND NOT 033 = 644. Subtraction (633) is a common mistake: the execute bit the mask removes did not exist in the 666 base."
+/>
+
+## Conclusion
+
+The difference between a junior and a senior engineer is not how many commands they have memorized, but understanding **why** things work, knowing **where** to look when something breaks and knowing the architecture under the hood. Linux is not hard — it is **different**. Spin up a VM, break things on purpose and fix them. That is how you learn.
