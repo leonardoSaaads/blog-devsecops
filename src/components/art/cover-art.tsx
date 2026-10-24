@@ -1,10 +1,10 @@
 import type { ArtworkRef } from "@/lib/art/catalog";
 import { artUrl } from "@/lib/art/url";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 /**
- * Capa/ilustração do site como imagem SVG estática: fica fora do HTML e do payload
- * do React (nada a hidratar), é baixada sob demanda e reaproveitada pelo cache.
+ * Site cover/illustration as a static SVG image: it stays out of the HTML and the React
+ * payload (nothing to hydrate), loads on demand and is reused from cache.
  */
 export function CoverArt({
   motif,
@@ -14,7 +14,7 @@ export function CoverArt({
   className,
 }: ArtworkRef & { alt?: string; priority?: boolean; className?: string }) {
   return (
-    // next/image não otimiza SVG (nem precisa): o arquivo já é vetorial e pequeno.
+    // next/image does not optimize SVG (nor does it need to): the file is vector and small.
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={artUrl(motif, seed)}

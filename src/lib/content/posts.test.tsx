@@ -8,28 +8,28 @@ import { POSTS_DIRECTORY, getAdjacentPosts, getAllPosts, getAllTags, getPostBySl
 const files = fs.readdirSync(POSTS_DIRECTORY).filter((file) => file.endsWith(".mdx"));
 const posts = files.map((file) => parsePostFile(file, fs.readFileSync(path.join(POSTS_DIRECTORY, file), "utf8")));
 
-/** Corpo sem blocos de código (exemplos de sintaxe não contam como citações). */
+/** Body without code blocks (syntax examples do not count as citations). */
 const withoutCode = (body: string) => body.replace(/```[\s\S]*?```/g, "");
 
-describe("conteúdo dos artigos", () => {
-  it("todos os artigos têm frontmatter válido e referências", () => {
-    expect(posts.length).toBeGreaterThanOrEqual(8);
+describe("article content", () => {
+  it("every article has valid frontmatter and references", () => {
+    expect(posts.length).toBeGreaterThanOrEqual(2);
     for (const post of posts) {
       expect(post.references.length, post.slug).toBeGreaterThan(0);
       expect(post.readingMinutes).toBeGreaterThan(0);
     }
   });
 
-  it("toda citação <Cite> aponta para uma referência existente e toda referência é citada", () => {
+  it("every <Cite> points to an existing reference and every reference is cited", () => {
     for (const post of posts) {
       const ids = new Set(post.references.map((ref) => ref.id));
       const cited = [...withoutCode(post.body).matchAll(/<Cite id="([^"]+)"/g)].flatMap((match) => match[1]!.split(",").map((id) => id.trim()));
-      for (const id of cited) expect(ids.has(id), `${post.slug}: citação órfã ${id}`).toBe(true);
-      for (const id of ids) expect(cited.includes(id), `${post.slug}: referência nunca citada ${id}`).toBe(true);
+      for (const id of cited) expect(ids.has(id), `${post.slug}: orphan citation ${id}`).toBe(true);
+      for (const id of ids) expect(cited.includes(id), `${post.slug}: reference never cited ${id}`).toBe(true);
     }
   });
 
-  it("imagens locais referenciadas existem em public/", () => {
+  it("referenced local images exist in public/", () => {
     for (const post of posts) {
       for (const [, src] of post.body.matchAll(/src="(\/[^"]+)"/g)) {
         expect(fs.existsSync(path.join(process.cwd(), "public", src!)), `${post.slug}: ${src}`).toBe(true);
@@ -37,7 +37,7 @@ describe("conteúdo dos artigos", () => {
     }
   });
 
-  it("links internos para artigos apontam para slugs existentes", () => {
+  it("internal article links point to existing slugs", () => {
     const slugs = new Set(posts.map((post) => post.slug));
     for (const post of posts) {
       for (const [, slug] of post.body.matchAll(/\]\(\/blog\/([^)#]+)\)/g)) {
@@ -46,46 +46,47 @@ describe("conteúdo dos artigos", () => {
     }
   });
 
-  it.each(posts.map((post) => [post.slug, post] as const))("compila e renderiza %s", async (_slug, post) => {
+  it.each(posts.map((post) => [post.slug, post] as const))("compiles and renders %s", async (_slug, post) => {
     const { Content, toc } = await renderMdx(post.body);
     const html = renderToStaticMarkup(<Content components={getMdxComponents(post.references)} />);
     expect(html.length).toBeGreaterThan(2000);
     expect(toc.length).toBeGreaterThan(1);
     expect(new Set(toc.map((item) => item.id)).size).toBe(toc.length);
-    // Nenhum bloco de código deve cair em linguagem desconhecida sem realce
+    // No code block may fall back to an unknown language without highlighting
     expect(html).not.toContain("undefined");
   }, 60_000);
 });
 
-describe("consultas de artigos", () => {
-  it("ordena do mais recente para o mais antigo", () => {
+describe("article queries", () => {
+  it("sorts from newest to oldest", () => {
     const dates = getAllPosts().map((post) => post.date);
     expect([...dates].sort().reverse()).toEqual(dates);
   });
 
-  it("busca por slug apenas na lista carregada (sem path traversal)", () => {
+  it("looks up slugs only in the loaded list (no path traversal)", () => {
     expect(getPostBySlug("../../package")).toBeUndefined();
-    expect(getPostBySlug("comandos-linux")?.title).toContain("Linux");
+    expect(getPostBySlug("linux-fundamentals")?.title).toContain("Linux");
+    expect(getPostBySlug("dwdm-introduction")?.title).toContain("DWDM");
   });
 
-  it("agrega tags e relaciona artigos", () => {
+  it("aggregates tags and relates articles", () => {
     const tags = getAllTags();
-    expect(tags.find((tag) => tag.tag === "devops")?.count).toBeGreaterThan(2);
-    const related = getRelatedPosts("cloudflared-tunnel-tutorail");
-    expect(related.length).toBeGreaterThan(0);
-    expect(related.some((post) => post.slug === "cloudflared-tunnel-tutorail")).toBe(false);
+    expect(tags.find((tag) => tag.tag === "linux")?.count).toBeGreaterThanOrEqual(1);
+    const current = getPostBySlug("linux-fundamentals")!;
+    for (const post of getRelatedPosts(current.slug)) {
+      expect(post.slug).not.toBe(current.slug);
+      expect(post.tags.some((tag) => current.tags.includes(tag))).toBe(true);
+    }
   });
 
-  it("calcula artigos adjacentes", () => {
+  it("computes adjacent articles", () => {
     const all = getAllPosts();
-    const middle = all[2]!;
-    const { newer, older } = getAdjacentPosts(middle.slug);
-    expect(newer?.slug).toBe(all[1]!.slug);
-    expect(older?.slug).toBe(all[3]!.slug);
+    expect(getAdjacentPosts(all[0]!.slug)).toMatchObject({ newer: undefined, older: all[1] });
+    expect(getAdjacentPosts(all[1]!.slug).newer?.slug).toBe(all[0]!.slug);
   });
 
-  it("rejeita frontmatter inválido com mensagem útil", () => {
-    expect(() => parsePostFile("x.mdx", "---\ntitle: 'Oi'\n---\ncorpo")).toThrow(/Frontmatter inválido em content\/posts\/x\.mdx/);
-    expect(() => parsePostFile("Slug Inválido.mdx", "---\n---\n")).toThrow(/Slug inválido/);
+  it("rejects invalid frontmatter with a helpful message", () => {
+    expect(() => parsePostFile("x.mdx", "---\ntitle: 'Hi'\n---\nbody")).toThrow(/Invalid frontmatter in content\/posts\/x\.mdx/);
+    expect(() => parsePostFile("Invalid Slug.mdx", "---\n---\n")).toThrow(/Invalid slug/);
   });
 });

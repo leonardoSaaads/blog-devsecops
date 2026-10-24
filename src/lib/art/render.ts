@@ -28,7 +28,7 @@ function shapeToString(shape: Shape): string {
 
 const n = (value: number) => Number(value.toFixed(1));
 
-/** Forma convertível em dados de path (para agrupar várias em um único elemento). */
+/** A shape that can be converted to path data (to merge several into a single element). */
 function asPathData(shape: Shape): string | null {
   if (shape.kind === "path") return shape.d;
   if (shape.kind === "rect" && !shape.stroke) {
@@ -55,13 +55,13 @@ const paintKey = (shape: Shape) =>
   ].join("|");
 
 /**
- * Serializa as formas agrupando as consecutivas de mesma pintura em um só <path>:
- * centenas de elementos viram poucos, e o arquivo encolhe várias vezes.
+ * Serializes shapes, merging consecutive ones with the same paint into a single <path>:
+ * hundreds of elements become a handful, and the file shrinks several times over.
  */
 function shapesToString(shapes: readonly Shape[]): string {
   let out = "";
   type Run = { key: string; shape: Shape; d: string[] };
-  // Cast evita que o TS estreite para `null` (a variável também muda dentro de `flush`).
+  // The cast stops TS from narrowing to `null` (the variable also changes inside `flush`).
   let run = null as Run | null;
   const flush = () => {
     if (!run) return;
@@ -91,7 +91,7 @@ function shapesToString(shapes: readonly Shape[]): string {
   return out;
 }
 
-/** SVG autônomo (sem CSS externo) — servido em /art e usado nas imagens Open Graph. */
+/** Standalone SVG (no external CSS) — served under /art and used in Open Graph images. */
 export function artworkToSvg(art: Artwork): string {
   const [top, bottom] = art.background;
   const glow = art.glow

@@ -4,23 +4,16 @@ import type { Route } from "next";
 import Link from "next/link";
 import type { ComponentProps } from "react";
 import {
-  ArtExplorer,
-  CodePlayground,
-  ComplexityChart,
   ConstellationViewer,
   DwdmGridCalculator,
   Fiber3D,
   FiberBandsChart,
   FilesystemExplorer,
   FlowDiagram,
-  K8sSimulator,
-  MibExplorer,
   OsnrCalculator,
   OtnHierarchy,
   PermissionLab,
-  PortExposure,
   QBerCalculator,
-  RateExplainer,
   SignalSimulator,
 } from "@/components/figures/lazy";
 import type { Reference } from "@/lib/content/schema";
@@ -56,7 +49,7 @@ function SmartLink({ href = "", children, ...props }: ComponentProps<"a">) {
       {children}
       <ExternalLink
         className="ml-0.5 inline size-3 align-baseline opacity-60"
-        aria-label="(abre em nova aba)"
+        aria-label="(opens in a new tab)"
         role="img"
       />
     </a>
@@ -71,7 +64,7 @@ const baseComponents = {
   a: SmartLink,
   pre: CodeBlock,
   img: MdxImage,
-  // Estrutura acadêmica
+  // Academic structure
   Callout,
   Card,
   CardGrid,
@@ -84,30 +77,23 @@ const baseComponents = {
   Tabs,
   Term,
   Video,
-  // Figuras interativas
-  ArtExplorer,
-  CodePlayground,
-  ComplexityChart,
+  // Interactive figures
   ConstellationViewer,
   DwdmGridCalculator,
   Fiber3D,
   FiberBandsChart,
   FilesystemExplorer,
   FlowDiagram,
-  K8sSimulator,
-  MibExplorer,
   OsnrCalculator,
   OtnHierarchy,
   PermissionLab,
-  PortExposure,
   QBerCalculator,
-  RateExplainer,
   SignalSimulator,
 } satisfies MDXComponents;
 
 export const MDX_COMPONENT_NAMES = Object.keys(baseComponents);
 
-/** Componentes disponíveis nos artigos; `Cite` é vinculado às referências do próprio artigo. */
+/** Components available in articles; `Cite` is bound to the article's own references. */
 export function getMdxComponents(references: Reference[]): MDXComponents {
   return { ...baseComponents, Cite: createCite(references) } as MDXComponents;
 }

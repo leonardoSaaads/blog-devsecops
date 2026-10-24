@@ -1,16 +1,16 @@
-# Dependabot: uma única atualização a cada 6 meses.
+# Dependabot: a single update every 6 months.
 #
-# - Um só pull request (e uma só branch) com TODAS as dependências — npm e GitHub
-#   Actions juntas —, graças ao grupo multiecossistema "dependencias".
-# - Execução semestral (`semiannually`); nada roda entre uma janela e outra.
-# - Alertas de segurança (Dependabot security updates) continuam independentes deste
-#   agendamento: correções de vulnerabilidade chegam assim que publicadas.
+# - One pull request (and one branch) with ALL dependencies — npm and GitHub
+#   Actions together — thanks to the "dependencies" multi-ecosystem group.
+# - Runs semiannually (`semiannually`); nothing runs between windows.
+# - Security alerts (Dependabot security updates) stay independent of this
+#   schedule: vulnerability fixes arrive as soon as they are published.
 #
-# Referência: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
+# Reference: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
 version: 2
 
 multi-ecosystem-groups:
-  dependencias:
+  dependencies:
     schedule:
       interval: semiannually
     labels: ["dependencies"]
@@ -18,19 +18,19 @@ multi-ecosystem-groups:
 updates:
   - package-ecosystem: npm
     directory: /
-    multi-ecosystem-group: dependencias
+    multi-ecosystem-group: dependencies
     patterns: ["*"]
     ignore:
-      # TypeScript 7 (compilador nativo): o typescript-eslint ainda não suporta a versão
-      # 7.0 (o suporte está previsto para 7.1+). Atualize manualmente quando houver.
+      # TypeScript 7 (native compiler): typescript-eslint does not support 7.0 yet
+      # (support is planned for 7.1+). Upgrade manually once it does.
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
-      # @types/node acompanha a versão do Node em produção (.nvmrc = 24 LTS). Atualize
-      # o major junto com o .nvmrc, nunca isoladamente.
+      # @types/node tracks the production Node version (.nvmrc = 24 LTS). Bump the
+      # major together with .nvmrc, never on its own.
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
-    multi-ecosystem-group: dependencias
+    multi-ecosystem-group: dependencies
     patterns: ["*"]

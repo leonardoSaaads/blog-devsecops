@@ -97,8 +97,8 @@ export function ConstellationViewer() {
 
   return (
     <InteractiveFigure
-      title="Constelações coerentes sob ruído"
-      description="Simulação de símbolos com ruído gaussiano (AWGN) por polarização. Pontos em vermelho foram decididos errado pelo receptor."
+      title="Coherent constellations under noise"
+      description="Symbol simulation with Gaussian noise (AWGN) per polarization. Red points were decided incorrectly by the receiver."
       testId="constellation-viewer"
       actions={
         <button
@@ -106,7 +106,7 @@ export function ConstellationViewer() {
           className={controlButton}
           onClick={() => setSeed((value) => value + 1)}
         >
-          <Shuffle className="size-4" aria-hidden="true" /> Novas amostras
+          <Shuffle className="size-4" aria-hidden="true" /> New samples
         </button>
       }
     >
@@ -116,10 +116,10 @@ export function ConstellationViewer() {
           style={{ width: SIZE, height: SIZE }}
           className="mx-auto max-w-full rounded-xl border border-border bg-background"
           role="img"
-          aria-label={`Constelação ${modulation} com SNR de ${snrDb.toFixed(1)} dB: ${simulation.symbolErrors} erros em ${SYMBOLS} símbolos`}
+          aria-label={`${modulation} constellation at an SNR of ${snrDb.toFixed(1)} dB: ${simulation.symbolErrors} errors in ${SYMBOLS} symbols`}
         />
         <div className="space-y-4">
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Formato de modulação">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Modulation format">
             {MODULATIONS.map((value) => (
               <button
                 key={value}
@@ -133,7 +133,7 @@ export function ConstellationViewer() {
             ))}
           </div>
           <RangeField
-            label="OSNR (0,1 nm)"
+            label="OSNR (0.1 nm)"
             value={osnr}
             min={6}
             max={36}
@@ -142,7 +142,7 @@ export function ConstellationViewer() {
             onChange={setOsnr}
             testId="constellation-osnr"
           />
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Taxa de símbolos">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Symbol rate">
             {SYMBOL_RATES.map((rate) => (
               <button
                 key={rate}
@@ -157,24 +157,24 @@ export function ConstellationViewer() {
           </div>
           <dl className="grid grid-cols-2 gap-3">
             <Stat
-              label="SNR por símbolo"
+              label="SNR per symbol"
               value={`${snrDb.toFixed(1)} dB`}
               hint="SNR = OSNR·B_ref/R_s"
             />
             <Stat
-              label="Taxa bruta"
+              label="Gross bit rate"
               value={`${grossRate} Gb/s`}
               hint={`2 pol. × ${bitsPerSymbol(modulation)} bit × ${symbolRate} GBd`}
             />
             <Stat
-              label="SER simulada"
+              label="Simulated SER"
               value={<span data-testid="ser-simulated">{formatProbability(simulation.ser)}</span>}
               tone={simulation.ser > 1e-2 ? "danger" : "success"}
             />
             <Stat
-              label="SER teórica"
+              label="Theoretical SER"
               value={formatProbability(theory)}
-              hint={`${MODULATION_ORDER[modulation]} pontos`}
+              hint={`${MODULATION_ORDER[modulation]} points`}
             />
           </dl>
         </div>

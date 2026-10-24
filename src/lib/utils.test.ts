@@ -1,84 +1,86 @@
 import { parseFrontmatter } from "@/lib/content/frontmatter";
 import { estimateReadingMinutes } from "@/lib/content/reading-time";
-import { buildRssFeed, escapeXml } from "@/lib/feed";
-import { cn, formatDate, formatShortDate } from "@/lib/format";
-import { normalize, searchEntries, type SearchEntry } from "@/lib/search";
-import { serializeJsonLd } from "@/lib/structured-data";
+import { buildRssFeed, escapeXml } from "@/lib/seo/feed";
+import { formatDate, formatReadingTime, formatShortDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { normalize, searchEntries, type SearchEntry } from "@/lib/search/query";
+import { serializeJsonLd } from "@/lib/seo/structured-data";
 import { nextPreference, resolveTheme, themeInitScript } from "@/lib/theme";
 
 describe("frontmatter", () => {
-  it("separa YAML e corpo sem converter datas", () => {
-    const { data, body } = parseFrontmatter('---\ntitle: "Oi"\ndate: 2025-10-03\n---\n# Corpo');
-    expect(data).toEqual({ title: "Oi", date: "2025-10-03" });
-    expect(body).toBe("# Corpo");
+  it("splits YAML and body without converting dates", () => {
+    const { data, body } = parseFrontmatter('---\ntitle: "Hi"\ndate: 2025-10-03\n---\n# Body');
+    expect(data).toEqual({ title: "Hi", date: "2025-10-03" });
+    expect(body).toBe("# Body");
   });
 
-  it("rejeita chaves duplicadas", () => {
+  it("rejects duplicate keys", () => {
     expect(() => parseFrontmatter("---\na: 1\na: 2\n---\n")).toThrow();
   });
 
-  it("documento sem frontmatter", () => {
-    expect(parseFrontmatter("texto")).toEqual({ data: {}, body: "texto" });
+  it("document without frontmatter", () => {
+    expect(parseFrontmatter("text")).toEqual({ data: {}, body: "text" });
   });
 });
 
-describe("tempo de leitura", () => {
-  it("considera prosa e código separadamente", () => {
-    expect(estimateReadingMinutes("palavra ".repeat(440))).toBe(2);
-    const code = "```bash\n" + "echo oi\n".repeat(80) + "```";
+describe("reading time", () => {
+  it("counts prose and code separately", () => {
+    expect(estimateReadingMinutes("word ".repeat(440))).toBe(2);
+    const code = "```bash\n" + "echo hi\n".repeat(80) + "```";
     expect(estimateReadingMinutes(code)).toBe(2);
     expect(estimateReadingMinutes("")).toBe(1);
   });
 });
 
-describe("formatação", () => {
-  it("datas ISO não sofrem deslocamento de fuso (bug da versão anterior)", () => {
-    expect(formatDate("2025-10-03")).toBe("3 de outubro de 2025");
-    expect(formatShortDate("2026-02-01")).toMatch(/^01 de fev/);
+describe("formatting", () => {
+  it("ISO dates do not shift with the time zone (bug in the previous version)", () => {
+    expect(formatDate("2025-10-03")).toBe("October 3, 2025");
+    expect(formatShortDate("2026-02-01")).toBe("Feb 1, 2026");
+    expect(formatReadingTime(7)).toBe("7 min read");
   });
 
-  it("cn ignora valores falsos", () => {
+  it("cn ignores falsy values", () => {
     expect(cn("a", false, undefined, "b")).toBe("a b");
   });
 });
 
-describe("busca", () => {
+describe("search", () => {
   const entries: SearchEntry[] = [
     {
       kind: "post",
-      title: "Aprendendo Kubernetes",
-      description: "Pods e Services",
+      title: "Learning Kubernetes",
+      description: "Pods and Services",
       href: "/blog/k8s",
       keywords: ["kubernetes"],
     },
     {
       kind: "post",
-      title: "DWDM coerente",
-      description: "Transmissão óptica",
+      title: "Coherent DWDM",
+      description: "Optical transmission",
       href: "/blog/dwdm",
-      keywords: ["optica"],
+      keywords: ["optics"],
     },
     {
       kind: "tag",
       title: "#homelab",
-      description: "2 artigos",
+      description: "2 articles",
       href: "/tags/homelab",
       keywords: ["homelab"],
     },
   ];
 
-  it("em empate, artigos vêm antes de tags", () => {
+  it("on a tie, articles come before tags", () => {
     const tied: SearchEntry[] = [
       {
         kind: "tag",
         title: "#kubernetes",
-        description: "1 artigo",
+        description: "1 article",
         href: "/tags/kubernetes",
         keywords: ["kubernetes"],
       },
       {
         kind: "post",
-        title: "Aprendendo Kubernetes",
+        title: "Learning Kubernetes",
         description: "Pods",
         href: "/blog/k8s",
         keywords: ["kubernetes"],
@@ -87,27 +89,27 @@ describe("busca", () => {
     expect(searchEntries(tied, "kubernetes")[0]?.href).toBe("/blog/k8s");
   });
 
-  it("normaliza acentos e caixa", () => {
-    expect(normalize("Óptica ÇÃO")).toBe("optica cao");
+  it("normalizes accents and case", () => {
+    expect(normalize("Café ÇÃO")).toBe("cafe cao");
   });
 
-  it("exige todos os termos e prioriza o título", () => {
-    expect(searchEntries(entries, "optica").map((e) => e.href)).toEqual(["/blog/dwdm"]);
+  it("requires every term and ranks the title first", () => {
+    expect(searchEntries(entries, "optical").map((e) => e.href)).toEqual(["/blog/dwdm"]);
     expect(searchEntries(entries, "kubernetes pods")[0]?.href).toBe("/blog/k8s");
-    expect(searchEntries(entries, "kubernetes inexistente")).toHaveLength(0);
+    expect(searchEntries(entries, "kubernetes missing")).toHaveLength(0);
     expect(searchEntries(entries, "  ")).toHaveLength(3);
   });
 });
 
-describe("tema", () => {
-  it("resolve preferências e alterna em ciclo", () => {
+describe("theme", () => {
+  it("resolves preferences and cycles through them", () => {
     expect(resolveTheme("system", true)).toBe("dark");
     expect(resolveTheme("light", true)).toBe("light");
     expect(nextPreference("system")).toBe("light");
     expect(nextPreference("dark")).toBe("system");
   });
 
-  it("script inicial aplica o tema antes da pintura", () => {
+  it("the init script applies the theme before first paint", () => {
     const documentElement = { dataset: {} as Record<string, string> };
     const sandbox = {
       localStorage: { getItem: () => "dark" },
@@ -123,17 +125,18 @@ describe("tema", () => {
   });
 });
 
-describe("RSS e JSON-LD", () => {
-  it("escapa XML", () => {
+describe("RSS and JSON-LD", () => {
+  it("escapes XML", () => {
     expect(escapeXml(`<a href="x">&'</a>`)).toBe(
       "&lt;a href=&quot;x&quot;&gt;&amp;&apos;&lt;/a&gt;",
     );
   });
 
-  it("gera feed válido", () => {
+  it("generates a valid feed", () => {
     const xml = buildRssFeed({
       title: "Blog",
       description: "D",
+      language: "en-US",
       siteUrl: "https://ex.com",
       feedUrl: "https://ex.com/feed.xml",
       items: [
@@ -149,9 +152,10 @@ describe("RSS e JSON-LD", () => {
     expect(xml).toContain("<title>A &amp; B</title>");
     expect(xml).toContain("<pubDate>Fri, 02 Jan 2026 12:00:00 GMT</pubDate>");
     expect(xml).toContain("<category>t</category>");
+    expect(xml).toContain("<language>en-US</language>");
   });
 
-  it("JSON-LD não permite fechar a tag <script>", () => {
+  it("JSON-LD cannot close the <script> tag", () => {
     expect(serializeJsonLd({ x: "</script><script>alert(1)</script>" })).not.toContain("</script>");
   });
 });

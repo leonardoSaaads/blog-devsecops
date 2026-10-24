@@ -8,8 +8,8 @@ const call = (motif: string, file: string) =>
     params: Promise.resolve({ motif, file }),
   });
 
-describe("arte como arquivo estático", () => {
-  it("catálogo cobre todos os artigos com sementes válidas e únicas", () => {
+describe("art as a static file", () => {
+  it("the catalog covers every article with valid, unique seeds", () => {
     const artworks = allArtworks();
     const keys = artworks.map(({ motif, seed }) => `${motif}/${seed}`);
     expect(new Set(keys).size).toBe(keys.length);
@@ -18,20 +18,20 @@ describe("arte como arquivo estático", () => {
     expect(generateStaticParams()).toHaveLength(artworks.length);
   });
 
-  it("serve SVG autônomo, sem scripts e com cache", async () => {
-    const response = await call("spectrum", "dwdm_intoduction.svg");
+  it("serves a self-contained SVG, without scripts and with caching", async () => {
+    const response = await call("spectrum", "dwdm-introduction.svg");
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("image/svg+xml");
     expect(response.headers.get("cache-control")).toContain("max-age=");
     const svg = await response.text();
     expect(svg.startsWith("<svg")).toBe(true);
     expect(svg).not.toMatch(/<script|on[a-z]+=/i);
-    expect(artUrl("spectrum", "dwdm_intoduction")).toBe("/art/spectrum/dwdm_intoduction.svg");
+    expect(artUrl("spectrum", "dwdm-introduction")).toBe("/art/spectrum/dwdm-introduction.svg");
   });
 
-  it("rejeita motivo ou semente inválidos", async () => {
-    expect((await call("nao-existe", "x.svg")).status).toBe(404);
+  it("rejects an invalid motif or seed", async () => {
+    expect((await call("does-not-exist", "x.svg")).status).toBe(404);
     expect((await call("spectrum", "../etc.svg")).status).toBe(404);
-    expect((await call("spectrum", "SEM-EXTENSAO")).status).toBe(404);
+    expect((await call("spectrum", "NO-EXTENSION")).status).toBe(404);
   });
 });

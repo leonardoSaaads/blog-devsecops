@@ -3,7 +3,7 @@
 import { Check, Copy } from "lucide-react";
 import { useRef, useState } from "react";
 
-/** Copia o texto do `<pre>` irmão dentro do mesmo `<figure>`. */
+/** Copies the text of the sibling `<pre>` inside the same `<figure>`. */
 export function CopyButton() {
   const ref = useRef<HTMLButtonElement>(null);
   const [copied, setCopied] = useState(false);
@@ -26,14 +26,14 @@ export function CopyButton() {
       type="button"
       onClick={copy}
       className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
-      aria-label={copied ? "Código copiado" : "Copiar código"}
+      aria-label={copied ? "Code copied" : "Copy code"}
     >
       {copied ? (
         <Check className="size-3.5 text-success" aria-hidden="true" />
       ) : (
         <Copy className="size-3.5" aria-hidden="true" />
       )}
-      <span>{copied ? "Copiado" : "Copiar"}</span>
+      <span>{copied ? "Copied" : "Copy"}</span>
     </button>
   );
 }

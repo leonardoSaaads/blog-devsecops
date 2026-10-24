@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { linearScale, polyline } from "./chart-utils";
 import { InteractiveFigure, controlToggle } from "./interactive-figure";
 
@@ -20,7 +20,7 @@ const BANDS: Band[] = [
     min: 1260,
     max: 1360,
     detail:
-      "Dispersão cromática ≈ 0 perto de 1310 nm (G.652). Enlaces curtos, data centers e upstream de PON.",
+      "Chromatic dispersion ≈ 0 near 1310 nm (G.652). Short links, data centers and PON upstream.",
   },
   {
     id: "E",
@@ -28,7 +28,7 @@ const BANDS: Band[] = [
     min: 1360,
     max: 1460,
     detail:
-      "Contém o pico de absorção OH⁻ em ~1383 nm nas fibras antigas; praticamente eliminado nas fibras G.652.D. Usada em CWDM.",
+      "Contains the OH⁻ absorption peak at ~1383 nm in older fibers; practically eliminated in G.652.D fibers. Used for CWDM.",
   },
   {
     id: "S",
@@ -36,34 +36,34 @@ const BANDS: Band[] = [
     min: 1460,
     max: 1530,
     detail:
-      "Sem EDFA convencional; amplificação por Raman ou fibra dopada com túlio (TDFA). Downstream de GPON em 1490 nm.",
+      "No conventional EDFA; amplification by Raman or thulium-doped fiber (TDFA). GPON downstream at 1490 nm.",
   },
   {
     id: "C",
     name: "Conventional",
     min: 1530,
     max: 1565,
-    detail: "Menor atenuação (~0,2 dB/km) e ganho eficiente do EDFA: o coração dos sistemas DWDM.",
+    detail: "Lowest attenuation (~0.2 dB/km) and efficient EDFA gain: the heart of DWDM systems.",
   },
   {
     id: "L",
     name: "Long",
     min: 1565,
     max: 1625,
-    detail: "EDFAs de banda L (fibra dopada mais longa) estendem a capacidade em sistemas C+L.",
+    detail: "L-band EDFAs (longer doped fiber) extend capacity in C+L systems.",
   },
   {
     id: "U",
     name: "Ultra-long",
     min: 1625,
     max: 1675,
-    detail: "Supervisão e monitoramento, como OTDR em serviço (ex.: 1650 nm).",
+    detail: "Supervision and monitoring, such as in-service OTDR (e.g., 1650 nm).",
   },
 ];
 
 /**
- * Modelo ilustrativo de atenuação da sílica (dB/km): espalhamento Rayleigh (A/λ⁴),
- * cauda de absorção infravermelha e pico OH⁻ gaussiano em 1383 nm.
+ * Illustrative silica attenuation model (dB/km): Rayleigh scattering (A/λ⁴),
+ * infrared absorption tail and a Gaussian OH⁻ peak at 1383 nm.
  */
 export function attenuationDbPerKm(nm: number, waterPeak: boolean): number {
   const um = nm / 1000;
@@ -93,8 +93,8 @@ export function FiberBandsChart() {
 
   return (
     <InteractiveFigure
-      title="Janelas espectrais da fibra monomodo"
-      description="Curva ilustrativa de atenuação (Rayleigh + absorção infravermelha + pico OH⁻). Selecione uma banda para ver suas características."
+      title="Spectral windows of single-mode fiber"
+      description="Illustrative attenuation curve (Rayleigh + infrared absorption + OH⁻ peak). Select a band to see its characteristics."
       testId="fiber-bands"
       actions={
         <button
@@ -103,7 +103,7 @@ export function FiberBandsChart() {
           aria-pressed={legacy}
           onClick={() => setLegacy((value) => !value)}
         >
-          Fibra legada (pico de água)
+          Legacy fiber (water peak)
         </button>
       }
     >
@@ -111,7 +111,7 @@ export function FiberBandsChart() {
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
         role="img"
-        aria-label="Atenuação da fibra de sílica entre 1250 e 1680 nm com as bandas O, E, S, C, L e U"
+        aria-label="Silica fiber attenuation between 1250 and 1680 nm with the O, E, S, C, L and U bands"
       >
         {BANDS.map((item) => (
           <g key={item.id}>
@@ -170,12 +170,12 @@ export function FiberBandsChart() {
           textAnchor="middle"
           className="fill-muted-foreground text-[11px]"
         >
-          comprimento de onda (nm) · eixo vertical: dB/km
+          wavelength (nm) · vertical axis: dB/km
         </text>
         <path d={path} fill="none" className="stroke-accent" strokeWidth={2.5} />
       </svg>
 
-      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Selecionar banda">
+      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Select band">
         {BANDS.map((item) => (
           <button
             key={item.id}
@@ -194,7 +194,7 @@ export function FiberBandsChart() {
         data-testid="band-detail"
       >
         <p className="font-semibold">
-          Banda {band.id} ({band.name}) · {band.min}–{band.max} nm
+          {band.id}-band ({band.name}) · {band.min}–{band.max} nm
         </p>
         <p className="mt-1 text-muted-foreground">{band.detail}</p>
       </div>

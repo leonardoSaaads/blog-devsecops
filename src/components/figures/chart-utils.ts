@@ -13,7 +13,7 @@ export function linearScale(domain: [number, number], range: [number, number]): 
   return scale;
 }
 
-/** Marcas "bonitas" (1, 2, 5 × 10ⁿ) para eixos. */
+/** "Nice" axis ticks (1, 2, 5 × 10ⁿ). */
 export function niceTicks(min: number, max: number, count = 5): number[] {
   const span = max - min;
   if (span <= 0) return [min];

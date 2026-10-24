@@ -3,9 +3,9 @@
 import { variantPath } from "./variants.mts";
 
 /**
- * Loader do `next/image` (configurado em `next.config.ts`): aponta cada largura do
- * `srcset` para a variante WebP gerada no build. Imagens fora do padrão (externas,
- * SVG) seguem com a URL original.
+ * `next/image` loader (configured in `next.config.ts`): points each `srcset` width to
+ * the WebP variant generated at build time. Anything else (external images, SVG)
+ * keeps its original URL.
  */
 export default function imageLoader({ src, width }: { src: string; width: number }): string {
   return variantPath(src, width) ?? src;

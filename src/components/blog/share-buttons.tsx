@@ -7,7 +7,7 @@ import { LinkedinIcon } from "@/components/icons/brand-icons";
 
 export function ShareButtons({ title, url }: { title: string; url: string }) {
   const [copied, setCopied] = useState(false);
-  // Detectado só no cliente para evitar divergência entre servidor e cliente.
+  // Detected on the client only to avoid a server/client mismatch.
   const canShare = useClientValue(() => "share" in navigator, false);
   const linkedin = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
 
@@ -25,11 +25,7 @@ export function ShareButtons({ title, url }: { title: string; url: string }) {
     "inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm transition hover:border-accent";
 
   return (
-    <div
-      className="flex flex-wrap items-center gap-2"
-      aria-label="Compartilhar artigo"
-      role="group"
-    >
+    <div className="flex flex-wrap items-center gap-2" aria-label="Share this article" role="group">
       <a href={linkedin} target="_blank" rel="noopener noreferrer" className={buttonClass}>
         <LinkedinIcon className="size-4" /> LinkedIn
       </a>
@@ -39,7 +35,7 @@ export function ShareButtons({ title, url }: { title: string; url: string }) {
         ) : (
           <Link2 className="size-4" aria-hidden="true" />
         )}
-        {copied ? "Link copiado" : "Copiar link"}
+        {copied ? "Link copied" : "Copy link"}
       </button>
       {canShare && (
         <button
@@ -47,7 +43,7 @@ export function ShareButtons({ title, url }: { title: string; url: string }) {
           onClick={() => navigator.share({ title, url }).catch(() => undefined)}
           className={buttonClass}
         >
-          <Share2 className="size-4" aria-hidden="true" /> Compartilhar
+          <Share2 className="size-4" aria-hidden="true" /> Share
         </button>
       )}
     </div>

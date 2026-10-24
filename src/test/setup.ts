@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 
-// APIs de navegador ausentes no jsdom, usadas pelos componentes interativos.
+// Browser APIs missing from jsdom that the interactive components use.
 if (typeof window !== "undefined") {
   class IntersectionObserverStub {
     private readonly callback: IntersectionObserverCallback;
@@ -8,7 +8,7 @@ if (typeof window !== "undefined") {
       this.callback = callback;
     }
     observe(target: Element) {
-      // Considera tudo visível: simulações e lazy-loading disparam imediatamente.
+      // Treat everything as visible: simulations and lazy loading fire immediately.
       this.callback(
         [{ isIntersecting: true, target } as IntersectionObserverEntry],
         this as unknown as IntersectionObserver,

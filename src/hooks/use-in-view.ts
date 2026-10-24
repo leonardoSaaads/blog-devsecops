@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type RefObject } from "react";
 
-/** Indica se o elemento está visível e a aba está ativa — usado para pausar simulações. */
+/** Whether the element is visible and the tab is active — used to pause simulations. */
 export function useInView(ref: RefObject<Element | null>, rootMargin = "100px"): boolean {
   const [inView, setInView] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);

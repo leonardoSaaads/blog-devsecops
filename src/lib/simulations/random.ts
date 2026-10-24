@@ -1,4 +1,4 @@
-/** PRNG determinístico (mulberry32) — reprodutível em testes e simulações. */
+/** Deterministic PRNG (mulberry32) — reproducible in tests and simulations. */
 export function mulberry32(seed: number): () => number {
   let state = seed >>> 0;
   return () => {
@@ -10,7 +10,7 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
-/** Amostra normal padrão via Box–Muller. */
+/** Standard normal sample via Box–Muller. */
 export function gaussian(random: () => number): number {
   let u = 0;
   while (u === 0) u = random();

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl } from "@/config/site";
+import { isTagIndexable } from "@/lib/seo/metadata";
 
 export const dynamic = "force-static";
 
@@ -25,10 +26,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.9,
     })),
-    ...getAllTags().map(({ tag }) => ({
-      url: absoluteUrl(`/tags/${tag}`),
-      changeFrequency: "monthly" as const,
-      priority: 0.4,
-    })),
+    // Thin keyword pages are `noindex` (see isTagIndexable) and stay out of the sitemap.
+    ...getAllTags()
+      .filter(({ count }) => isTagIndexable(count))
+      .map(({ tag }) => ({
+        url: absoluteUrl(`/tags/${tag}`),
+        changeFrequency: "monthly" as const,
+        priority: 0.4,
+      })),
   ];
 }

@@ -1,17 +1,17 @@
 /**
- * Arquivos de configuração da Cloudflare (Workers Static Assets) gerados no build.
+ * Cloudflare configuration files (Workers Static Assets) generated at build time.
  *
- * A exportação estática não tem servidor para aplicar `headers()`/`redirects()` do
- * Next nem os cabeçalhos devolvidos pelas rotas. A Cloudflare lê `_headers` e
- * `_redirects` da raiz dos assets (não são servidos publicamente).
+ * A static export has no server to apply Next's `headers()`/`redirects()` or the headers
+ * returned by routes. Cloudflare reads `_headers` and `_redirects` from the root of the
+ * assets directory (they are not served publicly).
  */
 import { ART_CACHE_CONTROL } from "@/lib/art/url";
-import { FEED_HEADERS } from "@/lib/feed";
+import { FEED_HEADERS } from "@/lib/seo/feed";
 import { VARIANTS_DIR } from "@/lib/images/variants.mts";
 import { buildSecurityHeaders, type HeaderRule } from "@/lib/security/headers";
 import { buildRedirects, type RedirectRule } from "./redirects";
 
-/** Limites da plataforma: o build falha em vez de publicar regras ignoradas. */
+/** Platform limits: the build fails instead of publishing rules that would be ignored. */
 export const CLOUDFLARE_LIMITS = {
   headerRules: 100,
   redirectRules: 2000,
@@ -21,13 +21,13 @@ export const CLOUDFLARE_LIMITS = {
 const IMMUTABLE = "public, max-age=31536000, immutable";
 const OG_IMAGE = [{ key: "Content-Type", value: "image/png" }];
 
-/** Tipo e cache de arquivos cujo cabeçalho a exportação estática não preserva. */
+/** Type and cache headers for files whose headers the static export does not keep. */
 export function buildAssetHeaders(): HeaderRule[] {
   return [
-    // Nomes com hash de conteúdo: podem ficar em cache indefinidamente.
+    // Content-hashed names: they can be cached forever.
     { source: "/_next/static/:path*", headers: [{ key: "Cache-Control", value: IMMUTABLE }] },
     { source: "/art/:path*", headers: [{ key: "Cache-Control", value: ART_CACHE_CONTROL }] },
-    // Variantes de imagem: sem hash no nome, mas mudam raramente (revalidam por ETag).
+    // Image variants: no hash in the name, but they rarely change (revalidated via ETag).
     {
       source: `/${VARIANTS_DIR}/:path*`,
       headers: [{ key: "Cache-Control", value: ART_CACHE_CONTROL }],
@@ -36,42 +36,42 @@ export function buildAssetHeaders(): HeaderRule[] {
       source: "/feed.xml",
       headers: Object.entries(FEED_HEADERS).map(([key, value]) => ({ key, value })),
     },
-    // Imagens Open Graph são exportadas sem extensão (o tipo não seria inferido).
+    // Open Graph images are exported without an extension (the type would not be inferred).
     { source: "/opengraph-image", headers: OG_IMAGE },
     { source: "/blog/:slug/opengraph-image", headers: OG_IMAGE },
   ];
 }
 
-/** Converte o padrão de rota do Next (`/:path*`) para a sintaxe da Cloudflare (`/*`). */
+/** Converts a Next route pattern (`/:path*`) to Cloudflare syntax (`/*`). */
 export function toCloudflarePath(source: string): string {
   const path = source.replace(/\/:\w+\*$/, "/*");
   if (!path.startsWith("/") || /[()+?\s]|\*(?!$)|:\w+\*/.test(path)) {
-    throw new Error(`Padrão de rota sem equivalente na Cloudflare: ${source}`);
+    throw new Error(`Route pattern with no Cloudflare equivalent: ${source}`);
   }
   return path;
 }
 
 function assertSafe(value: string, context: string): void {
-  // Quebras de linha permitiriam injetar regras no arquivo.
-  if (/[\r\n]/.test(value)) throw new Error(`Quebra de linha não permitida em ${context}`);
+  // Line breaks would allow injecting rules into the file.
+  if (/[\r\n]/.test(value)) throw new Error(`Line break not allowed in ${context}`);
 }
 
 function assertLimits(lines: readonly string[], rules: number, maxRules: number, file: string) {
-  if (rules > maxRules) throw new Error(`${file}: ${rules} regras excedem o limite de ${maxRules}`);
+  if (rules > maxRules) throw new Error(`${file}: ${rules} rules exceed the limit of ${maxRules}`);
   const long = lines.find((line) => line.length > CLOUDFLARE_LIMITS.lineLength);
-  if (long) throw new Error(`${file}: linha excede ${CLOUDFLARE_LIMITS.lineLength} caracteres`);
+  if (long) throw new Error(`${file}: line exceeds ${CLOUDFLARE_LIMITS.lineLength} characters`);
 }
 
 /**
- * No Next, uma regra posterior sobrescreve o cabeçalho de mesmo nome; na Cloudflare
- * os valores seriam concatenados com vírgula (duas CSPs = interseção das políticas).
- * `! Nome` desanexa o valor herdado antes de definir o novo.
+ * In Next, a later rule overrides a header with the same name; on Cloudflare the values
+ * would be joined with a comma (two CSPs = the intersection of both policies).
+ * `! Name` detaches the inherited value before setting the new one.
  */
 export function serializeHeadersFile(rules: readonly HeaderRule[]): string {
   const defined = new Set<string>();
   const blocks = rules.map(({ source, headers }) => {
     const lines = headers.flatMap(({ key, value }) => {
-      assertSafe(`${key}: ${value}`, `cabeçalho de ${source}`);
+      assertSafe(`${key}: ${value}`, `header for ${source}`);
       return defined.has(key.toLowerCase())
         ? [`! ${key}`, `${key}: ${value}`]
         : [`${key}: ${value}`];
@@ -86,7 +86,7 @@ export function serializeHeadersFile(rules: readonly HeaderRule[]): string {
 export function serializeRedirectsFile(rules: readonly RedirectRule[]): string {
   const lines = rules.map(({ source, destination }) => {
     if (!source.startsWith("/") || /\s/.test(source) || /\s/.test(destination)) {
-      throw new Error(`Redirecionamento inválido: ${source} -> ${destination}`);
+      throw new Error(`Invalid redirect: ${source} -> ${destination}`);
     }
     return `${source} ${destination} 308`;
   });
@@ -94,12 +94,12 @@ export function serializeRedirectsFile(rules: readonly RedirectRule[]): string {
   return `${lines.join("\n")}\n`;
 }
 
-/** Conteúdo de `_headers`: segurança (mesma fonte do `next dev`) + tipo/cache dos assets. */
+/** `_headers` content: security (same source as `next dev`) + asset type/cache. */
 export function cloudflareHeadersFile(): string {
   return serializeHeadersFile([...buildSecurityHeaders({ isDev: false }), ...buildAssetHeaders()]);
 }
 
-/** Conteúdo de `_redirects`: links legados e tags antigas em caixa alta. */
+/** `_redirects` content: legacy links and old uppercase tags. */
 export function cloudflareRedirectsFile(tags: readonly string[]): string {
   return serializeRedirectsFile(buildRedirects(tags));
 }

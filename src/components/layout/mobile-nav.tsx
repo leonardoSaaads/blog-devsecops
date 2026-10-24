@@ -3,7 +3,7 @@
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
-import type { NavItem } from "@/lib/site";
+import type { NavItem } from "@/config/site";
 import { NavLinks } from "./nav-links";
 
 export function MobileNav({ items }: { items: NavItem[] }) {
@@ -11,7 +11,7 @@ export function MobileNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
   const panelId = useId();
 
-  // Fecha o menu ao trocar de rota.
+  // Close the menu when the route changes.
   const [lastPath, setLastPath] = useState(pathname);
   if (pathname !== lastPath) {
     setLastPath(pathname);
@@ -32,7 +32,7 @@ export function MobileNav({ items }: { items: NavItem[] }) {
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls={panelId}
-        aria-label={open ? "Fechar menu" : "Abrir menu"}
+        aria-label={open ? "Close menu" : "Open menu"}
         className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
       >
         {open ? (
@@ -43,7 +43,7 @@ export function MobileNav({ items }: { items: NavItem[] }) {
       </button>
       <nav
         id={panelId}
-        aria-label="Navegação principal (móvel)"
+        aria-label="Main navigation (mobile)"
         hidden={!open}
         className="absolute inset-x-0 top-full border-b border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur"
       >

@@ -1,0 +1,491 @@
+---
+title: "DWDM: A Deep Dive into Coherent Optical Transmission"
+description: "A technical look at DWDM and OTN: the ITU-T grid, amplification, dispersion, coherent modulation, FEC and quality metrics (OSNR, Q, GSNR) — with interactive calculators and simulators."
+date: "2026-02-01"
+updated: "2026-10-13"
+featured: true
+tags: ["dwdm", "optics", "telecommunications", "otn", "huawei"]
+category: telecommunications
+art: spectrum
+abstract: "This article examines optical transmission in DWDM systems with an OTN layer, from the physical medium to performance metrics. It starts from single-mode fiber and the ITU-T G.694.1 frequency grid (fixed and flex-grid), walks through the line components — multiplexers, ROADMs, WSS, and EDFA and Raman amplifiers — and the effects of chromatic dispersion and PMD. It then describes coherent modulation and detection, the OTN hierarchy with FEC, and the OSNR, Q-factor, BER and GSNR metrics, tied together by equations and interactive figures that let you build a link budget."
+keyPoints:
+  - "The ITU-T grid anchors channels at 193.1 THz; flex-grid allocates 12.5 GHz slices for 400G signals and beyond."
+  - "In a chain of N identical amplifiers, OSNR drops by 10·log₁₀(N) dB: doubling the distance costs 3 dB."
+  - "Coherent detection recovers amplitude and phase on both polarizations; the DSP compensates dispersion and PMD without compensating fiber."
+  - "With SD-FEC, a link tolerates a pre-FEC BER on the order of 10⁻²; the Q-factor expresses the margin to that threshold."
+references:
+  - id: itu-g6941
+    type: standard
+    authors: ["International Telecommunication Union"]
+    title: "ITU-T G.694.1"
+    subtitle: "Spectral grids for WDM applications: DWDM frequency grid"
+    place: "Geneva"
+    publisher: "ITU"
+    year: 2020
+    url: "https://www.itu.int/rec/T-REC-G.694.1"
+    accessed: "2026-10-13"
+  - id: itu-g6942
+    type: standard
+    authors: ["International Telecommunication Union"]
+    title: "ITU-T G.694.2"
+    subtitle: "Spectral grids for WDM applications: CWDM wavelength grid"
+    place: "Geneva"
+    publisher: "ITU"
+    year: 2003
+    url: "https://www.itu.int/rec/T-REC-G.694.2"
+    accessed: "2026-10-13"
+  - id: itu-g709
+    type: standard
+    authors: ["International Telecommunication Union"]
+    title: "ITU-T G.709/Y.1331"
+    subtitle: "Interfaces for the optical transport network"
+    note: "As amended"
+    place: "Geneva"
+    publisher: "ITU"
+    year: 2020
+    url: "https://www.itu.int/rec/T-REC-G.709"
+    accessed: "2026-10-13"
+  - id: itu-g652
+    type: standard
+    authors: ["International Telecommunication Union"]
+    title: "ITU-T G.652"
+    subtitle: "Characteristics of a single-mode optical fibre and cable"
+    place: "Geneva"
+    publisher: "ITU"
+    year: 2016
+    url: "https://www.itu.int/rec/T-REC-G.652"
+    accessed: "2026-10-13"
+  - id: itu-g9751
+    type: standard
+    authors: ["International Telecommunication Union"]
+    title: "ITU-T G.975.1"
+    subtitle: "Forward error correction for high bit-rate DWDM submarine systems"
+    place: "Geneva"
+    publisher: "ITU"
+    year: 2004
+    url: "https://www.itu.int/rec/T-REC-G.975.1"
+    accessed: "2026-10-13"
+  - id: agrawal-2021
+    type: book
+    authors: ["Agrawal, Govind P."]
+    title: "Fiber-Optic Communication Systems"
+    edition: "5"
+    place: "Hoboken"
+    publisher: "Wiley"
+    year: 2021
+  - id: desurvire-1994
+    type: book
+    authors: ["Desurvire, Emmanuel"]
+    title: "Erbium-Doped Fiber Amplifiers"
+    subtitle: "principles and applications"
+    place: "New York"
+    publisher: "Wiley"
+    year: 1994
+  - id: islam-2002
+    type: article
+    authors: ["Islam, Mohammed N."]
+    title: "Raman amplifiers for telecommunications"
+    container: "IEEE Journal of Selected Topics in Quantum Electronics"
+    volume: "8"
+    issue: "3"
+    pages: "548-559"
+    year: 2002
+    doi: "10.1109/JSTQE.2002.1016358"
+  - id: kikuchi-2016
+    type: article
+    authors: ["Kikuchi, Kazuro"]
+    title: "Fundamentals of coherent optical fiber communications"
+    container: "Journal of Lightwave Technology"
+    volume: "34"
+    issue: "1"
+    pages: "157-179"
+    year: 2016
+    doi: "10.1109/JLT.2015.2463719"
+  - id: essiambre-2010
+    type: article
+    authors: ["Essiambre, René-Jean", "Kramer, Gerhard", "Winzer, Peter J.", "Foschini, Gerard J.", "Goebel, Bernhard"]
+    title: "Capacity limits of optical fiber networks"
+    container: "Journal of Lightwave Technology"
+    volume: "28"
+    issue: "4"
+    pages: "662-701"
+    year: 2010
+    doi: "10.1109/JLT.2009.2039464"
+  - id: poggiolini-2012
+    type: article
+    authors: ["Poggiolini, Pierluigi"]
+    title: "The GN model of non-linear propagation in uncompensated coherent optical systems"
+    container: "Journal of Lightwave Technology"
+    volume: "30"
+    issue: "24"
+    pages: "3857-3879"
+    year: 2012
+    doi: "10.1109/JLT.2012.2217729"
+  - id: bocherer-2015
+    type: article
+    authors: ["Böcherer, Georg", "Steiner, Fabian", "Schulte, Patrick"]
+    title: "Bandwidth efficient and rate-matched low-density parity-check coded modulation"
+    container: "IEEE Transactions on Communications"
+    volume: "63"
+    issue: "12"
+    pages: "4651-4665"
+    year: 2015
+    doi: "10.1109/TCOMM.2015.2494016"
+  - id: oif-400zr
+    type: report
+    authors: ["Optical Internetworking Forum"]
+    title: "Implementation Agreement 400ZR"
+    note: "OIF-400ZR-01.0"
+    place: "Fremont"
+    publisher: "OIF"
+    year: 2020
+  - id: huawei-osn
+    type: web
+    authors: ["Huawei Technologies"]
+    title: "OptiX OSN 9800/8800 product documentation"
+    container: "Huawei Enterprise Support"
+    year: 2026
+    url: "https://support.huawei.com/"
+    accessed: "2026-10-13"
+---
+
+<Callout type="info" title="October 2026 revision">
+This version fills in the formulas and diagrams that were still pending, adds interactive figures — including a 3D fiber model — and fixes three points: the relationship between Q and BER at the FEC threshold (section 7.3), the distinction between CFP-DCO and CFP-ACO modules (section 8.2) and the spectral width of a 400G signal at 64 GBd (section 3.2).
+</Callout>
+
+This article is for professionals already familiar with basic DWDM concepts who want a deeper understanding of the technology's inner workings, its components and the metrics that determine transmission quality. The treatment starts from the physical fundamentals, develops the relevant mathematical relationships and connects the theory to the implementations found in production equipment<Cite id="agrawal-2021" />.
+
+## 1. Historical context and motivation
+
+### 1.1 The need for wavelength multiplexing
+
+Transmission over silica fiber revolutionized telecommunications from the 1970s onward, with far more bandwidth and reach than copper. The first systems, however, used a single wavelength per fiber. Standard single-mode fiber has low attenuation roughly between 1260 nm and 1625 nm — about 50 THz of potential bandwidth<Cite id="itu-g652" />. Using a single carrier in that range occupies a tiny fraction of the capacity.
+
+Before multiplexing, it is worth looking at the physical medium. Light is guided by a doped silica core whose refractive index exceeds the cladding's by less than 1% — enough for <Term def="When light hits the interface with a lower-index medium beyond the critical angle, it is fully reflected, with no transmission loss.">total internal reflection</Term>.<Sidenote>In G.652 fiber, the mode field diameter is about 9 µm at 1310 nm, and the standardized cladding is 125 µm<Cite id="itu-g652" />.</Sidenote> The next figure shows the fiber's layers and the difference between single-mode and multimode propagation.
+
+<Fiber3D />
+
+*Wavelength Division Multiplexing* transmits several optical channels simultaneously over the same fiber, each on its own wavelength. The wavelengths propagate essentially independently, interacting only through nonlinear effects that matter at high power. Aggregate capacity grows with the number of channels.
+
+**CWDM** (ITU-T G.694.2) uses channels spaced 20 nm apart, from 1271 nm to 1611 nm, which allows lasers without active temperature control — cheaper, but limited to 18 channels<Cite id="itu-g6942" />. **DWDM** squeezes the spacing down to 0.8 nm (100 GHz) or less, requiring lasers stable to the picometer; the reward is 80, 96 or more channels in the C-band.
+
+### 1.2 The complementary relationship between DWDM and OTN
+
+DWDM is a **physical-layer** technology: it multiplies fiber capacity, but provides no management, performance monitoring or error correction. That gap motivated the *Optical Transport Network* (OTN), formalized in ITU-T G.709<Cite id="itu-g709" />.
+
+OTN introduces the *digital wrapper*: it encapsulates client signals by adding structured overhead for error monitoring at multiple points (TCM), automatic protection, communication channels and, crucially, FEC. In layer terms, DWDM corresponds to **Layer 0** (optical) and OTN to **Layer 1** (digital transport). Platforms such as the Huawei OptiX OSN 9800 integrate both functions<Cite id="huawei-osn" />.
+
+## 2. The client signal and its conversion to the DWDM domain
+
+### 2.1 The grey signal
+
+The **grey signal** is the client equipment's signal before it is converted to a grid wavelength — typically 1310 nm or 1550 nm with wide tolerances. It covers Ethernet (1GE to 400GE), Fibre Channel, SDH/SONET (STM-1 to STM-64) and client OTN. A 10GE LR transceiver, for example, operates at 1310 nm with a tolerance of several nanometers — unacceptable for channels spaced 0.4 nm apart.
+
+### 2.2 The transponder
+
+The transponder performs **optical-electrical-optical (O-E-O)** conversion: it receives the grey signal, processes it electrically and retransmits it on a precise grid wavelength.
+
+<FlowDiagram
+  title="Coherent transponder: from client to line"
+  caption="Simplified block diagram of a coherent transponder."
+  steps={[
+    { title: "Client (grey signal)", detail: "A pluggable transceiver (SFP+, QSFP28, QSFP-DD) receives the signal from the router/switch." },
+    { title: "Photodetector + TIA", detail: "Converts optical power into current and then into voltage." },
+    { title: "CDR", detail: "Recovers clock and data, removing accumulated jitter." },
+    { title: "OTN mapping + FEC", detail: "OPU → ODU → OTU; the FEC is computed and appended to the frame." },
+    { title: "Transmit DSP", detail: "Maps bits to symbols, applies pulse shaping and pre-compensation." },
+    { title: "DAC + drivers", detail: "Convert the digital samples into high-speed analog signals." },
+    { title: "Laser + I/Q modulator", detail: "A thermally controlled tunable ECL; nested Mach-Zehnder modulators imprint amplitude and phase." },
+    { title: "DWDM line (ITU λ)", detail: "The colored, grid-aligned signal heads to the multiplexer/ROADM." },
+  ]}
+/>
+
+The line laser (DFB or, in coherent systems, an <Term def="External Cavity Laser: a laser with a narrow linewidth (on the order of 100 kHz) that tunes across the entire C-band.">ECL</Term>) runs under closed-loop temperature control to keep its frequency stable to within a few MHz.
+
+### 2.3 Muxponders and aggregation
+
+A **muxponder** aggregates several lower-rate client signals onto a single wavelength. Ten 10GE links, for example, are mapped into ODU2e and multiplexed into a 100 Gb/s ODU4 — making better use of the spectrum. In the OptiX OSN 9800 series, boards such as the TNU2N402 perform transponder and muxponder functions for line rates from 100G to 400G<Cite id="huawei-osn" />.
+
+## 3. The ITU-T frequency grid and the spectral bands
+
+### 3.1 DWDM grid fundamentals
+
+Recommendation G.694.1 secured multi-vendor interoperability by fixing the anchor frequency at **193.1 THz** (≈ 1552.52 nm in vacuum)<Sidenote>The grid is defined in frequency rather than wavelength because a wave's frequency does not change with the medium it travels through.</Sidenote> and defining the nominal frequencies as integer multiples of the spacing<Cite id="itu-g6941" />:
+
+$$
+\lambda = \frac{c}{f}, \qquad f_n = 193.1\ \text{THz} + n\,\Delta f, \quad n \in \mathbb{Z}
+$$
+
+Converting between frequency spacing and wavelength spacing follows from differentiating the first relationship:
+
+$$
+\Delta\lambda \approx \frac{\lambda^2}{c}\,\Delta f \quad\Rightarrow\quad 100\ \text{GHz} \approx 0.8\ \text{nm}\ \text{at}\ 1550\ \text{nm}
+$$
+
+The fixed spacings are 12.5, 25, 50 and 100 GHz: narrower spacing means more channels, but more selective filters and more stable lasers.
+
+<DwdmGridCalculator />
+
+### 3.2 The flex-grid paradigm
+
+At 400G and above, the fixed grid became inefficient. A DP-16QAM signal at 64 GBd occupies about 65–70 GHz (the symbol rate plus the shaping filter's excess bandwidth): it does not fit in a 50 GHz slot, and two 50 GHz slots waste spectrum. Flex-grid, added to G.694.1 in its 2012 edition, defines center frequencies with 6.25 GHz granularity and slot widths in multiples of 12.5 GHz<Cite id="itu-g6941" />:
+
+$$
+f_c = 193.1\ \text{THz} + n \times 6.25\ \text{GHz}, \qquad \text{width} = m \times 12.5\ \text{GHz}
+$$
+
+The same signal then occupies a 75 GHz slot (m = 6). Implementation requires ROADMs with WSSs based on <Term def="Liquid Crystal on Silicon: a liquid-crystal array on silicon that applies a programmable phase pattern to each slice of the spectrum.">LCoS</Term>, whose spectral resolution allows programmable channel edges.
+
+### 3.3 Spectral bands
+
+Silica's attenuation and dispersion vary with wavelength, defining windows conventionally named by letters. Explore them below — turn on the legacy-fiber curve to see the OH⁻ absorption peak:
+
+<FiberBandsChart />
+
+- **O (1260–1360 nm)**: the first commercial window; ≈ 0.35 dB/km; zero chromatic dispersion near 1310 nm in G.652 fibers.
+- **E (1360–1460 nm)**: historically hurt by the water peak at ~1383 nm, practically eliminated in G.652.D fibers.
+- **S (1460–1530 nm)**: amplification by Raman or thulium-doped fiber.
+- **C (1530–1565 nm)**: minimum attenuation (~0.2 dB/km) and efficient EDFA gain — the overwhelming majority of DWDM systems operate here.
+- **L (1565–1625 nm)**: capacity extension (C+L systems roughly double the channel count).
+- **U (1625–1675 nm)**: supervision and OTDR.
+
+## 4. DWDM system components
+
+### 4.1 Multiplexers and demultiplexers
+
+The **AWG** (*Arrayed Waveguide Grating*) relies on multipath interference: light travels through an array of waveguides whose lengths increase in steps of ΔL. A wavelength is steered to an output port when the phase difference between adjacent waveguides is a multiple of 2π, that is, when it satisfies the constructive-interference condition<Cite id="agrawal-2021" />:
+
+$$
+n_{\text{eff}}\,\Delta L = m\,\lambda_c, \qquad \text{FSR} \approx \frac{\lambda_c^2}{n_g\,\Delta L}
+$$
+
+where $$m$$ is the diffraction order, $$n_{\text{eff}}$$ the effective index and $$n_g$$ the group index; the free spectral range (FSR) limits how many channels the device can separate without ambiguity.
+
+**Thin-film filters (TFF)** use multilayer Fabry-Pérot cavities; cascaded, they drop one channel per stage, with growing insertion loss. Critical specifications: insertion loss (3–5 dB for 40 channels), passband at −0.5 dB and −3 dB, channel isolation and *ripple*.
+
+### 4.2 ROADMs and optical reconfiguration
+
+A **ROADM** lets software choose remotely which channels are added, dropped or passed through a node. Generations evolved from wavelength blockers to **colorless** (any λ on any port), **directionless** (any direction) and **contentionless** (the same λ can be added more than once at the same node) architectures. Combined, they make a **CDC ROADM** — and, with flex-grid, **CDC-F**.
+
+<FlowDiagram
+  title="Path of a channel added at a CDC ROADM"
+  steps={[
+    { title: "Transponder", detail: "Generates the colored channel at the wavelength tuned by software." },
+    { title: "Add/drop (MCS)", detail: "A multicast switch lets any port use any λ (colorless) without conflicts (contentionless)." },
+    { title: "WSS of the chosen degree", detail: "Routes the channel to any direction (directionless) and equalizes its power." },
+    { title: "Booster (EDFA)", detail: "Amplifies the set of channels before the line fiber." },
+    { title: "Line fiber", detail: "The channel continues to the next ROADM or terminal node." },
+  ]}
+/>
+
+### 4.3 The WSS: heart of the modern ROADM
+
+A *Wavelength Selective Switch* receives a WDM signal and routes each wavelength to any of N ports, with individual attenuation. **MEMS** implementations use a diffraction grating and one micromirror per channel (typically limited to the fixed grid); **LCoS** implementations use a liquid-crystal array that modulates phase pixel by pixel, allowing arbitrary channel edges and native flex-grid support. Typical specifications: 1×9 to 1×20 ports, 4–8 dB insertion loss, isolation above 35 dB, PDL below 0.5 dB and reconfiguration times from tens to hundreds of milliseconds, depending on the technology.
+
+### 4.4 Optical amplification: EDFA
+
+The EDFA made it possible to amplify all WDM channels at once in the optical domain, eliminating O-E-O regenerators every 40–80 km<Cite id="desurvire-1994" />. Er³⁺ ions, pumped at 980 nm or 1480 nm, are raised to a metastable level; signal photons stimulate the emission of coherent photons. Accounting for the overlap factor Γ between the mode and the doped region and for the emission and absorption cross sections, the gain is:
+
+$$
+G = \exp\!\left[\int_0^{L} \Gamma_s\,\big(\sigma_e\,N_2(z) - \sigma_a\,N_1(z)\big)\,dz\right]
+$$
+
+Pumping at 980 nm achieves nearly complete population inversion (lower noise figure); 1480 nm favors higher output power. Erbium's gain spectrum is not flat (it peaks near 1530 nm), so two-stage EDFAs insert a **GFF** (*Gain Flattening Filter*) between stages. The theoretical noise figure limit is 3 dB;<Sidenote>This is the quantum limit of a high-gain phase-insensitive amplifier: NF ≈ 2·n_sp ≥ 2, that is, 3 dB.</Sidenote> practical EDFAs land between 4 and 6 dB.
+
+### 4.5 Raman amplification
+
+Stimulated Raman scattering uses the **transmission fiber itself** as the gain medium: silica's Raman shift is ~13 THz, so a pump at 1450 nm produces peak gain near 1550 nm<Cite id="islam-2002" />. Because it is **distributed**, the amplification keeps the signal from reaching very low power before the amplifier, lowering the effective noise figure — which can even be negative in dB when referred to the span input. The usual configuration is counter-propagating pumping, combined with an EDFA at the same site (hybrid Raman-EDFA systems).
+
+### 4.6 Chromatic dispersion
+
+Chromatic dispersion comes from the refractive index's dependence on wavelength. It has two contributions — material and waveguide:
+
+$$
+D(\lambda) = D_M(\lambda) + D_W(\lambda), \qquad D_M(\lambda) = -\frac{\lambda}{c}\,\frac{d^2 n}{d\lambda^2}, \qquad \Delta\tau = D\,L\,\Delta\lambda
+$$
+
+For G.652 fiber, $$D \approx 17$$ ps/(nm·km) at 1550 nm: a pulse with 1 nm of spectral width spreads 17 ps every kilometer. In 10G IM-DD systems (100 ps bit period), accumulated dispersion above ~1000 ps/nm causes a significant penalty. Compensation used to rely on dispersion-compensating fiber (DCF), with high attenuation and a small effective area. In **coherent** systems, the DSP applies the dispersion's inverse transfer function, compensating tens of thousands of ps/nm without DCF<Cite id="kikuchi-2016" />.
+
+### 4.7 Polarization mode dispersion (PMD)
+
+Residual fiber birefringence — from core ellipticity and mechanical stress — makes the two polarization states travel at slightly different speeds. Because it varies randomly along the fiber and over time, PMD is statistical: the differential group delay (DGD) follows a Maxwellian distribution, and its mean grows with the square root of the length:
+
+$$
+\langle \Delta\tau \rangle = D_{\text{PMD}}\,\sqrt{L}
+$$
+
+G.652.D fibers typically have $$D_{\text{PMD}}$$ below 0.1 ps/√km (under 3 ps over 1000 km). The coherent DSP's adaptive equalizer compensates the instantaneous PMD, tolerating DGDs of tens of ps.
+
+## 5. Coherent modulation and detection
+
+### 5.1 From IM-DD to coherent detection
+
+With intensity modulation and direct detection (IM-DD), the receiver only detects power — the squared magnitude of the field. Coherent detection recovers the **complete electric field**: amplitude and phase, on both polarizations<Cite id="kikuchi-2016" />. That enables formats with several bits per symbol and digital compensation of dispersion and PMD.
+
+<PullQuote>By measuring the field, not just the power, the receiver turns optical problems into signal-processing problems.</PullQuote>
+
+### 5.2 The coherent receiver
+
+<FlowDiagram
+  title="Polarization-diversity coherent receiver"
+  steps={[
+    { title: "Signal + local laser (LO)", detail: "The received signal is mixed with the local oscillator (intradyne detection)." },
+    { title: "PBS + 90° hybrid", detail: "Splits the X and Y polarizations and produces the in-phase (I) and quadrature (Q) components." },
+    { title: "Balanced detection + TIA", detail: "Balanced photodiodes cancel DC terms and the LO's intensity noise." },
+    { title: "ADCs", detail: "Four channels (XI, XQ, YI, YQ) sampled at ≈ 2 samples per symbol (e.g., 64 GSa/s for 32 GBd)." },
+    { title: "DSP", detail: "CD compensation, 2×2 MIMO equalization (PMD), carrier and clock recovery, demapping and FEC decoding." },
+  ]}
+/>
+
+The DSP is implemented in ASICs (7 nm nodes and below) and draws tens of watts — one of the vendors' main optimization targets.
+
+### 5.3 Modulation formats and spectral efficiency
+
+With polarization multiplexing, **DP-QPSK** carries 4 bits per symbol (the classic 100G format at ~32 GBd), **DP-16QAM** carries 8 and **DP-64QAM** carries 12. Higher-order formats need more SNR because the constellation points sit closer together. For dual-polarization signals, the per-symbol SNR relates to the OSNR measured in $$B_{\text{ref}} = 12.5$$ GHz by:
+
+$$
+\text{SNR} = \text{OSNR}\cdot\frac{B_{\text{ref}}}{R_s}
+$$
+
+See the effect in the simulator: choose the format and the symbol rate, then lower the OSNR until symbols start being decided incorrectly.
+
+<ConstellationViewer />
+
+The Shannon limit sets the maximum capacity of an AWGN channel; per polarization, $$C = B\log_2(1 + \text{SNR})$$<Cite id="essiambre-2010" />. Uniform QAM constellations sit some distance from that limit (the *shaping gap*, up to 1.53 dB). **Probabilistic constellation shaping (PCS)** adjusts symbol probabilities and recovers most of that gain, while also enabling fine rate adjustment<Cite id="bocherer-2015" />.
+
+### 5.4 The coherent transmitter
+
+The I/Q modulator is made of two nested Mach-Zehnder modulators (one for I, one for Q, with a 90° offset); for DP-QAM, two I/Q modulators process orthogonal polarizations, combined by a PBC. Laser phase noise rotates the constellation randomly: ECLs with linewidths on the order of 100 kHz suffice for DP-16QAM; higher-order formats require even more stable lasers.
+
+## 6. The OTN layer
+
+### 6.1 Container hierarchy
+
+OTN wraps the client in layers, each with its own overhead: **OPU** (payload adaptation: BMP, AMP, GMP), **ODU** (path monitoring, TCM, protection) and **OTU** (section, frame alignment and FEC)<Cite id="itu-g709" />. Explore the structure:
+
+<OtnHierarchy />
+
+### 6.2 OTN rates
+
+| Container | Nominal rate | Typical clients |
+| --- | --- | --- |
+| ODU0 | 1.244 Gb/s | GbE |
+| ODU1 | 2.499 Gb/s | STM-16, 2× ODU0 |
+| ODU2 | 10.037 Gb/s | STM-64, 10GE WAN PHY |
+| ODU2e | 10.399 Gb/s | 10GE LAN PHY |
+| ODU3 | 40.319 Gb/s | STM-256, 40GE |
+| ODU4 | 104.794 Gb/s | 100GE |
+| ODUCn | n × ~105 Gb/s | 200G, 400G and beyond (e.g., ODUC4) |
+| ODUflex | variable | services that do not fit the fixed containers |
+
+### 6.3 Forward Error Correction
+
+The original G.709 FEC uses **Reed-Solomon RS(255,239)**: 16 parity bytes for 239 data bytes (~6.7% overhead) and a net coding gain of ~6 dB. The **EFEC/Super-FEC** codes in G.975.1 reach ~8 dB or more with the same overhead<Cite id="itu-g9751" />. **SD-FEC** codes (*soft-decision*, such as LDPC and turbo product codes) use each bit's reliability and reach 10–12 dB, at the cost of 15–25% overhead. Their pre-FEC BER thresholds are on the order of 10⁻² — the system runs with roughly 1% to 4% of bits in error before correction, depending on the code, and delivers a post-FEC BER below 10⁻¹⁵.
+
+### 6.4 Tandem Connection Monitoring
+
+For services that cross several administrative domains, end-to-end path monitoring (PM) cannot tell **which** domain degrades the signal. OTN defines six TCM levels (TCM1 to TCM6), nested or cascaded, so each operator can monitor its own segment without interrupting traffic.
+
+## 7. Quality metrics
+
+### 7.1 OSNR
+
+<Definition term="OSNR (Optical Signal-to-Noise Ratio)">
+The ratio between the signal power and the ASE (*Amplified Spontaneous Emission*) noise power measured in a 0.1 nm (≈ 12.5 GHz) reference bandwidth around the channel<Cite id="agrawal-2021" />.
+</Definition>
+
+The ASE spectral density per polarization and the noise power across both polarizations within $$B_{\text{ref}}$$ are:
+
+$$
+S_{\text{ASE}} = n_{sp}\,h\nu\,(G-1), \qquad P_{\text{ASE}} = 2\,n_{sp}\,h\nu\,(G-1)\,B_{\text{ref}}
+$$
+
+Since $$NF \approx 2\,n_{sp}$$ at high gain, the OSNR at the output of an amplifier with input power $$P_{\text{in}}$$ is:
+
+$$
+\text{OSNR} \approx \frac{P_{\text{in}}}{NF\,h\nu\,B_{\text{ref}}} \;\Rightarrow\; \text{OSNR}_{\text{dB}} \approx 58 + P_{\text{in}}[\text{dBm}] - NF[\text{dB}]
+$$
+
+The "58" comes from $$10\log_{10}(h\nu B_{\text{ref}}) \approx -58$$ dBm at 1550 nm. In a chain of N identical amplifiers, each exactly compensating the loss of the preceding span, the inverses add up:
+
+$$
+\frac{1}{\text{OSNR}_{\text{total}}} = \sum_{i=1}^{N}\frac{1}{\text{OSNR}_i} \;\Rightarrow\; \text{OSNR}_{\text{total,dB}} = \text{OSNR}_{1,\text{dB}} - 10\log_{10} N
+$$
+
+Doubling the distance costs 3 dB.<Sidenote>A design rule of thumb: every doubling of the number of identical spans consumes 3 dB of OSNR margin.</Sidenote> To compensate: raise the launch power (limited by nonlinearities), lower the NF or use Raman. Build your own budget:
+
+<OsnrCalculator />
+
+### 7.2 OSNR, Q and BER
+
+For a binary decision with Gaussian noise, the <Term def="The ratio between the separation of the logic levels and the sum of the noise standard deviations: it measures how distinguishable the symbols are at the decision instant.">Q-factor</Term> and the bit error rate are related by:
+
+$$
+Q = \frac{\mu_1 - \mu_0}{\sigma_1 + \sigma_0}, \qquad \text{BER} = \frac{1}{2}\,\operatorname{erfc}\!\left(\frac{Q}{\sqrt{2}}\right)
+$$
+
+For Q = 6, BER ≈ 10⁻⁹; for Q = 7, BER ≈ 10⁻¹². In coherent systems, the SER depends on the SNR and on the constellation geometry: for a target BER of 10⁻³, DP-QPSK at 32 GBd needs an OSNR on the order of 12–14 dB, DP-16QAM 18–20 dB and DP-64QAM above 24 dB.
+
+### 7.3 Q-factor in coherent systems
+
+With FEC, Q indicates **margin**: the pre-FEC BER is measured or estimated and converted to Q (often expressed as $$Q^2_{\text{dB}} = 20\log_{10}Q$$). For a pre-FEC BER threshold of 10⁻², the minimum Q is **≈ 2.33**, that is, **Q² ≈ 7.3 dB**. The margin is the difference between the measured Q and that threshold. Equipment such as the OptiX OSN series reports Q in real time, enabling preventive maintenance before uncorrectable errors appear<Cite id="huawei-osn" />.
+
+<QBerCalculator />
+
+### 7.4 GSNR and nonlinear effects
+
+At high power, the fiber introduces **SPM** (self-phase modulation), **XPM** (cross-phase modulation) and **FWM** (four-wave mixing). The GN model treats this nonlinear interference (NLI) as additional Gaussian noise whose power grows with the cube of the per-channel power<Cite id="poggiolini-2012" />. The **GSNR** combines the contributions:
+
+$$
+\frac{1}{\text{GSNR}} = \frac{1}{\text{OSNR}_{\text{ASE}}} + \frac{1}{\text{SNR}_{\text{NLI}}} + \frac{1}{\text{SNR}_{\text{TRX}}}, \qquad P_{\text{NLI}} = \eta\,P_{\text{ch}}^{3}
+$$
+
+Maximizing the GSNR with respect to the per-channel power yields the optimal launch power, at which the NLI equals half the ASE noise:
+
+$$
+P_{\text{opt}} = \sqrt[3]{\frac{P_{\text{ASE}}}{2\,\eta}}
+$$
+
+## 8. Hardware: boards and subsystems
+
+### 8.1 Anatomy of a coherent transponder board
+
+On the client side, pluggable transceivers (SFP+, QSFP28, QSFP-DD) handle O/E conversion; FPGAs or ASICs implement *framing*, CRC checks, statistics and OTN mapping. The **line DSP** handles FEC encoding, symbol mapping and *pulse shaping* on transmit; on receive, CD compensation, adaptive equalization, carrier recovery and decoding. DACs and ADCs above 100 GSa/s, with 6–8 effective bits, bridge to the analog domain. Auxiliary subsystems include the laser's thermal control (TEC), multiple power domains and the management interface — the complete flow follows the diagram in section 2.2.
+
+### 8.2 Integration: CFP-DCO, QSFP-DD and beyond
+
+The first 100G coherent transponders were discrete, drawing more than 100 W per port. Then came CFP2 pluggables in two variants: **ACO** (*Analog Coherent Optics*), with the DSP **on the host board**, and **DCO** (*Digital Coherent Optics*), with the DSP **inside the module** — on the order of 20–25 W per 100G. **QSFP-DD** brought coherent optics with an integrated DSP to a compact form factor: **400ZR** (OIF) and OpenZR+ define 400G coherent interfaces in modules drawing 15–20 W<Cite id="oif-400zr" />. The trajectory continues toward *co-packaged optics* and silicon photonics.
+
+### 8.3 Amplification in practice
+
+Amplifier boards have one or two stages, each with doped fiber and a pump laser (with pump redundancy in some models). Photodiodes monitor input, output and pump, feeding control loops in **AGC** (constant gain) or **APC** (constant power) mode. In two-stage designs, a GFF sits between the stages; a VOA allows fine power adjustment. In the OptiX line, boards such as the OAU, OBU and OPU implement pre-amplification, *booster* and line amplification, and optical supervisory channel (OSC) boards can include an OTDR<Cite id="huawei-osn" />.
+
+## 9. Production applications
+
+### 9.1 Metro core networks
+
+Distances of 50 to 500 km, ring or partial-mesh topologies, many add/drop nodes and heterogeneous services. ROADMs at the main nodes, OTN access at the smaller ones (e.g., OptiX OSN 1800 V Pro) and multi-terabit platforms at the core nodes (OSN 8800/9800). The trend is 400G/800G in DCI, with ZR/ZR+ pluggables connecting routers directly to the DWDM domain.
+
+### 9.2 Submarine systems
+
+Thousands of kilometers with no maintenance access: sealed repeaters every 50–80 km, powered by direct current over the cable itself, with severely limited electrical power. **OSNR is the critical factor**: very low-NF amplifiers, distributed Raman and launch powers optimized against nonlinearities. Robust formats (DP-QPSK, and adaptive formats with PCS in recent systems) dominate. Vendors, Huawei included, report unregenerated 100G transmission over more than 10,000 km in optimized configurations<Cite id="huawei-osn" />.
+
+## 10. Outlook
+
+<CardGrid>
+<Card title="C+L band" icon="waves">Roughly doubles the channel count, requiring amplifiers and WSSs for the extended range.</Card>
+<Card title="800G and 1.2T per channel" icon="zap" tone="signal">High-order DP-QAM, PCS and symbol rates above 90 GBd, with DSPs on 7 nm nodes and smaller.</Card>
+<Card title="Artificial intelligence" icon="cpu" tone="success">Parameter optimization, failure prediction, equalization and FEC — an area where I do applied research.</Card>
+<Card title="IP + optical convergence" icon="network">Coherent pluggables in routers cut out unnecessary O-E-O conversions.</Card>
+</CardGrid>
+
+<Quiz
+  question="A link has an OSNR of 24 dB with 10 spans. Keeping everything else the same, what is the approximate OSNR with 20 spans?"
+  options={["12 dB", "21 dB", "24 dB", "27 dB"]}
+  answer={1}
+  explanation="OSNR_total = OSNR_1 − 10·log10(N). Doubling N lowers the OSNR by 10·log10(2) ≈ 3 dB: 24 − 3 = 21 dB."
+/>
+
+---
+
+*A version of this article was also published on the author's LinkedIn.*

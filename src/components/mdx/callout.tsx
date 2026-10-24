@@ -1,6 +1,6 @@
 import { CircleAlert, Info, Lightbulb, OctagonAlert, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const VARIANTS = {
   info: {
@@ -11,25 +11,25 @@ const VARIANTS = {
   },
   tip: {
     icon: Lightbulb,
-    label: "Dica",
+    label: "Tip",
     className: "border-success/40 bg-success/5",
     iconClass: "text-success",
   },
   warning: {
     icon: TriangleAlert,
-    label: "Atenção",
+    label: "Warning",
     className: "border-warning/50 bg-warning/5",
     iconClass: "text-warning",
   },
   danger: {
     icon: OctagonAlert,
-    label: "Perigo",
+    label: "Danger",
     className: "border-danger/50 bg-danger/5",
     iconClass: "text-danger",
   },
   security: {
     icon: CircleAlert,
-    label: "Segurança",
+    label: "Security",
     className: "border-danger/50 bg-danger/5",
     iconClass: "text-danger",
   },

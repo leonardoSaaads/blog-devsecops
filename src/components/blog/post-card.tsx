@@ -3,7 +3,8 @@ import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
 import { CATEGORIES } from "@/lib/content/categories";
 import type { PostMeta } from "@/lib/content/posts";
-import { cn, formatShortDate } from "@/lib/format";
+import { formatShortDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export type PostCardData = Pick<
   PostMeta,
@@ -55,11 +56,11 @@ export function PostCard({
         <p className="text-xs text-muted-foreground">
           <time dateTime={post.date}>{formatShortDate(post.date)}</time>
           <span aria-hidden="true"> · </span>
-          {post.readingMinutes} min de leitura
+          {post.readingMinutes} min read
           {post.figures > 0 && (
             <>
               <span aria-hidden="true"> · </span>
-              {post.figures} {post.figures === 1 ? "figura interativa" : "figuras interativas"}
+              {post.figures} {post.figures === 1 ? "interactive figure" : "interactive figures"}
             </>
           )}
         </p>

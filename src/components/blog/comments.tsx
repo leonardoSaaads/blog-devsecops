@@ -4,14 +4,14 @@ import { MessageSquare } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/hooks/use-theme";
-import { site } from "@/lib/site";
+import { site } from "@/config/site";
 
-// O código do Giscus só é baixado quando a seção de comentários se aproxima da tela.
+// Giscus code is only downloaded when the comments section approaches the viewport.
 const Giscus = dynamic(() => import("@giscus/react"), { ssr: false });
 
 /**
- * Comentários via Giscus (GitHub Discussions). O iframe só é carregado quando a
- * seção se aproxima da área visível — nenhum script de terceiros no carregamento inicial.
+ * Comments via Giscus (GitHub Discussions). The iframe only loads when the section
+ * approaches the viewport — no third-party script on the initial page load.
  */
 export function Comments() {
   const ref = useRef<HTMLElement>(null);
@@ -35,12 +35,12 @@ export function Comments() {
   }, []);
 
   return (
-    <section ref={ref} aria-labelledby="comentarios" className="mt-16 border-t border-border pt-10">
+    <section ref={ref} aria-labelledby="comments" className="mt-16 border-t border-border pt-10">
       <h2
-        id="comentarios"
+        id="comments"
         className="mb-6 flex items-center gap-2 text-2xl font-semibold tracking-tight"
       >
-        <MessageSquare className="size-5 text-accent" aria-hidden="true" /> Comentários
+        <MessageSquare className="size-5 text-accent" aria-hidden="true" /> Comments
       </h2>
       {visible ? (
         <Giscus
@@ -54,11 +54,11 @@ export function Comments() {
           emitMetadata="0"
           inputPosition="top"
           theme={theme === "dark" ? "dark_dimmed" : "light"}
-          lang="pt"
+          lang="en"
           loading="lazy"
         />
       ) : (
-        <p className="text-sm text-muted-foreground">Carregando comentários…</p>
+        <p className="text-sm text-muted-foreground">Loading comments…</p>
       )}
     </section>
   );

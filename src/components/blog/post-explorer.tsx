@@ -3,9 +3,9 @@
 import { Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { CATEGORIES, type CategoryId } from "@/lib/content/categories";
-import { cn } from "@/lib/format";
-import { normalize } from "@/lib/search";
+import { CATEGORIES, categoriesInUse } from "@/lib/content/categories";
+import { cn } from "@/lib/utils";
+import { normalize } from "@/lib/search/query";
 import { PostCard, type PostCardData } from "./post-card";
 
 export function filterPosts(
@@ -34,14 +34,14 @@ const chip = (active: boolean) =>
       : "border-border bg-card text-muted-foreground hover:border-accent hover:text-foreground",
   );
 
-/** Listagem com busca, área e tag sincronizadas na URL (?q=&area=&tag=). */
+/** Article list with search, area and tag filters synced to the URL (?q=&area=&tag=). */
 export function PostExplorer({ posts, tags }: { posts: PostCardData[]; tags: string[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const [, startTransition] = useTransition();
 
-  // Estado local mantém a digitação fluida; a URL é atualizada em transição.
+  // Local state keeps typing smooth; the URL is updated inside a transition.
   const [query, setQuery] = useState(() => params.get("q") ?? "");
   const activeTag = params.get("tag");
   const activeArea = params.get("area");
@@ -69,7 +69,7 @@ export function PostExplorer({ posts, tags }: { posts: PostCardData[]; tags: str
     <div className="space-y-8">
       <div className="space-y-4 rounded-2xl border border-border bg-card/80 p-4 shadow-sm backdrop-blur sm:p-5">
         <label className="relative block">
-          <span className="sr-only">Filtrar artigos</span>
+          <span className="sr-only">Filter articles</span>
           <Search
             className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
@@ -78,22 +78,22 @@ export function PostExplorer({ posts, tags }: { posts: PostCardData[]; tags: str
             type="search"
             value={query}
             onChange={(event) => update({ q: event.target.value })}
-            placeholder="Buscar por título, conceito ou tecnologia…"
+            placeholder="Search by title, concept or technology…"
             className="h-12 w-full rounded-xl border border-border bg-background pl-10 pr-3 font-serif text-base outline-none transition focus:border-accent focus:ring-4 focus:ring-[var(--ring)]"
             data-testid="post-filter"
           />
         </label>
 
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por área">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by area">
           <button
             type="button"
             onClick={() => update({ area: null })}
             aria-pressed={!activeArea}
             className={chip(!activeArea)}
           >
-            Todas as áreas
+            All areas
           </button>
-          {(Object.keys(CATEGORIES) as CategoryId[]).map((id) => (
+          {categoriesInUse(posts).map((id) => (
             <button
               key={id}
               type="button"
@@ -108,10 +108,9 @@ export function PostExplorer({ posts, tags }: { posts: PostCardData[]; tags: str
 
         <details className="group/tags">
           <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
-            Filtrar por tag{" "}
-            {activeTag && <span className="font-mono text-accent">#{activeTag}</span>}
+            Filter by tag {activeTag && <span className="font-mono text-accent">#{activeTag}</span>}
           </summary>
-          <div className="mt-3 flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por tag">
+          <div className="mt-3 flex flex-wrap gap-1.5" role="group" aria-label="Filter by tag">
             {tags.map((tag) => (
               <button
                 key={tag}
@@ -128,14 +127,14 @@ export function PostExplorer({ posts, tags }: { posts: PostCardData[]; tags: str
       </div>
 
       <p className="text-sm text-muted-foreground" aria-live="polite" data-testid="post-count">
-        {filtered.length} {filtered.length === 1 ? "artigo encontrado" : "artigos encontrados"}
+        {filtered.length} {filtered.length === 1 ? "article found" : "articles found"}
         {(query || activeTag || activeArea) && (
           <button
             type="button"
             onClick={() => update({ q: "", tag: null, area: null })}
             className="ml-3 inline-flex items-center gap-1 text-accent-strong underline-offset-4 hover:underline"
           >
-            <X className="size-3.5" aria-hidden="true" /> limpar filtros
+            <X className="size-3.5" aria-hidden="true" /> clear filters
           </button>
         )}
       </p>

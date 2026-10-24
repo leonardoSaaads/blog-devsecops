@@ -11,7 +11,7 @@ import {
   Terminal,
 } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   FS_ROOT,
   ancestors,
@@ -117,13 +117,13 @@ export function FilesystemExplorer() {
 
   return (
     <InteractiveFigure
-      title="Hierarquia de diretórios do Linux (FHS)"
-      description="Navegue pela árvore: cada diretório tem um propósito definido. Itens em âmbar são sistemas de arquivos virtuais, gerados pelo kernel em memória."
+      title="The Linux directory hierarchy (FHS)"
+      description="Browse the tree: every directory has a defined purpose. Amber items are virtual filesystems the kernel generates in memory."
       testId="filesystem-explorer"
     >
       <div className="grid gap-5 md:grid-cols-[16rem_minmax(0,1fr)]">
         <nav
-          aria-label="Árvore de diretórios"
+          aria-label="Directory tree"
           className="max-h-96 overflow-y-auto rounded-xl border border-border bg-background p-2"
         >
           <ul>
@@ -139,7 +139,7 @@ export function FilesystemExplorer() {
         </nav>
 
         <div className="space-y-4" aria-live="polite">
-          <nav aria-label="Caminho" className="flex flex-wrap items-center gap-1 font-mono text-sm">
+          <nav aria-label="Path" className="flex flex-wrap items-center gap-1 font-mono text-sm">
             {ancestors(selected).map((path, index, all) => (
               <span key={path} className="inline-flex items-center gap-1">
                 <button
@@ -165,17 +165,17 @@ export function FilesystemExplorer() {
             <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
               {node.virtual && (
                 <span className="rounded-full bg-signal-soft px-2 py-0.5 text-foreground">
-                  virtual (em memória)
+                  virtual (in memory)
                 </span>
               )}
               {node.link && (
                 <span className="rounded-full bg-muted px-2 py-0.5">
-                  link simbólico → /{node.link}
+                  symbolic link → /{node.link}
                 </span>
               )}
               {node.children && (
                 <span className="rounded-full bg-muted px-2 py-0.5">
-                  {node.children.length} itens
+                  {node.children.length} items
                 </span>
               )}
             </div>
@@ -190,7 +190,7 @@ export function FilesystemExplorer() {
           {node.command && (
             <div className="rounded-lg bg-code p-3 font-mono text-xs">
               <p className="mb-1 flex items-center gap-1.5 text-muted-foreground">
-                <Terminal className="size-3.5" aria-hidden="true" /> experimente
+                <Terminal className="size-3.5" aria-hidden="true" /> try it
               </p>
               <code>$ {node.command}</code>
             </div>

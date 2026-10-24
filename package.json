@@ -2,7 +2,7 @@
   "name": "blog-devsecops",
   "version": "2.0.0",
   "private": true,
-  "description": "Blog técnico e interativo sobre telecomunicações, infraestrutura, segurança e software.",
+  "description": "An interactive technical blog on telecommunications, infrastructure, security and software.",
   "license": "MIT",
   "author": "Leonardo Saads Pinto",
   "engines": {

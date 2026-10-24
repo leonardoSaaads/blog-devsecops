@@ -11,7 +11,6 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { createHighlighter, type BundledLanguage, type Highlighter } from "shiki";
 import { rehypeCollectHeadings, type TocItem } from "./plugins/rehype-collect-headings";
-import { remarkRunnableCode } from "./plugins/remark-runnable-code";
 import { codeMetaTransformer, parseCodeMeta } from "./plugins/shiki-meta";
 
 export const CODE_THEMES = { light: "github-light", dark: "github-dark-dimmed" } as const;
@@ -52,8 +51,8 @@ export interface RenderedMdx {
 }
 
 /**
- * Compila MDX no servidor (build time). O conteúdo é confiável (versionado no
- * repositório); `import`/`export` dentro dos artigos não são utilizados.
+ * Compiles MDX on the server (build time). Content is trusted (versioned in the
+ * repository); `import`/`export` inside articles are not used.
  */
 export const renderMdx = cache(async (source: string): Promise<RenderedMdx> => {
   const toc: TocItem[] = [];
@@ -62,7 +61,7 @@ export const renderMdx = cache(async (source: string): Promise<RenderedMdx> => {
   const { default: Content } = await evaluate(source, {
     ...runtime,
     development: false,
-    remarkPlugins: [remarkGfm, [remarkMath, { singleDollarTextMath: false }], remarkRunnableCode],
+    remarkPlugins: [remarkGfm, [remarkMath, { singleDollarTextMath: false }]],
     rehypePlugins: [
       rehypeSlug,
       [rehypeCollectHeadings, { toc }],
@@ -70,7 +69,7 @@ export const renderMdx = cache(async (source: string): Promise<RenderedMdx> => {
         rehypeAutolinkHeadings,
         {
           behavior: "append",
-          properties: { className: ["heading-anchor"], ariaLabel: "Link direto para esta seção" },
+          properties: { className: ["heading-anchor"], ariaLabel: "Direct link to this section" },
           content: { type: "text", value: "#" },
         },
       ],

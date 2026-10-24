@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostCard } from "@/components/blog/post-card";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { getAllTags, getPostsByTag } from "@/lib/content/posts";
+import { isTagIndexable, pageMetadata } from "@/lib/seo/metadata";
 
 export function generateStaticParams() {
   return getAllTags().map(({ tag }) => ({ tag }));
@@ -13,18 +14,20 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/tags/[tag]">): Promise<Metadata> {
   const { tag } = await params;
   const normalized = decodeURIComponent(tag).toLowerCase();
-  return {
+  const count = getPostsByTag(normalized).length;
+  return pageMetadata({
     title: `#${normalized}`,
-    description: `Artigos sobre ${normalized}.`,
-    alternates: { canonical: `/tags/${normalized}` },
-  };
+    description: `${count} ${count === 1 ? "article" : "articles"} about ${normalized}, with interactive figures and cited sources.`,
+    path: `/tags/${normalized}`,
+    noindex: !isTagIndexable(count),
+  });
 }
 
 export default async function TagPage({ params }: PageProps<"/tags/[tag]">) {
   const { tag: raw } = await params;
   const tag = decodeURIComponent(raw);
-  // Links antigos em caixa alta (ex.: /tags/DEVOPS) são redirecionados pelo
-  // `_redirects` da Cloudflare (ver src/lib/hosting/redirects.ts).
+  // Old uppercase links (e.g., /tags/DEVOPS) are redirected by Cloudflare's
+  // `_redirects` (see src/lib/hosting/redirects.ts).
   const posts = getPostsByTag(tag);
   if (posts.length === 0) notFound();
 
@@ -34,12 +37,12 @@ export default async function TagPage({ params }: PageProps<"/tags/[tag]">) {
         href="/tags"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Todos os tópicos
+        <ArrowLeft className="size-4" aria-hidden="true" /> All topics
       </Link>
       <PageHeader
-        eyebrow="Palavra-chave"
+        eyebrow="Keyword"
         title={`#${tag}`}
-        description={`${posts.length} ${posts.length === 1 ? "artigo" : "artigos"}.`}
+        description={`${posts.length} ${posts.length === 1 ? "article" : "articles"}.`}
       />
       <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => (

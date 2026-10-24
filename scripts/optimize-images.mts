@@ -1,9 +1,9 @@
 /**
- * Gera as variantes WebP das imagens de `public/` (ver src/lib/images/variants.mts).
+ * Generates WebP variants of the images in `public/` (see src/lib/images/variants.mts).
  *
- * Executado por `npm run dev` e `npm run build` (Node com remoção de tipos nativa).
- * Incremental: só recodifica imagens alteradas desde a última execução. Lê apenas
- * arquivos regulares dentro de `public/` (links simbólicos são ignorados).
+ * Run by `npm run dev` and `npm run build` (Node with native type stripping).
+ * Incremental: only re-encodes images changed since the last run. Reads only regular
+ * files inside `public/` (symbolic links are ignored).
  */
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -25,7 +25,7 @@ const STAMP_FILE = path.resolve(
   "optimize-images.json",
 );
 
-/** Qualidade visual próxima do original em capturas de tela, com texto legível. */
+/** Visual quality close to the original for screenshots, with legible text. */
 const WEBP_OPTIONS = { quality: 80, effort: 5, smartSubsample: true } as const;
 const SETTINGS = JSON.stringify({ widths: VARIANT_WIDTHS, webp: WEBP_OPTIONS });
 
@@ -62,7 +62,7 @@ async function optimize(file: string): Promise<boolean> {
 
   const { width: original = 0 } = await sharp(file).metadata();
   await fs.mkdir(path.dirname(outputs[0]!), { recursive: true });
-  // Larguras acima da original resultariam no mesmo arquivo: codifica uma vez e copia.
+  // Widths above the original would produce the same file: encode once and copy.
   const encoded = new Map<number, string>();
   for (const [index, width] of VARIANT_WIDTHS.entries()) {
     const target = Math.min(width, original);
@@ -82,7 +82,7 @@ async function optimize(file: string): Promise<boolean> {
 }
 
 async function main(): Promise<void> {
-  // Configuração diferente da última execução invalida todas as variantes.
+  // Settings that differ from the last run invalidate every variant.
   const previous = await fs.readFile(STAMP_FILE, "utf8").catch(() => "");
   if (previous !== SETTINGS) await fs.rm(OUTPUT_DIR, { recursive: true, force: true });
 
@@ -97,7 +97,7 @@ async function main(): Promise<void> {
   await fs.writeFile(STAMP_FILE, SETTINGS);
   const seconds = ((performance.now() - started) / 1000).toFixed(1);
   console.log(
-    `[imagens] ${images.length} imagens, ${generated} atualizadas em ${seconds}s → public/${VARIANTS_DIR}/`,
+    `[images] ${images.length} images, ${generated} updated in ${seconds}s → public/${VARIANTS_DIR}/`,
   );
 }
 

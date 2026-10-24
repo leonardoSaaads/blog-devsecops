@@ -1,6 +1,6 @@
 import { getAllPosts } from "@/lib/content/posts";
-import { buildRssFeed, FEED_HEADERS } from "@/lib/feed";
-import { absoluteUrl, site } from "@/lib/site";
+import { buildRssFeed, FEED_HEADERS } from "@/lib/seo/feed";
+import { absoluteUrl, site } from "@/config/site";
 
 export const dynamic = "force-static";
 
@@ -10,6 +10,7 @@ export function GET() {
     description: site.description,
     siteUrl: site.url,
     feedUrl: absoluteUrl("/feed.xml"),
+    language: site.locale,
     items: getAllPosts().map((post) => ({
       title: post.title,
       description: post.description,

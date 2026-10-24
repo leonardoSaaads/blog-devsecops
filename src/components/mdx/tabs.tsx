@@ -1,13 +1,13 @@
 "use client";
 
 import { Children, isValidElement, useId, useRef, useState, type ReactNode } from "react";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export function Tab({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Abas acessíveis (padrão WAI-ARIA: setas ←/→, Home/End). */
+/** Accessible tabs (WAI-ARIA pattern: ←/→ arrows, Home/End). */
 export function Tabs({ labels, children }: { labels: string[]; children: ReactNode }) {
   const panels = Children.toArray(children).filter(isValidElement);
   const [active, setActive] = useState(0);

@@ -1,9 +1,9 @@
 import { CATEGORIES } from "@/lib/content/categories";
 import { getAllPosts, getPostBySlug } from "@/lib/content/posts";
 import { formatDate } from "@/lib/format";
-import { OG_SIZE, renderOgImage } from "@/lib/og";
+import { OG_SIZE, renderOgImage } from "@/lib/seo/og";
 
-export const alt = "Capa do artigo";
+export const alt = "Article title card with the title, area, author and date";
 export const size = OG_SIZE;
 export const contentType = "image/png";
 export const dynamic = "force-static";
@@ -21,8 +21,8 @@ export default async function PostOpengraphImage({
   const post = getPostBySlug(slug);
   if (!post)
     return renderOgImage({
-      eyebrow: "Artigo",
-      title: "Artigo",
+      eyebrow: "Article",
+      title: "Article",
       art: { motif: "circuit", seed: slug },
     });
   return renderOgImage({

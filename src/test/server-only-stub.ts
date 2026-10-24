@@ -1,2 +1,2 @@
-// Stub de `server-only` para o ambiente de testes (Vitest).
+// `server-only` stub for the test environment (Vitest).
 export {};

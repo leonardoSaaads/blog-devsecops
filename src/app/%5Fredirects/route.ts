@@ -1,7 +1,7 @@
 import { getAllTags } from "@/lib/content/posts";
 import { cloudflareRedirectsFile } from "@/lib/hosting/cloudflare";
 
-// Exportado como `out/_redirects` (a pasta `%5F` produz o segmento `_redirects`).
+// Exported as `out/_redirects` (the `%5F` folder produces the `_redirects` segment).
 export const dynamic = "force-static";
 
 export function GET() {

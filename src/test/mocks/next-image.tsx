@@ -1,4 +1,4 @@
-/** Substituto de `next/image` para testes. */
+/** Test stand-in for `next/image`. */
 export default function Image({
   src,
   alt,

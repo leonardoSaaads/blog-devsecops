@@ -9,18 +9,18 @@ export function referenceAnchor(id: string): string {
 export function ReferenceList({ references }: { references: Reference[] }) {
   return (
     <section
-      aria-labelledby="referencias"
+      aria-labelledby="references"
       className="mt-16 border-t border-border pt-10"
       data-testid="references"
     >
       <h2
-        id="referencias"
+        id="references"
         className="flex items-center gap-2 font-serif text-3xl font-semibold tracking-tight"
       >
         <BookOpen className="size-5 text-accent" aria-hidden="true" />
-        Referências
+        References
       </h2>
-      <p className="mt-1 text-sm text-muted-foreground">Formatadas segundo a ABNT NBR 6023:2018.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Formatted in IEEE style.</p>
       <ol className="mt-6 space-y-3 text-sm leading-relaxed">
         {references.map((ref, index) => (
           <li
@@ -41,8 +41,8 @@ export function ReferenceList({ references }: { references: Reference[] }) {
                   >
                     {part.text}
                   </a>
-                ) : part.strong ? (
-                  <strong key={partIndex}>{part.text}</strong>
+                ) : part.emphasis ? (
+                  <em key={partIndex}>{part.text}</em>
                 ) : (
                   <span key={partIndex}>{part.text}</span>
                 ),

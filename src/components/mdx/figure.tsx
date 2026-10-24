@@ -2,11 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { imageSize } from "image-size";
 import Image from "next/image";
-import { cn } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 
-/** Lê as dimensões de uma imagem local em build time (evita layout shift). */
+/** Reads a local image's dimensions at build time (prevents layout shift). */
 export function localImageSize(src: string): { width: number; height: number } | undefined {
   if (!src.startsWith("/")) return undefined;
   const file = path.normalize(path.join(PUBLIC_DIR, src));
@@ -19,12 +19,12 @@ export interface FigureProps {
   src: string;
   alt: string;
   caption?: string;
-  /** Crédito/fonte da imagem (obrigatório para imagens de terceiros). */
+  /** Image credit/source (required for third-party images). */
   source?: string;
   sourceUrl?: string;
-  /** Imagem acima da dobra (LCP): pré-carregada no `<head>`. */
+  /** Above-the-fold image (LCP): preloaded in the `<head>`. */
   priority?: boolean;
-  /** Largura máxima de exibição em px (ex.: diagramas pequenos). */
+  /** Maximum display width in px (e.g., small diagrams). */
   maxWidth?: number;
 }
 
@@ -48,7 +48,7 @@ export function Figure({ src, alt, caption, source, sourceUrl, priority, maxWidt
             className="h-auto w-full"
           />
         ) : (
-          // Imagens externas: sem otimização do Next (domínios de terceiros variados).
+          // External images: not optimized by Next (assorted third-party domains).
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
@@ -68,7 +68,7 @@ export function Figure({ src, alt, caption, source, sourceUrl, priority, maxWidt
             <>
               {caption ? " " : ""}
               <span className="whitespace-nowrap">
-                Fonte:{" "}
+                Source:{" "}
                 {sourceUrl ? (
                   <a
                     href={sourceUrl}

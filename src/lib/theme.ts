@@ -19,7 +19,7 @@ export function nextPreference(current: ThemePreference): ThemePreference {
 }
 
 /**
- * Script inline executado antes da primeira pintura (evita "flash" de tema).
- * Mantido mínimo e sem dependências; espelha `resolveTheme`.
+ * Inline script that runs before the first paint (prevents a theme "flash").
+ * Kept minimal and dependency-free; mirrors `resolveTheme`.
  */
 export const themeInitScript = `(function(){try{var p=localStorage.getItem("${THEME_STORAGE_KEY}");if(p!=="light"&&p!=="dark")p="system";var d=p==="dark"||(p==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var e=document.documentElement;e.dataset.theme=d?"dark":"light";e.dataset.themePreference=p;}catch(_){document.documentElement.dataset.theme="light";}})();`;

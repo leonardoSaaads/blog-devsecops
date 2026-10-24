@@ -14,36 +14,36 @@ import { routerMock } from "@/test/mocks/next-navigation";
 const posts: PostCardData[] = [
   {
     slug: "k8s",
-    title: "Aprendendo Kubernetes",
-    description: "Pods, Services e Deployments",
+    title: "Learning Kubernetes",
+    description: "Pods, Services and Deployments",
     date: "2025-10-31",
     tags: ["kubernetes", "devops"],
     readingMinutes: 10,
-    category: "infraestrutura",
+    category: "infrastructure",
     art: "lattice",
     figures: 1,
   },
   {
     slug: "linux",
-    title: "Entendendo Linux",
-    description: "Permissões e processos no sistema",
+    title: "Understanding Linux",
+    description: "Permissions and processes in the système",
     date: "2025-10-03",
     tags: ["linux"],
     readingMinutes: 12,
-    category: "seguranca",
+    category: "security",
     art: "bits",
     figures: 0,
   },
 ];
 
-describe("tema", () => {
+describe("theme", () => {
   beforeEach(() => {
     document.documentElement.dataset.theme = "light";
     document.documentElement.dataset.themePreference = "system";
     localStorage.clear();
   });
 
-  it("alterna system → light → dark e persiste a preferência", async () => {
+  it("cycles system → light → dark and persists the preference", async () => {
     const user = userEvent.setup();
     render(<ThemeToggle />);
     const button = screen.getByTestId("theme-toggle");
@@ -56,20 +56,20 @@ describe("tema", () => {
   });
 });
 
-describe("navegação", () => {
-  it("marca rota ativa inclusive em subpáginas", () => {
+describe("navigation", () => {
+  it("marks the active route, including subpages", () => {
     expect(isActivePath("/blog/abc", "/blog")).toBe(true);
     expect(isActivePath("/blogger", "/blog")).toBe(false);
   });
 
-  it("paleta de comandos abre com Ctrl+K, filtra e navega com Enter", async () => {
+  it("the command palette opens with Ctrl+K, filters and navigates with Enter", async () => {
     const user = userEvent.setup();
     render(
       <CommandPalette
         entries={[
           {
             kind: "post",
-            title: "Aprendendo Kubernetes",
+            title: "Learning Kubernetes",
             description: "Pods",
             href: "/blog/k8s",
             keywords: ["kubernetes"],
@@ -77,7 +77,7 @@ describe("navegação", () => {
           {
             kind: "tag",
             title: "#prometheus",
-            description: "1 artigo",
+            description: "1 article",
             href: "/tags/prometheus",
             keywords: [],
           },
@@ -94,33 +94,33 @@ describe("navegação", () => {
   });
 });
 
-describe("listagem de artigos", () => {
-  it("filtra por texto (sem acentos), tag e área", () => {
-    expect(filterPosts(posts, "permissoes", null).map((p) => p.slug)).toEqual(["linux"]);
+describe("article list", () => {
+  it("filters by text (accent-insensitive), tag and area", () => {
+    expect(filterPosts(posts, "systeme", null).map((p) => p.slug)).toEqual(["linux"]);
     expect(filterPosts(posts, "", "kubernetes").map((p) => p.slug)).toEqual(["k8s"]);
-    expect(filterPosts(posts, "seguranca", null).map((p) => p.slug)).toEqual(["linux"]);
-    expect(filterPosts(posts, "", null, "infraestrutura").map((p) => p.slug)).toEqual(["k8s"]);
+    expect(filterPosts(posts, "security", null).map((p) => p.slug)).toEqual(["linux"]);
+    expect(filterPosts(posts, "", null, "infrastructure").map((p) => p.slug)).toEqual(["k8s"]);
     expect(filterPosts(posts, "linux", "kubernetes")).toHaveLength(0);
   });
 
-  it("filtro de área atualiza a URL", async () => {
+  it("the area filter updates the URL", async () => {
     const user = userEvent.setup();
     render(<PostExplorer posts={posts} tags={["kubernetes", "linux"]} />);
-    await user.click(screen.getByRole("button", { name: "Segurança" }));
-    expect(routerMock.replace).toHaveBeenLastCalledWith("/?area=seguranca", { scroll: false });
+    await user.click(screen.getByRole("button", { name: "Security" }));
+    expect(routerMock.replace).toHaveBeenLastCalledWith("/?area=security", { scroll: false });
   });
 
-  it("atualiza contagem e URL ao digitar", async () => {
+  it("updates the count and the URL while typing", async () => {
     const user = userEvent.setup();
     render(<PostExplorer posts={posts} tags={["kubernetes", "linux", "devops"]} />);
     await user.type(screen.getByTestId("post-filter"), "linux");
-    expect(screen.getByTestId("post-count")).toHaveTextContent("1 artigo encontrado");
+    expect(screen.getByTestId("post-count")).toHaveTextContent("1 article found");
     expect(routerMock.replace).toHaveBeenLastCalledWith("/?q=linux", { scroll: false });
   });
 });
 
-describe("componentes MDX", () => {
-  it("abas seguem o padrão WAI-ARIA com setas", async () => {
+describe("MDX components", () => {
+  it("tabs follow the WAI-ARIA pattern with arrow keys", async () => {
     const user = userEvent.setup();
     render(
       <Tabs labels={["Debian", "Alpine"]}>
@@ -137,25 +137,25 @@ describe("componentes MDX", () => {
     expect(screen.getByRole("tabpanel")).toHaveTextContent("apk");
   });
 
-  it("quiz verifica a resposta e explica", async () => {
+  it("the quiz checks the answer and explains it", async () => {
     const user = userEvent.setup();
     render(
-      <Quiz question="2 + 2?" options={["3", "4"]} answer={1} explanation="Aritmética básica." />,
+      <Quiz question="2 + 2?" options={["3", "4"]} answer={1} explanation="Basic arithmetic." />,
     );
-    const check = screen.getByRole("button", { name: "Verificar resposta" });
+    const check = screen.getByRole("button", { name: "Check answer" });
     expect(check).toBeDisabled();
     await user.click(screen.getByLabelText("3"));
     await user.click(check);
-    expect(screen.getByText("Não exatamente.")).toBeInTheDocument();
+    expect(screen.getByText("Not quite.")).toBeInTheDocument();
     await user.click(screen.getByLabelText("4"));
     await user.click(check);
-    expect(screen.getByText("Correto!")).toBeInTheDocument();
-    expect(screen.getByText("Aritmética básica.")).toBeInTheDocument();
+    expect(screen.getByText("Correct!")).toBeInTheDocument();
+    expect(screen.getByText("Basic arithmetic.")).toBeInTheDocument();
   });
 });
 
 describe("easter egg", () => {
-  it("reconhece o código Konami e reinicia em erro", () => {
+  it("recognizes the Konami code and resets on a wrong key", () => {
     let progress = 0;
     for (const key of KONAMI_SEQUENCE) progress = advanceSequence(progress, key);
     expect(progress).toBe(KONAMI_SEQUENCE.length);
@@ -163,12 +163,12 @@ describe("easter egg", () => {
     expect(advanceSequence(5, "ArrowUp")).toBe(1);
   });
 
-  it("aparece após a sequência", async () => {
+  it("appears after the sequence", async () => {
     render(<EasterEgg />);
     await act(async () => {
       for (const key of KONAMI_SEQUENCE)
         window.dispatchEvent(new KeyboardEvent("keydown", { key }));
     });
-    expect(screen.getByRole("status")).toHaveTextContent("Outro Leonardo");
+    expect(screen.getByRole("status")).toHaveTextContent("Another Leonardo");
   });
 });

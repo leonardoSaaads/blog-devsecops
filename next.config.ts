@@ -6,10 +6,10 @@ import { buildSecurityHeaders } from "./src/lib/security/headers";
 const isDev = process.env.NODE_ENV === "development";
 
 /**
- * Exportação estática (`out/`), servida pela Cloudflare como Workers Static Assets.
- * Não há servidor Node em produção: cabeçalhos e redirecionamentos são entregues
- * pelos arquivos `_headers` e `_redirects`, gerados no build a partir das mesmas
- * fontes usadas abaixo (ver `src/app/%5Fheaders` e `src/app/%5Fredirects`).
+ * Static export (`out/`), served by Cloudflare as Workers Static Assets.
+ * There is no Node server in production: headers and redirects are delivered by
+ * the `_headers` and `_redirects` files, generated at build time from the same
+ * sources used below (see `src/app/%5Fheaders` and `src/app/%5Fredirects`).
  */
 const nextConfig: NextConfig = {
   output: "export",
@@ -17,15 +17,15 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   images: {
-    // Sem servidor não há otimizador (`/_next/image`): o loader aponta o `srcset` para
-    // variantes WebP geradas no build por `scripts/optimize-images.mts`.
+    // Without a server there is no optimizer (`/_next/image`): the loader points `srcset`
+    // at WebP variants generated at build time by `scripts/optimize-images.mts`.
     loader: "custom",
     loaderFile: "./src/lib/images/loader.ts",
     deviceSizes: DEVICE_SIZES,
     imageSizes: IMAGE_SIZES,
   },
-  // `headers`/`redirects` não existem na exportação estática; no `next dev` mantêm
-  // paridade com a produção (CSP incluída) para detectar violações cedo.
+  // `headers`/`redirects` do not exist in a static export; under `next dev` they keep
+  // parity with production (CSP included) to catch violations early.
   ...(isDev && {
     async headers() {
       return buildSecurityHeaders({ isDev });

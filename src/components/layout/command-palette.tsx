@@ -4,12 +4,12 @@ import { BookOpen, CornerDownLeft, FileText, Hash, Search } from "lucide-react";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { cn } from "@/lib/format";
-import { searchEntries, type SearchEntry, type SearchKind } from "@/lib/search";
+import { cn } from "@/lib/utils";
+import { searchEntries, type SearchEntry, type SearchKind } from "@/lib/search/query";
 
 const KIND_META: Record<SearchKind, { label: string; icon: typeof BookOpen }> = {
-  post: { label: "Artigo", icon: BookOpen },
-  page: { label: "Página", icon: FileText },
+  post: { label: "Article", icon: BookOpen },
+  page: { label: "Page", icon: FileText },
   tag: { label: "Tag", icon: Hash },
 };
 
@@ -77,14 +77,14 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
         type="button"
         onClick={open}
         className="group inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-sm text-muted-foreground transition hover:border-accent hover:text-foreground sm:w-56"
-        // Nome acessível começa pelo texto visível (WCAG 2.5.3); o atalho vai em aria-keyshortcuts.
+        // The accessible name starts with the visible text (WCAG 2.5.3); the shortcut goes in aria-keyshortcuts.
         aria-keyshortcuts="Control+K"
         data-testid="search-trigger"
       >
         <Search className="size-4" aria-hidden="true" />
-        <span className="sr-only">Buscar no site</span>
+        <span className="sr-only">Search the site</span>
         <span aria-hidden="true" className="hidden flex-1 text-left sm:inline">
-          Buscar…
+          Search…
         </span>
         <kbd
           aria-hidden="true"
@@ -96,7 +96,7 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
 
       <dialog
         ref={dialogRef}
-        aria-label="Busca no site"
+        aria-label="Site search"
         onClick={(event) => event.target === dialogRef.current && close()}
         className="m-auto mt-[12vh] w-[min(42rem,calc(100vw-2rem))] rounded-2xl border border-border bg-card p-0 text-foreground shadow-2xl"
       >
@@ -110,7 +110,7 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
             aria-controls={listId}
             aria-activedescendant={results[active] ? `${listId}-${active}` : undefined}
             aria-autocomplete="list"
-            placeholder="Busque artigos, temas e conceitos…"
+            placeholder="Search articles, topics and concepts…"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
@@ -128,12 +128,12 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
         <ul
           id={listId}
           role="listbox"
-          aria-label="Resultados"
+          aria-label="Results"
           className="max-h-[60vh] overflow-y-auto p-2"
         >
           {results.length === 0 && (
             <li className="px-3 py-8 text-center text-sm text-muted-foreground">
-              Nenhum resultado para “{query}”.
+              No results for “{query}”.
             </li>
           )}
           {results.map((entry, index) => {

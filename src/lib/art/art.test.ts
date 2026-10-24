@@ -6,13 +6,13 @@ function flatten(shapes: Shape[]): Shape[] {
   return shapes.flatMap((shape) => (shape.kind === "group" ? flatten(shape.children) : [shape]));
 }
 
-describe("arte generativa", () => {
-  it("todos os motivos estão registrados", () => {
+describe("generative art", () => {
+  it("every motif is registered", () => {
     expect(Object.keys(GENERATORS).sort()).toEqual([...MOTIFS].sort());
   });
 
   it.each(MOTIFS.map((motif) => [motif]))(
-    "%s é determinístico, finito e com tamanho controlado",
+    "%s is deterministic, finite and size-bounded",
     (motif) => {
       const a = generateArt(motif, "slug-a");
       const b = generateArt(motif, "slug-a");
@@ -28,12 +28,12 @@ describe("arte generativa", () => {
         if (shape.kind === "path") expect(shape.d).not.toMatch(/NaN|Infinity/);
       }
       expect(a.caption.length).toBeGreaterThan(20);
-      // Arquivo servido em /art: tamanho limitado (é baixado em cards e capas).
+      // File served under /art: bounded size (downloaded for cards and covers).
       expect(artworkToSvg(a).length).toBeLessThan(70_000);
     },
   );
 
-  it("limita os elementos animados (custo de repintura sem GPU)", () => {
+  it("caps animated elements (repaint cost without a GPU)", () => {
     const countAnimated = (shapes: Shape[]): number =>
       shapes.reduce(
         (sum, shape) =>
@@ -43,7 +43,7 @@ describe("arte generativa", () => {
         0,
       );
     for (const motif of MOTIFS) {
-      for (const seed of ["a", "b", "cloudflared-tunnel-tutorail"]) {
+      for (const seed of ["a", "b", "linux-fundamentals"]) {
         expect(countAnimated(generateArt(motif, seed).shapes)).toBeLessThanOrEqual(
           MAX_ANIMATED_SHAPES,
         );
@@ -51,20 +51,20 @@ describe("arte generativa", () => {
     }
   });
 
-  it("sementes diferentes produzem obras diferentes", () => {
+  it("different seeds produce different artworks", () => {
     expect(artworkToSvg(generateArt("lattice", "a"))).not.toBe(
       artworkToSvg(generateArt("lattice", "b")),
     );
     expect(seedFrom("dwdm")).not.toBe(seedFrom("dwdn"));
   });
 
-  it("SVG para Open Graph é autônomo e escapa atributos", () => {
+  it("the Open Graph SVG is self-contained and escapes attributes", () => {
     const svg = artworkToSvg(generateArt("radar", "x"));
     expect(svg.startsWith("<svg xmlns=")).toBe(true);
     expect(svg).not.toContain("class=");
   });
 
-  it("cores espectrais vão do violeta ao vermelho", () => {
+  it("spectral colors run from violet to red", () => {
     expect(spectralColor(0)).toBe("hsl(265, 90%, 62%)");
     expect(spectralColor(1)).toBe("hsl(0, 90%, 62%)");
   });

@@ -17,7 +17,7 @@ interface Paint {
   stroke?: string;
   strokeWidth?: number;
   opacity?: number;
-  /** Classe CSS para animações opcionais (aplicadas só na capa do artigo). */
+  /** CSS class for optional animations (applied on the article cover only). */
   className?: string;
   dash?: string;
 }
@@ -32,12 +32,12 @@ export interface Artwork {
   motif: Motif;
   width: number;
   height: number;
-  /** Gradiente de fundo (de cima para baixo). */
+  /** Background gradient (top to bottom). */
   background: [string, string];
-  /** Brilho radial opcional (cor, cx, cy em fração). */
+  /** Optional radial glow (color, cx, cy as fractions). */
   glow?: { color: string; cx: number; cy: number };
   shapes: Shape[];
-  /** Legenda descritiva (também usada como texto alternativo). */
+  /** Descriptive caption (also used as alt text). */
   caption: string;
 }
 

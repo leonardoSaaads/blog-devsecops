@@ -23,12 +23,12 @@ const LANGUAGE_LABELS: Record<string, string> = {
   nginx: "nginx",
   html: "HTML",
   css: "CSS",
-  text: "texto",
+  text: "text",
 };
 
 type PreProps = ComponentProps<"pre"> & { "data-language"?: string; "data-title"?: string };
 
-/** Moldura dos blocos de código (Shiki): título/arquivo, linguagem e botão de cópia. */
+/** Code block frame (Shiki): title/file name, language and copy button. */
 export function CodeBlock({
   "data-language": language,
   "data-title": title,

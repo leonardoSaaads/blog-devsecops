@@ -7,9 +7,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
-      // `server-only` lança erro fora do bundler do Next; nos testes é um no-op.
+      // `server-only` throws outside the Next bundler; in tests it is a no-op.
       "server-only": fileURLToPath(new URL("./src/test/server-only-stub.ts", import.meta.url)),
-      // Componentes do Next substituídos por versões mínimas fora do framework.
+      // Next components replaced by minimal versions outside the framework.
       "next/link": fileURLToPath(new URL("./src/test/mocks/next-link.tsx", import.meta.url)),
       "next/image": fileURLToPath(new URL("./src/test/mocks/next-image.tsx", import.meta.url)),
       "next/navigation": fileURLToPath(

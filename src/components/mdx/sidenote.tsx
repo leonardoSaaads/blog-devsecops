@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 /**
- * Nota de margem numerada (estilo Tufte). Em telas largas flutua na margem direita;
- * em telas menores aparece em linha, logo após a frase. Usa apenas elementos de frase
- * (span) para ser válida dentro de parágrafos.
+ * Numbered margin note (Tufte style). On wide screens it floats in the right margin;
+ * on smaller screens it appears inline, right after the sentence. Uses phrasing
+ * elements only (span) so it stays valid inside paragraphs.
  */
 export function Sidenote({ children }: { children: ReactNode }) {
   return (

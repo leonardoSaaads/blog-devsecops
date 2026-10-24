@@ -3,23 +3,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
 import { GithubIcon } from "@/components/icons/brand-icons";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { projectArtwork } from "@/lib/art/catalog";
-import { PROJECTS } from "@/lib/projects";
+import { PROJECTS } from "@/lib/content/projects";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Projetos",
-  description: "Projetos open source de infraestrutura, observabilidade e automação.",
-  alternates: { canonical: "/projects" },
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Projects",
+  description: "Open-source infrastructure, observability and automation projects.",
+  path: "/projects",
+});
 
 export default function ProjectsPage() {
   return (
     <div className="container-page py-14">
       <PageHeader
         eyebrow="Open source"
-        title="Projetos"
-        description="Ferramentas e stacks que uso — e documento — no dia a dia."
+        title="Projects"
+        description="Tools and stacks used — and documented — day to day."
       />
       <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {PROJECTS.map((project) => (
@@ -33,7 +34,7 @@ export default function ProjectsPage() {
             <div className="flex flex-1 flex-col p-6">
               <h2 className="font-mono text-lg font-semibold">{project.name}</h2>
               <p className="mt-2 flex-1 text-sm text-muted-foreground">{project.description}</p>
-              <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Tecnologias">
+              <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Technologies">
                 {project.stack.map((item) => (
                   <li key={item} className="rounded-full bg-muted px-2.5 py-0.5 text-xs">
                     {item}
@@ -48,7 +49,7 @@ export default function ProjectsPage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-accent-strong hover:underline"
                   >
-                    <GithubIcon className="size-4" /> Código{" "}
+                    <GithubIcon className="size-4" /> Code{" "}
                     <ArrowUpRight className="size-3.5" aria-hidden="true" />
                   </a>
                 )}
@@ -57,7 +58,7 @@ export default function ProjectsPage() {
                     href={`/blog/${project.article}`}
                     className="inline-flex items-center gap-1.5 text-accent-strong hover:underline"
                   >
-                    <BookOpen className="size-4" aria-hidden="true" /> Artigo
+                    <BookOpen className="size-4" aria-hidden="true" /> Article
                   </Link>
                 )}
               </div>

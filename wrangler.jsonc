@@ -1,21 +1,21 @@
 {
-  // Site 100% estático: `next build` gera `out/` e a Cloudflare o serve como
-  // Workers Static Assets. Sem `main`: nenhum código executa por requisição.
+  // Fully static site: `next build` generates `out/` and Cloudflare serves it as
+  // Workers Static Assets. No `main`: no code runs per request.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "blog-devsecops",
   "compatibility_date": "2026-10-19",
   "assets": {
     "directory": "./out",
-    // `/about` serve `about.html`; `/about/` redireciona para `/about`.
+    // `/about` serves `about.html`; `/about/` redirects to `/about`.
     "html_handling": "auto-trailing-slash",
-    // Rotas inexistentes recebem `404.html` com status 404.
+    // Unknown routes get `404.html` with a 404 status.
     "not_found_handling": "404-page",
   },
   "observability": {
     "enabled": true,
   },
-  // Explícitos para silenciar os avisos do deploy. As URLs canônicas apontam para
-  // NEXT_PUBLIC_SITE_URL; desative após confirmar o domínio customizado, se preferir.
+  // Explicit to silence deploy warnings. Canonical URLs point to NEXT_PUBLIC_SITE_URL;
+  // disable these once the custom domain is confirmed, if you prefer.
   "workers_dev": true,
   "preview_urls": true,
 }

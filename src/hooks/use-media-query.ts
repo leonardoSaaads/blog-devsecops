@@ -2,7 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
-/** Assina uma media query; no servidor assume `false`. */
+/** Subscribes to a media query; assumes `false` on the server. */
 export function useMediaQuery(query: string): boolean {
   const subscribe = useCallback(
     (callback: () => void) => {
