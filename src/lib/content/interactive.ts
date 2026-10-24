@@ -3,15 +3,9 @@
  * (exibido nos cards). O teste de componentes garante que todos estejam registrados.
  */
 export const INTERACTIVE_COMPONENTS = [
-  "CodePlayground",
   "PermissionLab",
   "SignalSimulator",
   "FilesystemExplorer",
-  "K8sSimulator",
-  "PortExposure",
-  "RateExplainer",
-  "MibExplorer",
-  "ComplexityChart",
   "DwdmGridCalculator",
   "OsnrCalculator",
   "QBerCalculator",
@@ -20,7 +14,6 @@ export const INTERACTIVE_COMPONENTS = [
   "Fiber3D",
   "FlowDiagram",
   "OtnHierarchy",
-  "ArtExplorer",
 ] as const;
 
 const PATTERN = new RegExp(`^\\s*<(?:${INTERACTIVE_COMPONENTS.join("|")})\\b`, "gm");

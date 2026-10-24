@@ -6,10 +6,7 @@ export interface RedirectRule {
 }
 
 /** Links que mudaram na reconstrução do blog. */
-export const LEGACY_REDIRECTS: readonly RedirectRule[] = [
-  // Post "Hello World" substituído pelo artigo de bastidores do novo blog.
-  { source: "/blog/hello-world", destination: "/blog/bastidores-do-blog", permanent: true },
-];
+export const LEGACY_REDIRECTS: readonly RedirectRule[] = [];
 
 /**
  * O blog antigo publicava tags em caixa alta (ex.: /tags/DEVOPS). Sem servidor,

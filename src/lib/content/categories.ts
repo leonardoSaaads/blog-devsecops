@@ -25,3 +25,9 @@ export const CATEGORIES = {
 
 export type CategoryId = keyof typeof CATEGORIES;
 export const CATEGORY_IDS = Object.keys(CATEGORIES) as [CategoryId, ...CategoryId[]];
+
+/** Áreas com ao menos um artigo, na ordem canônica (áreas vazias não são exibidas). */
+export function categoriesInUse(posts: readonly { category: CategoryId }[]): CategoryId[] {
+  const used = new Set(posts.map((post) => post.category));
+  return CATEGORY_IDS.filter((id) => used.has(id));
+}

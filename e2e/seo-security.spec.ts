@@ -13,17 +13,6 @@ test.describe("segurança e SEO", () => {
     expect(headers["x-powered-by"]).toBeUndefined();
   });
 
-  test("workers recebem CSP própria e restritiva", async ({ request }) => {
-    const js = await request.get("/workers/js-runner.js");
-    expect(js.headers()["content-security-policy"]).toBe(
-      "default-src 'none'; script-src 'unsafe-eval'",
-    );
-    const py = await request.get("/workers/py-runner.mjs");
-    expect(py.headers()["content-security-policy"]).toContain(
-      "connect-src https://cdn.jsdelivr.net",
-    );
-  });
-
   test("a página não gera violações de CSP nem erros de console", async ({ page }) => {
     test.setTimeout(90_000); // quatro páginas completas
 
@@ -32,7 +21,7 @@ test.describe("segurança e SEO", () => {
       if (message.type() === "error" || message.type() === "warning") problems.push(message.text());
     });
     page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
-    for (const path of ["/", "/blog/dwdm_intoduction", "/blog/bastidores-do-blog", "/tags"]) {
+    for (const path of ["/", "/blog/dwdm_intoduction", "/blog/comandos-linux", "/tags"]) {
       await page.goto(path, { waitUntil: "networkidle" });
     }
     // A fibra 3D (three.js) só carrega quando entra na tela: rola até ela e espera o WebGL.
@@ -64,7 +53,7 @@ test.describe("segurança e SEO", () => {
   test("sitemap, robots, RSS e manifest", async ({ request }) => {
     const sitemap = await (await request.get("/sitemap.xml")).text();
     expect(sitemap).toContain("/blog/dwdm_intoduction");
-    expect(sitemap).toContain("/tags/kubernetes");
+    expect(sitemap).toContain("/tags/linux");
     expect(sitemap).not.toContain("/shop");
     expect(await (await request.get("/robots.txt")).text()).toContain("Sitemap:");
     const feed = await request.get("/feed.xml");
@@ -74,10 +63,10 @@ test.describe("segurança e SEO", () => {
   });
 
   test("metadados, JSON-LD com citações e imagem Open Graph", async ({ page, request }) => {
-    await page.goto("/blog/valocidade-de-linguagem-nao-importa");
+    await page.goto("/blog/dwdm_intoduction");
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       "href",
-      /\/blog\/valocidade-de-linguagem-nao-importa$/,
+      /\/blog\/dwdm_intoduction$/,
     );
     await expect(page.locator('meta[property="og:type"]')).toHaveAttribute("content", "article");
     const jsonLd = JSON.parse(
@@ -86,14 +75,14 @@ test.describe("segurança e SEO", () => {
     expect(jsonLd["@type"]).toBe("BlogPosting");
     expect(jsonLd.citation.length).toBeGreaterThan(5);
 
-    const og = await request.get("/blog/valocidade-de-linguagem-nao-importa/opengraph-image");
+    const og = await request.get("/blog/dwdm_intoduction/opengraph-image");
     expect(og.ok()).toBe(true);
     expect(og.headers()["content-type"]).toBe("image/png");
   });
 
   test("links externos dos artigos abrem com rel=noopener", async ({ page }) => {
-    await page.goto("/blog/deploy-zabbix-em-minutos");
-    const external = page.locator('[data-testid="post-content"] a[href^="http"]');
+    await page.goto("/blog/comandos-linux");
+    const external = page.locator('main a[href^="http"]');
     const count = await external.count();
     expect(count).toBeGreaterThan(0);
     for (let i = 0; i < count; i++) {

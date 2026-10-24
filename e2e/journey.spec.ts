@@ -10,33 +10,28 @@ test.describe("jornada do leitor", () => {
 
     await page.getByTestId("cta-blog").click();
     await expect(page).toHaveURL(/\/blog$/);
-    await expect(page.getByTestId("post-card")).toHaveCount(8);
+    await expect(page.getByTestId("post-card")).toHaveCount(2);
 
-    await page.getByTestId("post-filter").fill("kubernetes");
+    await page.getByTestId("post-filter").fill("linux");
     await expect(page.getByTestId("post-card")).toHaveCount(1);
-    await expect(page).toHaveURL(/\?q=kubernetes/);
+    await expect(page).toHaveURL(/\?q=linux/);
 
-    await page
-      .getByTestId("post-card")
-      .getByRole("link", { name: /Kubernetes/ })
-      .click();
-    await expect(page).toHaveURL(/\/blog\/first-steps-with-k8s$/);
+    await page.getByTestId("post-card").getByRole("link", { name: /Linux/ }).click();
+    await expect(page).toHaveURL(/\/blog\/comandos-linux$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Aprendendo Kubernetes: os primeiros passos",
+      "Entendendo um pouco de Linux",
     );
 
     // Sumário lateral leva à seção
-    await page.getByTestId("toc").getByRole("link", { name: "Nível 3: Service" }).click();
+    await page.getByTestId("toc").getByRole("link", { name: "Processos e sinais" }).click();
     await expect(
-      page.getByRole("heading", { level: 2, name: /Nível 3: Service/ }),
+      page.getByRole("heading", { level: 2, name: /Processos e sinais/ }),
     ).toBeInViewport();
 
     // Citação numerada leva à lista de referências ABNT
     await page.locator('sup a[href^="#ref-"]').first().click();
     await expect(page.getByTestId("references")).toBeVisible();
-    await expect(page.getByTestId("references").getByRole("listitem").first()).toContainText(
-      "Disponível em:",
-    );
+    await expect(page.getByTestId("references")).toContainText("Disponível em:");
 
     // Próximo/anterior
     await page
@@ -44,7 +39,7 @@ test.describe("jornada do leitor", () => {
       .getByRole("link")
       .first()
       .click();
-    await expect(page).not.toHaveURL(/first-steps-with-k8s/);
+    await expect(page).not.toHaveURL(/comandos-linux/);
     await expect(page.getByTestId("post-content")).toBeVisible();
   });
 
@@ -99,14 +94,14 @@ test.describe("jornada do leitor", () => {
     await page.goto("/blog");
     await page
       .getByRole("group", { name: "Filtrar por área" })
-      .getByRole("button", { name: "Software" })
+      .getByRole("button", { name: "Segurança" })
       .click();
-    await expect(page).toHaveURL(/area=software/);
-    await expect(page.getByTestId("post-card")).toHaveCount(2);
+    await expect(page).toHaveURL(/area=seguranca/);
+    await expect(page.getByTestId("post-card")).toHaveCount(1);
     await page.goto("/tags");
-    await page.getByRole("link", { name: "Ver artigos de Segurança" }).click();
-    await expect(page).toHaveURL(/\/blog\?area=seguranca$/);
-    await expect(page.getByTestId("post-card")).toHaveCount(2);
+    await page.getByRole("link", { name: "Ver artigos de Telecomunicações" }).click();
+    await expect(page).toHaveURL(/\/blog\?area=telecomunicacoes$/);
+    await expect(page.getByTestId("post-card")).toHaveCount(1);
   });
 
   test("tags: do artigo para a listagem por tema", async ({ page }) => {
@@ -142,8 +137,6 @@ test.describe("jornada do leitor", () => {
   });
 
   test("links antigos continuam funcionando (redirecionamentos 308)", async ({ page }) => {
-    await page.goto("/blog/hello-world");
-    await expect(page).toHaveURL(/\/blog\/bastidores-do-blog$/);
     await page.goto("/tags/DEVOPS");
     await expect(page).toHaveURL(/\/tags\/devops$/);
   });
@@ -179,6 +172,6 @@ test.describe("tema e busca", () => {
     await page.getByTestId("search-input").fill("telecomunicacoes");
     await page.getByRole("option", { name: /Área: Telecomunicações/ }).click();
     await expect(page).toHaveURL(/\/blog\?area=telecomunicacoes$/);
-    await expect(page.getByTestId("post-card")).toHaveCount(2);
+    await expect(page.getByTestId("post-card")).toHaveCount(1);
   });
 });

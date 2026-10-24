@@ -1,4 +1,3 @@
-import { WORKER_CSP } from "@/lib/security/headers";
 import {
   CLOUDFLARE_LIMITS,
   cloudflareHeadersFile,
@@ -34,14 +33,21 @@ describe("_headers da Cloudflare", () => {
     expect(global.some((line) => line.startsWith("Strict-Transport-Security:"))).toBe(true);
   });
 
-  it("substitui (não concatena) a CSP dos workers", () => {
-    expect(blocks.get("/workers/js-runner.js")).toEqual([
-      "! Content-Security-Policy",
-      `Content-Security-Policy: ${WORKER_CSP.javascript}`,
+  it("regra posterior substitui (não concatena) o cabeçalho herdado", () => {
+    const file = serializeHeadersFile([
+      {
+        source: "/:path*",
+        headers: [{ key: "Content-Security-Policy", value: "default-src 'self'" }],
+      },
+      {
+        source: "/embed/*",
+        headers: [{ key: "Content-Security-Policy", value: "default-src 'none'" }],
+      },
     ]);
-    expect(blocks.get("/workers/py-runner.mjs")).toContain(
-      `Content-Security-Policy: ${WORKER_CSP.python}`,
-    );
+    expect(parseBlocks(file).get("/embed/*")).toEqual([
+      "! Content-Security-Policy",
+      "Content-Security-Policy: default-src 'none'",
+    ]);
   });
 
   it("define tipo e cache que a exportação estática não preserva", () => {
@@ -79,10 +85,9 @@ describe("_headers da Cloudflare", () => {
 });
 
 describe("_redirects da Cloudflare", () => {
-  it("mantém os links legados com 308", () => {
+  it("tags antigas em caixa alta redirecionam com 308", () => {
     const file = cloudflareRedirectsFile(["devops", "zero-trust"]);
     expect(file.split("\n")).toEqual([
-      "/blog/hello-world /blog/bastidores-do-blog 308",
       "/tags/DEVOPS /tags/devops 308",
       "/tags/ZERO-TRUST /tags/zero-trust 308",
       "",

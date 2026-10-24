@@ -43,7 +43,7 @@ describe("arte generativa", () => {
         0,
       );
     for (const motif of MOTIFS) {
-      for (const seed of ["a", "b", "cloudflared-tunnel-tutorail"]) {
+      for (const seed of ["a", "b", "comandos-linux"]) {
         expect(countAnimated(generateArt(motif, seed).shapes)).toBeLessThanOrEqual(
           MAX_ANIMATED_SHAPES,
         );

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
 import { areaArtwork } from "@/lib/art/catalog";
 import { PageHeader } from "@/components/ui/page-header";
-import { CATEGORIES, CATEGORY_IDS } from "@/lib/content/categories";
+import { CATEGORIES, categoriesInUse } from "@/lib/content/categories";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
 
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export default function TopicsPage() {
           Áreas
         </h2>
         <ul className="mt-4 grid gap-5 sm:grid-cols-2">
-          {CATEGORY_IDS.map((id) => {
+          {categoriesInUse(posts).map((id) => {
             const category = CATEGORIES[id];
             const items = posts.filter((post) => post.category === id);
             return (

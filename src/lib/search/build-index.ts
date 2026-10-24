@@ -1,5 +1,5 @@
 import "server-only";
-import { CATEGORIES, CATEGORY_IDS } from "@/lib/content/categories";
+import { CATEGORIES, categoriesInUse } from "@/lib/content/categories";
 import { getAllPosts, getAllTags } from "@/lib/content/posts";
 import type { SearchEntry } from "@/lib/search/query";
 
@@ -50,7 +50,7 @@ export function buildSearchIndex(): SearchEntry[] {
     href: `/tags/${tag}`,
     keywords: [tag],
   }));
-  const areas: SearchEntry[] = CATEGORY_IDS.map((id) => ({
+  const areas: SearchEntry[] = categoriesInUse(getAllPosts()).map((id) => ({
     kind: "page",
     title: `Área: ${CATEGORIES[id].label}`,
     description: CATEGORIES[id].description,

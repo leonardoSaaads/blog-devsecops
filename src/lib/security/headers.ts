@@ -14,7 +14,6 @@ export interface HeaderRule {
   headers: { key: string; value: string }[];
 }
 
-export const PYODIDE_CDN = "https://cdn.jsdelivr.net";
 export const GISCUS_ORIGIN = "https://giscus.app";
 
 export function serializeCsp(directives: Directives): string {
@@ -33,7 +32,8 @@ export function buildContentSecurityPolicy({ isDev }: { isDev: boolean }): strin
     "media-src": ["'self'"],
     "connect-src": ["'self'", ...(isDev ? ["ws:"] : [])],
     "frame-src": [GISCUS_ORIGIN],
-    "worker-src": ["'self'"],
+    // Nenhuma página usa Web Workers: menor privilégio.
+    "worker-src": ["'none'"],
     "manifest-src": ["'self'"],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],
@@ -41,23 +41,6 @@ export function buildContentSecurityPolicy({ isDev }: { isDev: boolean }): strin
     "frame-ancestors": ["'none'"],
   });
 }
-
-/**
- * Workers de execução de código possuem CSP própria (entregue com o script).
- * - JS: pode avaliar o código digitado, mas não tem acesso à rede.
- * - Python: precisa baixar o runtime Pyodide (WASM) de uma única origem fixa.
- */
-export const WORKER_CSP = {
-  javascript: serializeCsp({
-    "default-src": ["'none'"],
-    "script-src": ["'unsafe-eval'"],
-  }),
-  python: serializeCsp({
-    "default-src": ["'none'"],
-    "script-src": [PYODIDE_CDN, "'unsafe-eval'", "'wasm-unsafe-eval'"],
-    "connect-src": [PYODIDE_CDN],
-  }),
-} as const;
 
 export function buildSecurityHeaders({ isDev }: { isDev: boolean }): HeaderRule[] {
   const common = [
@@ -74,16 +57,5 @@ export function buildSecurityHeaders({ isDev }: { isDev: boolean }): HeaderRule[
     },
   ];
 
-  return [
-    { source: "/:path*", headers: common },
-    // Regras posteriores sobrescrevem a CSP global para os workers.
-    {
-      source: "/workers/js-runner.js",
-      headers: [{ key: "Content-Security-Policy", value: WORKER_CSP.javascript }],
-    },
-    {
-      source: "/workers/py-runner.mjs",
-      headers: [{ key: "Content-Security-Policy", value: WORKER_CSP.python }],
-    },
-  ];
+  return [{ source: "/:path*", headers: common }];
 }

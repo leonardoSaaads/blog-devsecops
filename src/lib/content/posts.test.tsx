@@ -13,7 +13,7 @@ const withoutCode = (body: string) => body.replace(/```[\s\S]*?```/g, "");
 
 describe("conteúdo dos artigos", () => {
   it("todos os artigos têm frontmatter válido e referências", () => {
-    expect(posts.length).toBeGreaterThanOrEqual(8);
+    expect(posts.length).toBeGreaterThanOrEqual(2);
     for (const post of posts) {
       expect(post.references.length, post.slug).toBeGreaterThan(0);
       expect(post.readingMinutes).toBeGreaterThan(0);
@@ -70,18 +70,18 @@ describe("consultas de artigos", () => {
 
   it("agrega tags e relaciona artigos", () => {
     const tags = getAllTags();
-    expect(tags.find((tag) => tag.tag === "devops")?.count).toBeGreaterThan(2);
-    const related = getRelatedPosts("cloudflared-tunnel-tutorail");
-    expect(related.length).toBeGreaterThan(0);
-    expect(related.some((post) => post.slug === "cloudflared-tunnel-tutorail")).toBe(false);
+    expect(tags.find((tag) => tag.tag === "linux")?.count).toBeGreaterThanOrEqual(1);
+    const current = getPostBySlug("comandos-linux")!;
+    for (const post of getRelatedPosts(current.slug)) {
+      expect(post.slug).not.toBe(current.slug);
+      expect(post.tags.some((tag) => current.tags.includes(tag))).toBe(true);
+    }
   });
 
   it("calcula artigos adjacentes", () => {
     const all = getAllPosts();
-    const middle = all[2]!;
-    const { newer, older } = getAdjacentPosts(middle.slug);
-    expect(newer?.slug).toBe(all[1]!.slug);
-    expect(older?.slug).toBe(all[3]!.slug);
+    expect(getAdjacentPosts(all[0]!.slug)).toMatchObject({ newer: undefined, older: all[1] });
+    expect(getAdjacentPosts(all[1]!.slug).newer?.slug).toBe(all[0]!.slug);
   });
 
   it("rejeita frontmatter inválido com mensagem útil", () => {

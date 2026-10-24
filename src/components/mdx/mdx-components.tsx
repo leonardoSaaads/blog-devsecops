@@ -4,23 +4,16 @@ import type { Route } from "next";
 import Link from "next/link";
 import type { ComponentProps } from "react";
 import {
-  ArtExplorer,
-  CodePlayground,
-  ComplexityChart,
   ConstellationViewer,
   DwdmGridCalculator,
   Fiber3D,
   FiberBandsChart,
   FilesystemExplorer,
   FlowDiagram,
-  K8sSimulator,
-  MibExplorer,
   OsnrCalculator,
   OtnHierarchy,
   PermissionLab,
-  PortExposure,
   QBerCalculator,
-  RateExplainer,
   SignalSimulator,
 } from "@/components/figures/lazy";
 import type { Reference } from "@/lib/content/schema";
@@ -85,23 +78,16 @@ const baseComponents = {
   Term,
   Video,
   // Figuras interativas
-  ArtExplorer,
-  CodePlayground,
-  ComplexityChart,
   ConstellationViewer,
   DwdmGridCalculator,
   Fiber3D,
   FiberBandsChart,
   FilesystemExplorer,
   FlowDiagram,
-  K8sSimulator,
-  MibExplorer,
   OsnrCalculator,
   OtnHierarchy,
   PermissionLab,
-  PortExposure,
   QBerCalculator,
-  RateExplainer,
   SignalSimulator,
 } satisfies MDXComponents;
 

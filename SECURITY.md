@@ -16,7 +16,6 @@ Include the affected URL or file, steps to reproduce and the impact you observed
 ## Scope
 
 - The static site and its HTTP headers (`_headers`, `_redirects`, CSP).
-- The in-browser code runners (`public/workers/`).
 - The build pipeline and dependencies of this repository.
 
 Third-party services (Cloudflare, GitHub, Giscus) are out of scope; report issues in those directly to their vendors.

@@ -28,7 +28,7 @@ test.describe("experiência móvel", () => {
   });
 
   test("nenhuma página tem rolagem horizontal", async ({ page }) => {
-    test.setTimeout(120_000); // 13 navegações completas
+    test.setTimeout(60_000); // 7 navegações completas
 
     const paths = [
       "/",
@@ -36,14 +36,8 @@ test.describe("experiência móvel", () => {
       "/tags",
       "/projects",
       "/about",
-      "/blog/bastidores-do-blog",
-      "/blog/cloudflared-tunnel-tutorail",
       "/blog/comandos-linux",
-      "/blog/deploy-zabbix-em-minutos",
       "/blog/dwdm_intoduction",
-      "/blog/first-steps-with-k8s",
-      "/blog/monitoramento-homeserver",
-      "/blog/valocidade-de-linguagem-nao-importa",
     ];
     const overflowing: string[] = [];
     for (const path of paths) {
@@ -55,13 +49,5 @@ test.describe("experiência móvel", () => {
       if (overflow > 1) overflowing.push(`${path}: ${overflow}px`);
     }
     expect(overflowing).toEqual([]);
-  });
-
-  test("simulador de Kubernetes funciona com toque", async ({ page }) => {
-    await page.goto("/blog/first-steps-with-k8s");
-    const sim = page.getByTestId("k8s-simulator");
-    await sim.scrollIntoViewIfNeeded();
-    await sim.getByRole("button", { name: "Aumentar réplicas" }).tap();
-    await expect(sim.getByTestId("replicas")).toHaveText("replicas: 4");
   });
 });

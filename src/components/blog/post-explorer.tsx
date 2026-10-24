@@ -3,7 +3,7 @@
 import { Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { CATEGORIES, type CategoryId } from "@/lib/content/categories";
+import { CATEGORIES, categoriesInUse } from "@/lib/content/categories";
 import { cn } from "@/lib/utils";
 import { normalize } from "@/lib/search/query";
 import { PostCard, type PostCardData } from "./post-card";
@@ -93,7 +93,7 @@ export function PostExplorer({ posts, tags }: { posts: PostCardData[]; tags: str
           >
             Todas as áreas
           </button>
-          {(Object.keys(CATEGORIES) as CategoryId[]).map((id) => (
+          {categoriesInUse(posts).map((id) => (
             <button
               key={id}
               type="button"

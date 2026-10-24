@@ -4,8 +4,9 @@ import Link from "next/link";
 import { CoverArt } from "@/components/art/cover-art";
 import { SITE_ARTWORKS, areaArtwork } from "@/lib/art/catalog";
 import { PostCard } from "@/components/blog/post-card";
-import { CATEGORIES, CATEGORY_IDS } from "@/lib/content/categories";
+import { CATEGORIES, categoriesInUse } from "@/lib/content/categories";
 import { getAllPosts } from "@/lib/content/posts";
+import { cn } from "@/lib/utils";
 import { site } from "@/config/site";
 
 const READING_GUIDE = [
@@ -33,6 +34,7 @@ const READING_GUIDE = [
 
 export default function HomePage() {
   const posts = getAllPosts();
+  const areas = categoriesInUse(posts);
   const featured = posts.find((post) => post.featured) ?? posts[0];
   const recent = posts.filter((post) => post.slug !== featured?.slug).slice(0, 6);
   const references = posts.reduce((sum, post) => sum + post.references.length, 0);
@@ -119,8 +121,14 @@ export default function HomePage() {
             Quatro eixos que se cruzam: do fóton ao pacote, do kernel ao algoritmo.
           </p>
         </div>
-        <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {CATEGORY_IDS.map((id) => {
+        <ul
+          className={cn(
+            "mt-8 grid gap-5 sm:grid-cols-2",
+            areas.length >= 4 && "lg:grid-cols-4",
+            areas.length === 3 && "lg:grid-cols-3",
+          )}
+        >
+          {areas.map((id) => {
             const category = CATEGORIES[id];
             const count = posts.filter((post) => post.category === id).length;
             return (

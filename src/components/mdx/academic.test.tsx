@@ -15,7 +15,7 @@ describe("componentes acadêmicos", () => {
 
   it("conta figuras ignorando blocos de código", () => {
     const body =
-      "Texto\n\n<Fiber3D />\n\n```mdx\n<Fiber3D />\n```\n\n  <RateExplainer />\n<Callout>x</Callout>";
+      "Texto\n\n<Fiber3D />\n\n```mdx\n<Fiber3D />\n```\n\n  <OsnrCalculator />\n<Callout>x</Callout>";
     expect(countInteractiveFigures(body)).toBe(2);
   });
 

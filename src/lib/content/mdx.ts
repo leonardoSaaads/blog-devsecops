@@ -11,7 +11,6 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { createHighlighter, type BundledLanguage, type Highlighter } from "shiki";
 import { rehypeCollectHeadings, type TocItem } from "./plugins/rehype-collect-headings";
-import { remarkRunnableCode } from "./plugins/remark-runnable-code";
 import { codeMetaTransformer, parseCodeMeta } from "./plugins/shiki-meta";
 
 export const CODE_THEMES = { light: "github-light", dark: "github-dark-dimmed" } as const;
@@ -62,7 +61,7 @@ export const renderMdx = cache(async (source: string): Promise<RenderedMdx> => {
   const { default: Content } = await evaluate(source, {
     ...runtime,
     development: false,
-    remarkPlugins: [remarkGfm, [remarkMath, { singleDollarTextMath: false }], remarkRunnableCode],
+    remarkPlugins: [remarkGfm, [remarkMath, { singleDollarTextMath: false }]],
     rehypePlugins: [
       rehypeSlug,
       [rehypeCollectHeadings, { toc }],
